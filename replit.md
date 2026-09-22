@@ -32,6 +32,7 @@ EYNƏK is an Azerbaijan-first multi-vendor eyewear marketplace for discovering f
 - The site uses original EYNƏK brand language and visuals, using major eyewear sites only as broad UX references.
 - The customer surface includes shop, stores, brands, seller onboarding, product detail, wishlist, cart, account, and integration-ready VTO routes.
 - A frontend-only seller demo is available at `/seller-login`; it persists the demo session and seller product CRUD in browser localStorage.
+- Auglio is the planned eyewear VTO provider. Seller products collect separate front (0°) and side (90°) images, each at least 1000 px wide.
 
 ## Product
 
@@ -47,6 +48,7 @@ Demo sellers can sign in with `seller@eynek.az` / `Demo1234`, review inventory, 
 
 - The customer experience is currently local-data driven; connect API/database persistence before treating cart, inventory, seller applications, or order flows as production records.
 - The seller login is intentionally a public demo, not production authentication; replace it with real auth and server-side authorization before launch.
+- Local data-URL product images are not Google-indexable; production uploads must use object storage and stable public image URLs.
 - The VTO surface is a provider boundary and preview state, not a real camera or face-tracking implementation.
 
 ## Pointers

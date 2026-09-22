@@ -15,7 +15,8 @@ export type SellerProduct = {
   color: string;
   material: string;
   status: 'Aktiv' | 'Qaralama';
-  image: string;
+  frontImage: string;
+  sideImage: string;
   createdAt: string;
 };
 
@@ -32,7 +33,8 @@ const DEFAULT_PRODUCTS: SellerProduct[] = [
     color: 'Kərpic / şampan',
     material: 'Asetat',
     status: 'Aktiv',
-    image: 'product-images/mimoza-02.jpg',
+    frontImage: 'product-images/mimoza-02.jpg',
+    sideImage: 'product-images/mimoza-02.jpg',
     createdAt: new Date().toISOString(),
   },
   {
@@ -44,7 +46,8 @@ const DEFAULT_PRODUCTS: SellerProduct[] = [
     color: 'Zeytun',
     material: 'Asetat',
     status: 'Aktiv',
-    image: 'product-images/sahil-11.jpg',
+    frontImage: 'product-images/sahil-11.jpg',
+    sideImage: 'product-images/sahil-11.jpg',
     createdAt: new Date().toISOString(),
   }
 ];
@@ -64,7 +67,13 @@ export function useDemoSeller() {
       const stored = localStorage.getItem(PRODUCTS_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.map((p: any) => ({
+            ...p,
+            frontImage: p.frontImage || p.image || '',
+            sideImage: p.sideImage || p.image || '',
+          }));
+        }
       }
       return DEFAULT_PRODUCTS;
     } catch {
@@ -78,6 +87,7 @@ export function useDemoSeller() {
 
   useEffect(() => {
     localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+    window.dispatchEvent(new Event('eynek-demo-products-updated'));
   }, [products]);
 
   const login = (email: string, storeName: string) => {

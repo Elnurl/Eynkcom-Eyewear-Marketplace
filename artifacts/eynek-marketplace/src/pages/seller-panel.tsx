@@ -153,7 +153,7 @@ export default function SellerPanel() {
               <div className="recent-products-list">
                 {products.slice(0, 4).map(p => (
                   <div key={p.id} className="recent-product-item">
-                    <img src={sellerImageUrl(p.image)} alt={p.name} className="recent-product-img" />
+                    <img src={sellerImageUrl(p.frontImage)} alt={p.name} className="recent-product-img" />
                     <div>
                       <strong>{p.name}</strong>
                       <span>{p.category}</span>
@@ -214,8 +214,9 @@ export default function SellerPanel() {
                       <tr key={product.id} data-testid={`row-product-${product.id}`}>
                         <td>
                           <div className="product-cell">
-                            <div className="product-cell-img">
-                              <img src={sellerImageUrl(product.image)} alt={product.name} />
+                            <div className="product-cell-img-wrap">
+                              <div className="product-cell-img"><img src={sellerImageUrl(product.frontImage)} alt={product.name} /></div>
+                              <div className="product-cell-img"><img src={sellerImageUrl(product.sideImage)} alt={`${product.name} yan`} /></div>
                             </div>
                             <div>
                               <strong>{product.name}</strong>
@@ -302,34 +303,74 @@ function ProductFormModal({ product, onClose, onSave }: {
     color: product?.color || '',
     material: product?.material || 'Asetat',
     status: product?.status || 'Qaralama',
-    image: product?.image || '',
+    frontImage: product?.frontImage || '',
+    sideImage: product?.sideImage || '',
   });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [frontImageError, setFrontImageError] = useState('');
+  const [sideImageError, setSideImageError] = useState('');
+
+  const frontInputRef = useRef<HTMLInputElement>(null);
+  const sideInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (field: keyof typeof formData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const validateImage = (file: File): Promise<{valid: boolean, error: string, dataUrl: string}> => {
+    return new Promise((resolve) => {
+      if (!['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type)) {
+        resolve({valid: false, error: 'Yalnız JPG, JPEG və PNG formatları dəstəklənir.', dataUrl: ''});
+        return;
+      }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: reader.result as string }));
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          if (img.width < 1000) {
+            resolve({valid: false, error: `Şəklin eni ən azı 1000px olmalıdır (Sizin şəkil: ${img.width}px).`, dataUrl: ''});
+          } else {
+            resolve({valid: true, error: '', dataUrl: e.target?.result as string});
+          }
+        };
+        img.src = e.target?.result as string;
       };
       reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>, type: 'frontImage' | 'sideImage') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const result = await validateImage(file);
+      if (result.valid) {
+        setFormData(prev => ({ ...prev, [type]: result.dataUrl }));
+        if (type === 'frontImage') setFrontImageError('');
+        else setSideImageError('');
+      } else {
+        if (type === 'frontImage') setFrontImageError(result.error);
+        else setSideImageError(result.error);
+      }
     }
   };
 
   const handleUseSampleImage = () => {
-    // Generate a placeholder via a generic image or sample from existing ones
-    setFormData(prev => ({ ...prev, image: 'product-images/mimoza-02.jpg' }));
+    setFormData(prev => ({ 
+      ...prev, 
+      frontImage: 'product-images/mimoza-02.jpg',
+      sideImage: 'product-images/nisan-07.jpg'
+    }));
+    setFrontImageError('');
+    setSideImageError('');
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    if (!formData.frontImage) setFrontImageError('Ön görünüş şəkli tələb olunur.');
+    if (!formData.sideImage) setSideImageError('Yan görünüş şəkli tələb olunur.');
+    if (formData.frontImage && formData.sideImage && !frontImageError && !sideImageError) {
+      onSave(formData);
+    }
   };
 
   return (
@@ -343,39 +384,87 @@ function ProductFormModal({ product, onClose, onSave }: {
         </div>
         
         <form onSubmit={handleSubmit} className="seller-modal-body">
+          <div className="auglio-instructions">
+            <h3>VTO Şəkil Tələbləri (Auglio)</h3>
+            <p>Bu şəkillər Auglio virtual try-on (VTO) emalı üçün hazırlanır.</p>
+            <ul>
+              <li><strong>Ön görünüş:</strong> Tam düz (0°), tam çərçivə görünməlidir.</li>
+              <li><strong>Yan görünüş:</strong> Tam yan (90°), sol və ya sağ tərəf, təmiz kəsim.</li>
+              <li><strong>Arxa fon:</strong> Şəffaf və ya tünd çərçivələr üçün açıq, açıq çərçivələr üçün tünd fon.</li>
+              <li><strong>Format:</strong> JPG, JPEG, PNG. Minimum en: 1000px.</li>
+            </ul>
+            <div className="google-index-note">
+              <AlertCircle size={12} />
+              Qeyd: Google axtarış sistemində indekslənmək üçün şəkillər canlı serverə yüklənməlidir (yerli data deyil).
+            </div>
+          </div>
+
           <div className="form-grid">
             {/* Image Upload Section */}
-            <div className="field full image-upload-field">
-              <label>Məhsul şəkli</label>
-              <div className="image-upload-area">
-                {formData.image ? (
-                  <div className="image-preview">
-                    <img src={sellerImageUrl(formData.image)} alt="Məhsul şəkli önizləməsi" />
-                    <div className="image-actions">
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()}>Dəyiş</button>
-                      <button type="button" className="icon-button text-danger bg-white" onClick={() => setFormData(prev => ({ ...prev, image: '' }))}>
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+            <div className="field full">
+              <label>Məhsul şəkilləri (Ön və Yan)</label>
+              
+              <div className="image-upload-grid">
+                {/* Front Image */}
+                <div className="image-upload-field">
+                  <div className="image-upload-area">
+                    {formData.frontImage ? (
+                      <div className="image-preview">
+                        <img src={sellerImageUrl(formData.frontImage)} alt="Ön görünüş" />
+                        <div className="image-actions">
+                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => frontInputRef.current?.click()}>Dəyiş</button>
+                          <button type="button" className="icon-button text-danger bg-white" onClick={() => { setFormData(prev => ({ ...prev, frontImage: '' })); setFrontImageError(''); }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="image-upload-prompt">
+                        <div className="icon-circle"><ImageIcon size={24} /></div>
+                        <p>Ön görünüş (0°)</p>
+                        <div className="flex gap-2 justify-center mt-2">
+                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => frontInputRef.current?.click()} data-testid="button-upload-front">Şəkil seç</button>
+                        </div>
+                      </div>
+                    )}
+                    <input type="file" ref={frontInputRef} onChange={(e) => handleImageUpload(e, 'frontImage')} accept="image/png, image/jpeg, image/jpg" className="hidden" />
                   </div>
-                ) : (
-                  <div className="image-upload-prompt">
-                    <div className="icon-circle"><ImageIcon size={24} /></div>
-                    <p>Şəkil yükləmək üçün toxunun və ya sürükləyin</p>
-                    <div className="flex gap-2 justify-center mt-2">
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} data-testid="button-upload-image">Şəkil seç</button>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={handleUseSampleImage} data-testid="button-sample-image">Nümunə istifadə et</button>
-                    </div>
+                  {frontImageError && <span className="field-error-text" data-testid="error-front-image">{frontImageError}</span>}
+                </div>
+
+                {/* Side Image */}
+                <div className="image-upload-field">
+                  <div className="image-upload-area">
+                    {formData.sideImage ? (
+                      <div className="image-preview">
+                        <img src={sellerImageUrl(formData.sideImage)} alt="Yan görünüş" />
+                        <div className="image-actions">
+                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => sideInputRef.current?.click()}>Dəyiş</button>
+                          <button type="button" className="icon-button text-danger bg-white" onClick={() => { setFormData(prev => ({ ...prev, sideImage: '' })); setSideImageError(''); }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="image-upload-prompt">
+                        <div className="icon-circle"><ImageIcon size={24} /></div>
+                        <p>Yan görünüş (90°)</p>
+                        <div className="flex gap-2 justify-center mt-2">
+                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => sideInputRef.current?.click()} data-testid="button-upload-side">Şəkil seç</button>
+                        </div>
+                      </div>
+                    )}
+                    <input type="file" ref={sideInputRef} onChange={(e) => handleImageUpload(e, 'sideImage')} accept="image/png, image/jpeg, image/jpg" className="hidden" />
                   </div>
-                )}
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleImageUpload} 
-                  accept="image/png, image/jpeg, image/webp" 
-                  className="hidden" 
-                />
+                  {sideImageError && <span className="field-error-text" data-testid="error-side-image">{sideImageError}</span>}
+                </div>
               </div>
+              
+              {!formData.frontImage && !formData.sideImage && (
+                <div className="flex justify-center" style={{ marginTop: '10px' }}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={handleUseSampleImage} data-testid="button-sample-image">Nümunə istifadə et (Demo)</button>
+                </div>
+              )}
             </div>
 
             {/* General Info */}
@@ -477,7 +566,12 @@ function ProductFormModal({ product, onClose, onSave }: {
 
           <div className="seller-modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose} data-testid="button-cancel-product">Ləğv et</button>
-            <button type="submit" className="btn btn-blue" disabled={!formData.name || !formData.image} data-testid="button-save-product">
+            <button
+              type="submit"
+              className="btn btn-blue"
+              disabled={!formData.name || !formData.frontImage || !formData.sideImage || Boolean(frontImageError) || Boolean(sideImageError)}
+              data-testid="button-save-product"
+            >
               {product ? 'Yenilə' : 'Əlavə et'}
             </button>
           </div>
