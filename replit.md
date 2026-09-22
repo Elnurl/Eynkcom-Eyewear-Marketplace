@@ -1,6 +1,6 @@
-# Eynək.com Eyewear Marketplace
+# EYNƏK Eyewear Marketplace
 
-Eynək.com is a multi-vendor Azerbaijani eyewear marketplace for discovering frames and sunglasses from independent Bakı optical stores.
+EYNƏK is an Azerbaijan-first multi-vendor eyewear marketplace for discovering frames and sunglasses from independent optical stores.
 
 ## Run & Operate
 
@@ -22,27 +22,28 @@ Eynək.com is a multi-vendor Azerbaijani eyewear marketplace for discovering fra
 
 ## Where things live
 
-- `artifacts/eynek-marketplace/src/App.tsx` — storefront routes, sample marketplace data, and interaction state
-- `artifacts/eynek-marketplace/src/index.css` — the storefront design system and responsive styles
+- `artifacts/eynek-marketplace/src/App.tsx` — customer marketplace routes, sample marketplace data, and interaction state
+- `artifacts/eynek-marketplace/src/index.css` — the EYNƏK design system and responsive styles
 - `artifacts/eynek-marketplace/.replit-artifact/artifact.toml` — artifact routing and managed web workflow
 
 ## Architecture decisions
 
-- The first release is a frontend-first experience with local sample marketplace data so browsing and merchandising can be validated before adding persistence.
-- The site uses original Eynək.com brand language and visuals, using Zenni Optical only as a broad commerce reference.
-- Product, vendor, filter, cart, favorites, quick-view, and virtual try-on state live in the storefront so primary interactions work without a backend.
+- The current release is a frontend-first customer experience with clearly labeled development inventory; persistence and marketplace services are intentionally not faked.
+- The site uses original EYNƏK brand language and visuals, using major eyewear sites only as broad UX references.
+- The customer surface includes shop, stores, brands, seller onboarding, product detail, wishlist, cart, account, and integration-ready VTO routes.
 
 ## Product
 
-Users can browse optical frames and sunglasses, filter by shape and attributes, search and sort products, inspect seller details and frame measurements, save favorites, add items to cart, open vendor storefronts, and launch a virtual try-on overlay.
+Users can browse optical frames and sunglasses, filter by shape and attributes, search and sort products, inspect seller details and frame measurements, save favorites, add items to cart, open vendor storefronts, discover stores and brands, submit a seller application, and launch an integration-ready virtual try-on experience.
 
 ## User preferences
 
-- Use Zenni Optical for reference only; keep Eynək.com branding, product language, and visuals original.
+- Use eyewear references for UX quality only; keep EYNƏK branding, product language, and visuals original.
 
 ## Gotchas
 
-- The storefront is currently local-data driven; connect API/database persistence before treating cart, inventory, or vendor catalog data as production records.
+- The customer experience is currently local-data driven; connect API/database persistence before treating cart, inventory, seller applications, or order flows as production records.
+- The VTO surface is a provider boundary and preview state, not a real camera or face-tracking implementation.
 
 ## Pointers
 

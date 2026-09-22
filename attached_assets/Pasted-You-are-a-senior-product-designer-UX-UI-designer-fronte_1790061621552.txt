@@ -1,0 +1,1515 @@
+You are a senior product designer, UX/UI designer, frontend architect and marketplace product engineer.
+
+You are working on an existing Azerbaijani eyewear marketplace called EYNƏK.
+
+Website:
+EYNƏK.com
+
+IMPORTANT:
+This is NOT a simple ecommerce store.
+
+EYNƏK is a multi-vendor eyewear marketplace for Azerbaijan.
+
+The platform allows independent optical stores, eyewear stores, brands, distributors and other approved sellers to create their own seller accounts, upload and manage their own eyewear products, set prices, manage stock and receive orders.
+
+Customers browse products from multiple sellers through one marketplace, use Virtual Try-On, compare products and purchase directly through EYNƏK.
+
+The core marketplace model is:
+
+SELLER → EYNƏK MARKETPLACE → CUSTOMER
+
+EYNƏK initially operates only in Azerbaijan.
+
+The initial product categories are:
+
+1. Optical eyeglass frames
+2. Sunglasses
+
+Other relevant optical categories such as contact lenses may be added in the future, but do not make them central to the first version.
+
+--------------------------------------------------
+1. PRIMARY PRODUCT VISION
+--------------------------------------------------
+
+The goal is to make EYNƏK feel like a serious, premium, modern eyewear marketplace — not an AI-generated template, not a generic Shopify store and not a dashboard template.
+
+The visual and UX quality should be comparable to leading international eyewear ecommerce platforms.
+
+Use leading eyewear ecommerce experiences only as inspiration for quality, structure, usability and interaction patterns.
+
+Do NOT copy any existing website directly.
+
+Create an original EYNƏK design system.
+
+The overall feeling should be:
+
+- premium
+- modern
+- fashion-oriented
+- clean
+- editorial
+- trustworthy
+- minimal
+- highly functional
+- technology-enabled
+- eyewear-focused
+
+The platform should feel like a real venture-backed consumer marketplace, not a student project or AI-generated website.
+
+--------------------------------------------------
+2. CRITICAL EXISTING-SYSTEM RULE
+--------------------------------------------------
+
+This is an EXISTING website.
+
+Before making changes:
+
+1. Inspect the current codebase.
+2. Inspect the existing routing.
+3. Inspect the current database structure.
+4. Inspect authentication.
+5. Inspect existing seller functionality.
+6. Inspect product models.
+7. Inspect current product data.
+8. Inspect current VTO integration points.
+9. Inspect existing API endpoints.
+10. Inspect current payment and order logic.
+11. Inspect current responsive behavior.
+
+DO NOT blindly rewrite the application.
+
+Preserve working functionality.
+
+Do not remove existing features unless they directly conflict with the new marketplace architecture.
+
+Improve the existing application rather than replacing everything unnecessarily.
+
+If an existing backend/API already supports a feature, reuse it.
+
+If a feature is not yet implemented, create a clean architecture for it without breaking existing functionality.
+
+--------------------------------------------------
+3. BRAND
+--------------------------------------------------
+
+Brand name:
+
+EYNƏK
+
+Use the Azerbaijani character Ə correctly everywhere.
+
+Do not write EYEnek, EYNEK or Eynak.
+
+The brand should visually communicate:
+
+Eyewear + marketplace + modern technology.
+
+Primary brand positioning:
+
+“Bütün eynəklər. Bir marketplace.”
+
+Alternative supporting message:
+
+“Üzünə uyğun eynəyi tap. Almazdan əvvəl üzündə yoxla.”
+
+The brand should feel premium but accessible.
+
+Avoid excessive luxury styling.
+
+--------------------------------------------------
+4. DESIGN SYSTEM
+--------------------------------------------------
+
+Create a coherent design system before implementing individual pages.
+
+Typography:
+
+Primary font:
+Manrope
+
+Use a consistent typography hierarchy.
+
+Suggested weights:
+
+400 — body
+500 — secondary/UI
+600 — labels/product names
+700 — headings
+800 — major display headlines only when appropriate
+
+Do not use many different fonts.
+
+The interface should feel typographically refined.
+
+Colors:
+
+Primary deep navy:
+#171A3A
+
+Primary text:
+#111111
+
+Secondary text:
+#6B6B6B
+
+Background:
+#FAFAF8
+
+Secondary background:
+#F3F3EF
+
+Border:
+#E6E6E2
+
+Accent blue:
+#3D5AFE
+
+Use the accent blue sparingly.
+
+Do not make the entire website blue.
+
+Buttons should primarily use deep navy, white, black or restrained outline styles.
+
+Avoid:
+
+- excessive gradients
+- purple AI-style gradients
+- glassmorphism
+- excessive shadows
+- glowing cards
+- neon colors
+- excessive rounded containers
+- oversized pills everywhere
+- random decorative elements
+- generic SaaS dashboard styling
+
+Border radius should generally be subtle:
+
+8px–12px.
+
+Some larger editorial containers can use slightly larger radius where appropriate, but avoid excessive rounded cards.
+
+Shadows should be extremely subtle.
+
+Whitespace is important.
+
+--------------------------------------------------
+5. VISUAL DIRECTION
+--------------------------------------------------
+
+The visual quality should combine:
+
+- premium fashion ecommerce
+- modern product design
+- clean marketplace UX
+- editorial photography
+- strong product imagery
+- excellent spacing
+- high-quality typography
+
+Product photography should be the visual focus.
+
+Do not overcrowd product cards with information.
+
+Do not make every element a card.
+
+Use whitespace to create hierarchy.
+
+The website must NOT look like it was generated from a generic AI UI kit.
+
+Avoid repetitive:
+
+“rounded card + shadow + icon + gradient”
+
+patterns.
+
+--------------------------------------------------
+6. DESKTOP NAVIGATION
+--------------------------------------------------
+
+Create a clean desktop navigation.
+
+Recommended structure:
+
+EYNƏK
+
+Eynəklər
+Gün eynəkləri
+Brendlər
+Mağazalar
+
+Right side:
+
+Search
+Wishlist
+Account
+Cart
+
+Also include a subtle:
+
+“EYNƏK-də sat”
+
+or
+
+“Satıcı ol”
+
+CTA.
+
+The seller CTA should be visible but should not overpower customer navigation.
+
+--------------------------------------------------
+7. MOBILE NAVIGATION
+--------------------------------------------------
+
+Mobile navigation must be designed independently.
+
+Use a clean mobile header.
+
+Consider a bottom navigation:
+
+Home
+Shop
+VTO
+Wishlist
+Account
+
+VTO should have strong visibility because it is one of EYNƏK's key differentiators.
+
+Do not simply shrink the desktop UI.
+
+Design mobile interactions intentionally.
+
+--------------------------------------------------
+8. HOMEPAGE
+--------------------------------------------------
+
+Redesign the homepage as a premium marketplace homepage.
+
+Recommended structure:
+
+1. Announcement / small top message
+2. Main navigation
+3. Hero
+4. Categories
+5. Virtual Try-On section
+6. Featured / popular products
+7. Stores
+8. Brands
+9. Shop by frame shape
+10. Seller CTA
+11. Footer
+
+--------------------------------------------------
+9. HERO SECTION
+--------------------------------------------------
+
+The hero should immediately explain what EYNƏK is.
+
+Headline:
+
+“Üzünə uyğun eynəyi tap.”
+
+Supporting text:
+
+“Azərbaycandakı müxtəlif optikaların və brendlərin eynəklərini bir yerdə kəşf et.”
+
+Primary CTA:
+
+“Eynəklərə bax”
+
+Secondary CTA:
+
+“Üzümdə yoxla”
+
+Use a large, premium eyewear/lifestyle visual.
+
+The hero should NOT look like a generic ecommerce banner.
+
+Use strong editorial composition.
+
+The visual should communicate eyewear and try-on.
+
+--------------------------------------------------
+10. CATEGORY SECTION
+--------------------------------------------------
+
+Create a simple section:
+
+“Nə axtarırsan?”
+
+Main categories:
+
+Gün eynəkləri
+Optik çərçivələr
+
+Use elegant visual tiles.
+
+Do not create dozens of categories on the homepage.
+
+--------------------------------------------------
+11. VIRTUAL TRY-ON SECTION
+--------------------------------------------------
+
+Virtual Try-On is a core EYNƏK feature.
+
+IMPORTANT:
+
+A real-time VTO system will be integrated later through an external VTO API/SDK.
+
+Do NOT build a fake VTO implementation.
+
+Do NOT hard-code a fake camera system.
+
+Create the UX architecture and integration-ready interface.
+
+The future flow should be:
+
+Product → “Üzümdə yoxla” → Camera permission → Real-time face tracking → Frame placed on face → Change frame/color → Capture image → Add to wishlist/cart.
+
+The main VTO CTA should be:
+
+“Üzümdə yoxla”
+
+VTO should be available from:
+
+1. Product cards where supported
+2. Product detail page
+3. Homepage VTO section
+4. Mobile navigation
+
+The final VTO interface must be full-screen or near full-screen and optimized for mobile.
+
+Potential controls:
+
+Close
+Previous frame
+Next frame
+Color
+Take photo
+Save
+Add to cart
+
+Do not finalize provider-specific UI until the real VTO API/SDK capabilities are known.
+
+Create a clean integration boundary so the VTO provider can be connected later without redesigning the whole product experience.
+
+--------------------------------------------------
+12. PRODUCT CARD
+--------------------------------------------------
+
+Product cards are extremely important.
+
+They should be clean and image-first.
+
+Suggested structure:
+
+Large product image
+
+Wishlist icon
+
+Optional VTO CTA
+
+Brand
+Product/model name
+Price
+Seller/store
+
+Example:
+
+Ray-Ban
+
+RB 2140
+
+249 AZN
+
+NN Optic · Bakı
+
+“Üzümdə yoxla”
+
+Do NOT overload the card.
+
+Avoid excessive badges.
+
+Do not display fake ratings if there is not enough real review data.
+
+Do not invent discount information.
+
+Product imagery should occupy most of the card.
+
+Use hover interactions on desktop.
+
+For example:
+
+Primary image
+→ hover
+→ alternate product image
+→ subtle “Üzümdə yoxla” action
+
+Keep the interaction elegant.
+
+--------------------------------------------------
+13. SHOP PAGE
+--------------------------------------------------
+
+The Shop page is one of the most important parts of the marketplace.
+
+Create:
+
+Search
+Filters
+Sorting
+Product grid
+
+Filters should include where applicable:
+
+Category
+Brand
+Seller
+Price
+Gender
+Frame shape
+Color
+Material
+Size
+Face shape
+VTO available
+Discount
+Availability
+
+Sorting:
+
+Recommended
+Newest
+Best selling
+Price low to high
+Price high to low
+Most viewed
+
+Desktop:
+
+Use a clean filter sidebar.
+
+Mobile:
+
+Use a filter drawer / bottom sheet.
+
+Do not make filters visually heavy.
+
+Product grid:
+
+Desktop: 4 columns where appropriate.
+
+Tablet: 3 columns.
+
+Mobile: 2 columns.
+
+Maintain generous product image areas.
+
+--------------------------------------------------
+14. SEARCH
+--------------------------------------------------
+
+Search must feel like a real marketplace search system.
+
+Search placeholder:
+
+“Eynək, marka və ya model axtar...”
+
+When activated, show:
+
+Recent searches
+Popular searches
+Brands
+Products
+Suggested queries
+
+Autocomplete should eventually support:
+
+Brand
+Model
+Category
+Shape
+
+Search results should be fast and clean.
+
+--------------------------------------------------
+15. PRODUCT DETAIL PAGE
+--------------------------------------------------
+
+Create a premium product detail experience.
+
+Desktop layout:
+
+Large image gallery on the left.
+
+Product information on the right.
+
+Information:
+
+Brand
+Model
+Price
+Seller
+Rating when real data exists
+Color
+Available variants
+Size
+Stock
+Delivery
+Product details
+
+Primary CTA:
+
+“Üzümdə yoxla”
+
+Secondary CTA:
+
+“Səbətə əlavə et”
+
+The VTO button should be visually prominent.
+
+Below:
+
+Product details
+Frame dimensions
+Material
+Color
+Seller information
+Delivery
+Return information
+Similar products
+
+--------------------------------------------------
+16. SELLER INFORMATION
+--------------------------------------------------
+
+Because EYNƏK is a marketplace, seller identity must be visible.
+
+Every product should show the seller.
+
+Example:
+
+“NN Optic · Bakı”
+
+Seller profile should be clickable.
+
+Seller storefront:
+
+Store name
+Logo
+Location
+About
+Products
+Ratings when available
+Contact information where appropriate
+
+The seller storefront should feel like a mini-store inside EYNƏK.
+
+--------------------------------------------------
+17. STORES PAGE
+--------------------------------------------------
+
+Create a dedicated:
+
+“Mağazalar”
+
+page.
+
+Display all approved sellers.
+
+Each seller card:
+
+Store name
+Logo/image
+Location
+Number of products
+Optional rating if real
+“Mağazaya bax”
+
+This page must clearly communicate:
+
+EYNƏK is a marketplace, not a single eyewear retailer.
+
+--------------------------------------------------
+18. BRANDS PAGE
+--------------------------------------------------
+
+Create a dedicated brands discovery experience.
+
+Users can browse:
+
+Popular brands
+All brands
+Brand search
+
+Only display brands that actually exist in the marketplace inventory.
+
+Do not invent brands or products.
+
+--------------------------------------------------
+19. FRAME SHAPE DISCOVERY
+--------------------------------------------------
+
+Create discovery by shape:
+
+Round
+Square
+Rectangle
+Oval
+Cat-eye
+Aviator
+Browline
+Other relevant shapes
+
+Use actual eyewear visuals.
+
+Avoid generic iconography when a real product image can communicate the shape better.
+
+--------------------------------------------------
+20. WISHLIST
+--------------------------------------------------
+
+Users can save products.
+
+Wishlist should display:
+
+Product
+Brand
+Price
+Seller
+Availability
+VTO option
+
+Allow removing products easily.
+
+If authentication is required, handle guest wishlist elegantly.
+
+--------------------------------------------------
+21. CART
+--------------------------------------------------
+
+Cart must support marketplace logic.
+
+Products should be grouped by seller if necessary.
+
+Example:
+
+NN Optic
+Product A
+Product B
+
+Baku Vision
+Product C
+
+Show:
+
+Product subtotal
+Delivery
+Total
+
+Prepare architecture for future multi-seller orders.
+
+--------------------------------------------------
+22. CHECKOUT
+--------------------------------------------------
+
+Checkout must happen directly inside EYNƏK.
+
+Customer should NOT be redirected to the seller to complete payment.
+
+Flow:
+
+1. Customer information
+2. Delivery address
+3. Delivery option
+4. Payment
+5. Order confirmation
+
+EYNƏK collects the payment.
+
+The seller receives their portion according to the marketplace commission model.
+
+Keep checkout extremely clean.
+
+Do not add unnecessary fields.
+
+--------------------------------------------------
+23. ORDER TRACKING
+--------------------------------------------------
+
+Customer order status:
+
+Order received
+Seller confirmed
+Preparing
+Handed to EYNƏK delivery
+Out for delivery
+Delivered
+
+Create a visual timeline.
+
+Example:
+
+✓ Sifariş qəbul edildi
+✓ Satıcı təsdiqlədi
+✓ Hazırlanır
+🚚 Çatdırılır
+✓ Çatdırıldı
+
+--------------------------------------------------
+24. CUSTOMER ACCOUNT
+--------------------------------------------------
+
+Customer account:
+
+Profile
+Orders
+Wishlist
+Addresses
+Payment methods
+Notifications
+Support
+
+Keep it simple.
+
+--------------------------------------------------
+25. SELLER ONBOARDING
+--------------------------------------------------
+
+Create:
+
+“EYNƏK-də sat”
+
+page.
+
+Message:
+
+“Mağazanızı EYNƏK-ə qoşun və məhsullarınızı Azərbaycanda daha çox müştəriyə çatdırın.”
+
+Seller application fields:
+
+Store name
+Owner / responsible person
+Phone
+Email
+Business information
+VÖEN where applicable
+Store address
+Instagram
+Website
+Product categories
+Store images
+Required documents
+
+Application statuses:
+
+Pending
+Approved
+Rejected
+Needs changes
+
+Only approved sellers can publish products.
+
+--------------------------------------------------
+26. SELLER DASHBOARD
+--------------------------------------------------
+
+Seller dashboard must feel like a professional marketplace seller portal.
+
+Main dashboard:
+
+Today's views
+VTO sessions
+Orders
+Sales
+Pending orders
+Inventory warnings
+
+Monthly:
+
+Gross sales
+EYNƏK commission
+Seller earnings
+Pending payout
+Paid amount
+
+--------------------------------------------------
+27. SELLER PRODUCT MANAGEMENT
+--------------------------------------------------
+
+Seller can manage:
+
+Product name
+Brand
+Model
+Category
+Price
+Discount
+Stock
+SKU
+Color
+Material
+Shape
+Size
+Dimensions
+Images
+Description
+VTO data where required
+
+Product status:
+
+Draft
+Pending approval
+Approved
+Rejected
+Out of stock
+
+EYNƏK admin should be able to review products before publishing.
+
+--------------------------------------------------
+28. SELLER ORDER MANAGEMENT
+--------------------------------------------------
+
+Seller can see:
+
+New
+Confirmed
+Preparing
+Ready for pickup
+Completed
+Cancelled
+
+Each order should include:
+
+Customer order information
+Products
+Quantity
+Price
+Seller earnings
+EYNƏK commission
+Delivery status
+
+--------------------------------------------------
+29. SELLER FINANCE
+--------------------------------------------------
+
+Seller finance page:
+
+Total sales
+EYNƏK commission
+Net seller earnings
+Pending payout
+Paid payouts
+Transaction history
+
+Make calculations transparent.
+
+Do not hide commission information.
+
+--------------------------------------------------
+30. SELLER STORE SETTINGS
+--------------------------------------------------
+
+Seller can manage:
+
+Store name
+Logo
+Cover image
+Description
+Phone
+Email
+Address
+Opening hours
+Social links
+
+--------------------------------------------------
+31. ADMIN PANEL
+--------------------------------------------------
+
+Create a professional EYNƏK admin system.
+
+Admin dashboard:
+
+GMV
+EYNƏK revenue
+Orders
+Customers
+Sellers
+Products
+Pending approvals
+Delivery
+Payouts
+
+Admin modules:
+
+Dashboard
+Sellers
+Customers
+Products
+Orders
+Payments
+Payouts
+Delivery
+Brands
+Categories
+VTO
+Reviews
+Support
+Settings
+
+--------------------------------------------------
+32. SELLER APPROVAL
+--------------------------------------------------
+
+Admin can:
+
+Approve seller
+Reject seller
+Suspend seller
+Request changes
+
+Seller status should be clearly visible.
+
+--------------------------------------------------
+33. PRODUCT APPROVAL
+--------------------------------------------------
+
+Admin can:
+
+Approve
+Reject
+Request changes
+Edit where necessary
+Deactivate
+
+Admin should see:
+
+Product
+Seller
+Price
+Images
+Brand
+Category
+Stock
+
+--------------------------------------------------
+34. MARKETPLACE TRUST
+--------------------------------------------------
+
+Currently EYNƏK does NOT guarantee product authenticity.
+
+Therefore do NOT display claims such as:
+
+“100% authentic guaranteed”
+
+unless such a system is actually implemented.
+
+Instead, use factual seller status such as:
+
+“EYNƏK seller”
+
+or
+
+“Verified store”
+
+ONLY if the backend actually verifies the seller.
+
+Do not create fake trust badges.
+
+--------------------------------------------------
+35. DELIVERY
+--------------------------------------------------
+
+EYNƏK manages delivery.
+
+Prepare the architecture for:
+
+Seller → EYNƏK delivery → Customer
+
+The customer should experience delivery as an EYNƏK service.
+
+Prepare for future multi-seller orders.
+
+--------------------------------------------------
+36. PAYMENT
+--------------------------------------------------
+
+Payment happens through EYNƏK.
+
+Architecture must support:
+
+Customer payment
+Marketplace commission
+Seller payout
+Refund
+Transaction history
+
+Do not hard-code financial calculations in the frontend.
+
+All important financial values must come from secure backend logic.
+
+--------------------------------------------------
+37. AZERBAIJAN-FIRST
+--------------------------------------------------
+
+EYNƏK initially operates only in Azerbaijan.
+
+Default currency:
+
+AZN
+
+Default language:
+
+Azerbaijani
+
+Use Azerbaijani UI copy throughout the customer-facing product.
+
+Support the Azerbaijani characters correctly:
+
+ə
+Ə
+ı
+İ
+ö
+Ö
+ü
+Ü
+ğ
+Ğ
+ç
+Ç
+ş
+Ş
+
+Do not use Turkish spelling where Azerbaijani spelling is required.
+
+Design for:
+
+Bakı
+Gəncə
+Sumqayıt
+other Azerbaijani regions
+
+Do not add international country selectors unless required later.
+
+--------------------------------------------------
+38. RESPONSIVE DESIGN
+--------------------------------------------------
+
+Desktop, tablet and mobile must all be intentionally designed.
+
+Do not simply scale desktop down.
+
+Important mobile priorities:
+
+Search
+Shop
+VTO
+Product image
+Price
+Seller
+Add to cart
+Checkout
+
+Mobile VTO must receive special attention.
+
+--------------------------------------------------
+39. ACCESSIBILITY
+--------------------------------------------------
+
+Use:
+
+Semantic HTML
+Keyboard navigation
+Accessible buttons
+Proper labels
+Readable contrast
+Focus states
+Alt text
+ARIA where appropriate
+
+Do not sacrifice accessibility for visual effects.
+
+--------------------------------------------------
+40. PERFORMANCE
+--------------------------------------------------
+
+The website must feel fast.
+
+Optimize:
+
+Images
+Lazy loading
+Product grids
+Search
+Animations
+API requests
+
+Do not add heavy animations everywhere.
+
+Use subtle motion:
+
+150–300ms where appropriate.
+
+Animations should improve UX, not distract.
+
+--------------------------------------------------
+41. MICROINTERACTIONS
+--------------------------------------------------
+
+Use tasteful interactions:
+
+Wishlist heart animation
+Product hover
+Image transition
+Button feedback
+Cart confirmation
+Filter transitions
+Drawer animation
+VTO opening transition
+Skeleton loading
+
+Avoid excessive animation.
+
+--------------------------------------------------
+42. EMPTY STATES
+--------------------------------------------------
+
+Create polished empty states.
+
+Examples:
+
+No wishlist products
+
+“No saved frames yet.”
+
+No search results
+
+“Bu axtarışa uyğun eynək tapılmadı.”
+
+Out of stock
+
+“Hazırda stokda yoxdur.”
+
+Do not use generic developer placeholders.
+
+--------------------------------------------------
+43. LOADING STATES
+--------------------------------------------------
+
+Use proper skeleton loading.
+
+Do not display raw:
+
+“Loading...”
+
+everywhere.
+
+Product grids should use product skeletons.
+
+--------------------------------------------------
+44. ERROR STATES
+--------------------------------------------------
+
+Create friendly Azerbaijani error messages.
+
+Example:
+
+“Bir problem yarandı. Yenidən cəhd edin.”
+
+Do not expose raw API errors to users.
+
+--------------------------------------------------
+45. DATA INTEGRITY
+--------------------------------------------------
+
+Never invent:
+
+Products
+Brands
+Prices
+Ratings
+Reviews
+Stores
+Stock
+Discounts
+
+If real data is unavailable, use clearly marked development data only.
+
+Do not create fake marketplace trust signals.
+
+--------------------------------------------------
+46. SEO
+--------------------------------------------------
+
+Prepare the marketplace for SEO.
+
+Product pages should have:
+
+Unique title
+Meta description
+Canonical URL
+Structured product data where appropriate
+Clean URLs
+
+Store pages should also be indexable.
+
+Brand pages should be indexable.
+
+Category pages should be indexable.
+
+--------------------------------------------------
+47. ARCHITECTURE
+--------------------------------------------------
+
+Keep the application modular.
+
+Recommended logical separation:
+
+Customer experience
+Seller experience
+Admin experience
+Marketplace services
+VTO integration
+Payment services
+Delivery services
+Notifications
+
+Do not tightly couple the future VTO provider to the entire frontend.
+
+Create a provider abstraction where appropriate.
+
+--------------------------------------------------
+48. COMPONENT SYSTEM
+--------------------------------------------------
+
+Create reusable components:
+
+Navbar
+MobileNav
+Search
+ProductCard
+ProductGrid
+ProductGallery
+SellerBadge
+SellerCard
+BrandCard
+CategoryCard
+FilterSidebar
+FilterDrawer
+SortMenu
+WishlistButton
+VTOButton
+VTOExperience
+PriceDisplay
+CartItem
+CheckoutSummary
+OrderTimeline
+StoreHeader
+ProductForm
+SellerSidebar
+AdminSidebar
+Toast
+Modal
+Drawer
+Skeleton
+EmptyState
+
+Avoid duplicated components.
+
+--------------------------------------------------
+49. PRODUCT CARD DESIGN
+--------------------------------------------------
+
+The product card should visually prioritize:
+
+1. Image
+2. Brand
+3. Product name
+4. Price
+5. Seller
+6. VTO
+
+Do not prioritize:
+
+Large rating badges
+Promotional stickers
+Large discount badges
+Random marketing copy
+
+unless real data and business logic justify them.
+
+--------------------------------------------------
+50. FINAL VISUAL QUALITY STANDARD
+--------------------------------------------------
+
+The final website should look like a professional international eyewear marketplace.
+
+It should feel:
+
+10/10 polished
+10/10 intentional
+10/10 responsive
+10/10 modern
+10/10 premium
+
+But NOT:
+
+generic
+over-designed
+AI-generated
+template-like
+over-rounded
+over-shadowed
+gradient-heavy
+dashboard-like
+
+The user should never think:
+
+“This looks AI-generated.”
+
+Instead the feeling should be:
+
+“This looks like a serious eyewear technology company.”
+
+--------------------------------------------------
+51. IMPORTANT: DO NOT COPY REFERENCES
+--------------------------------------------------
+
+Use major international eyewear ecommerce websites only as inspiration for:
+
+- product discovery
+- typography quality
+- visual hierarchy
+- ecommerce UX
+- VTO placement
+- product imagery
+- filtering
+- navigation
+- editorial composition
+
+Do NOT copy:
+
+- logos
+- exact layouts
+- exact text
+- exact components
+- exact color systems
+- proprietary assets
+- exact page structure
+
+Create an original EYNƏK identity.
+
+--------------------------------------------------
+52. DEVELOPMENT PRIORITY
+--------------------------------------------------
+
+Implement in this order:
+
+PHASE 1:
+Design system
+Typography
+Colors
+Spacing
+Buttons
+Navigation
+Product cards
+
+PHASE 2:
+Homepage
+Shop
+Filters
+Search
+Product detail
+
+PHASE 3:
+Customer account
+Wishlist
+Cart
+Checkout
+Orders
+
+PHASE 4:
+Seller onboarding
+Seller dashboard
+Product management
+Orders
+Finance
+Storefront
+
+PHASE 5:
+Admin dashboard
+Seller approval
+Product approval
+Order management
+Payments
+Delivery
+
+PHASE 6:
+VTO integration layer
+
+PHASE 7:
+Polish
+Responsive
+Accessibility
+Performance
+SEO
+Animations
+Loading/error states
+
+--------------------------------------------------
+53. VERY IMPORTANT FINAL INSTRUCTION
+--------------------------------------------------
+
+Do not simply generate a visual mockup.
+
+Build a real, scalable marketplace interface.
+
+All buttons should have logical destinations.
+
+All navigation should work.
+
+All forms should have validation.
+
+All product interactions should be realistic.
+
+All seller workflows should be logically connected.
+
+All marketplace concepts should be reflected in the UX.
+
+Do not create dead-end UI.
+
+Do not create fake functionality just to make the screen look complete.
+
+If backend functionality is missing, create clean frontend states and clearly structured integration points rather than pretending the functionality works.
+
+Before changing anything, inspect the existing EYNƏK project and preserve existing working functionality.
+
+The final result must be a coherent product, not a collection of beautiful screens.
+
+The core user journey must be:
+
+DISCOVER
+→ SEARCH
+→ FILTER
+→ VIEW PRODUCT
+→ VIRTUAL TRY-ON
+→ SAVE / COMPARE
+→ ADD TO CART
+→ CHECKOUT
+→ EYNƏK DELIVERY
+→ ORDER TRACKING
+
+The core seller journey must be:
+
+APPLY
+→ GET APPROVED
+→ CREATE STORE
+→ ADD PRODUCTS
+→ MANAGE STOCK
+→ RECEIVE ORDER
+→ PREPARE ORDER
+→ EYNƏK DELIVERY
+→ RECEIVE PAYOUT
+
+Build EYNƏK as a serious Azerbaijan-first eyewear marketplace.
