@@ -88,6 +88,7 @@ function money(value: number) {
 }
 
 function assetUrl(path: string) {
+  if (path.startsWith('/objects/')) return `/api/storage${path}`;
   return `${import.meta.env.BASE_URL}${path}`;
 }
 

@@ -3,8 +3,8 @@ name: Seller product image persistence
 description: Why product records store image paths and real seller uploads remain gated by authentication and App Storage.
 ---
 
-Seller product records may store public image paths or URLs, but must never store base64 image data or file bytes in PostgreSQL.
+Seller product records store public sample paths or App Storage `/objects/...` paths, but never base64 image data or file bytes in PostgreSQL.
 
-**Why:** Persistent seller uploads need protected ownership and durable file storage. The current seller login is intentionally demo-only, so exposing an unauthenticated upload route would let anyone write files.
+**Why:** The seller login remains intentionally demo-only, while App Storage write URLs require a separate authenticated browser session. This preserves the demo while preventing anonymous callers from minting upload URLs.
 
-**How to apply:** Keep metadata CRUD usable with existing public sample paths. Enable new file uploads only together with real seller authentication and App Storage, then save returned object paths in product records.
+**How to apply:** Keep metadata CRUD usable with sample paths. For new files, require authenticated presigned uploads, finalize owner/public ACL metadata, and save only the returned object path.

@@ -1,5 +1,7 @@
 import { useState, useRef, FormEvent, useMemo, ChangeEvent, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
+import { completeUpload, requestUploadUrl } from '@workspace/api-client-react';
+import { useAuth } from '@workspace/replit-auth-web';
 import { 
   LogOut, Plus, Search, MoreVertical, Edit2, Trash2, 
   Image as ImageIcon, ArrowLeft, Store, Settings, 
@@ -9,6 +11,7 @@ import { useDemoSeller, type SellerProduct, type SellerProductInput } from '@/ho
 
 function sellerImageUrl(image: string) {
   if (image.startsWith('data:') || image.startsWith('http')) return image;
+  if (image.startsWith('/objects/')) return `/api/storage${image}`;
   return `${import.meta.env.BASE_URL}${image}`;
 }
 
@@ -308,6 +311,11 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
   isSaving: boolean;
   serverError: string;
 }) {
+  const {
+    isAuthenticated: canUpload,
+    isLoading: isAuthLoading,
+    login: beginUploadLogin,
+  } = useAuth();
   const [formData, setFormData] = useState<SellerProductInput>({
     name: product?.name || '',
     category: product?.category || 'Optik çərçivə',
@@ -323,6 +331,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
   const [frontImageError, setFrontImageError] = useState('');
   const [sideImageError, setSideImageError] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [isImageUploading, setIsImageUploading] = useState(false);
 
   const frontInputRef = useRef<HTMLInputElement>(null);
   const sideInputRef = useRef<HTMLInputElement>(null);
@@ -331,39 +340,77 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const validateImage = (file: File): Promise<{valid: boolean, error: string, dataUrl: string}> => {
+  const validateImage = (file: File): Promise<{valid: boolean, error: string}> => {
     return new Promise((resolve) => {
-      if (!['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type)) {
-        resolve({valid: false, error: 'Yalnız JPG, JPEG və PNG formatları dəstəklənir.', dataUrl: ''});
+      if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+        resolve({valid: false, error: 'Yalnız JPG, JPEG və PNG formatları dəstəklənir.'});
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          if (img.width < 1000) {
-            resolve({valid: false, error: `Şəklin eni ən azı 1000px olmalıdır (Sizin şəkil: ${img.width}px).`, dataUrl: ''});
-          } else {
-            resolve({valid: true, error: '', dataUrl: e.target?.result as string});
-          }
-        };
-        img.src = e.target?.result as string;
+      if (file.size > 10 * 1024 * 1024) {
+        resolve({valid: false, error: 'Şəklin ölçüsü maksimum 10 MB ola bilər.'});
+        return;
+      }
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        if (img.width < 1000) {
+          resolve({valid: false, error: `Şəklin eni ən azı 1000px olmalıdır (Sizin şəkil: ${img.width}px).`});
+        } else {
+          resolve({valid: true, error: ''});
+        }
       };
-      reader.readAsDataURL(file);
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve({valid: false, error: 'Şəkil oxuna bilmədi.'});
+      };
+      img.src = objectUrl;
     });
   };
 
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>, type: 'frontImage' | 'sideImage') => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!canUpload) {
+        const message = 'Şəkil yükləmək üçün əvvəl təhlükəsiz giriş edin.';
+        if (type === 'frontImage') setFrontImageError(message);
+        else setSideImageError(message);
+        e.target.value = '';
+        return;
+      }
+
       const result = await validateImage(file);
       if (result.valid) {
-        setFormData(prev => ({ ...prev, [type]: result.dataUrl }));
-        if (type === 'frontImage') setFrontImageError('');
-        else setSideImageError('');
+        setIsImageUploading(true);
+        try {
+          const upload = await requestUploadUrl({
+            name: file.name,
+            size: file.size,
+            contentType: file.type as 'image/jpeg' | 'image/png',
+          });
+          const uploadResponse = await fetch(upload.uploadURL, {
+            method: 'PUT',
+            headers: { 'Content-Type': file.type },
+            body: file,
+          });
+          if (!uploadResponse.ok) throw new Error('Storage upload failed');
+
+          const completed = await completeUpload({ objectPath: upload.objectPath });
+          setFormData(prev => ({ ...prev, [type]: completed.objectPath }));
+          if (type === 'frontImage') setFrontImageError('');
+          else setSideImageError('');
+        } catch {
+          const message = 'Şəkil yüklənmədi. Yenidən cəhd edin.';
+          if (type === 'frontImage') setFrontImageError(message);
+          else setSideImageError(message);
+        } finally {
+          setIsImageUploading(false);
+          e.target.value = '';
+        }
       } else {
         if (type === 'frontImage') setFrontImageError(result.error);
         else setSideImageError(result.error);
+        e.target.value = '';
       }
     }
   };
@@ -422,6 +469,21 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
               <AlertCircle size={12} />
               Qeyd: Google axtarış sistemində indekslənmək üçün şəkillər canlı serverə yüklənməlidir (yerli data deyil).
             </div>
+            {!isAuthLoading && !canUpload && (
+              <div className="google-index-note">
+                <AlertCircle size={12} />
+                <span>Real şəkil yükləməsi üçün təhlükəsiz giriş tələb olunur.</span>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={beginUploadLogin}>
+                  Giriş et
+                </button>
+              </div>
+            )}
+            {!isAuthLoading && canUpload && (
+              <div className="google-index-note">
+                <Check size={12} />
+                Şəkillər birbaşa təhlükəsiz App Storage-a yüklənəcək.
+              </div>
+            )}
           </div>
 
           <div className="form-grid">
@@ -437,7 +499,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
                       <div className="image-preview">
                         <img src={sellerImageUrl(formData.frontImage)} alt="Ön görünüş" />
                         <div className="image-actions">
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => frontInputRef.current?.click()}>Dəyiş</button>
+                          <button type="button" className="btn btn-secondary btn-sm" disabled={isImageUploading} onClick={() => frontInputRef.current?.click()}>Dəyiş</button>
                           <button type="button" className="icon-button text-danger bg-white" onClick={() => { setFormData(prev => ({ ...prev, frontImage: '' })); setFrontImageError(''); }}>
                             <Trash2 size={16} />
                           </button>
@@ -448,11 +510,11 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
                         <div className="icon-circle"><ImageIcon size={24} /></div>
                         <p>Ön görünüş (0°)</p>
                         <div className="flex gap-2 justify-center mt-2">
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => frontInputRef.current?.click()} data-testid="button-upload-front">Şəkil seç</button>
+                          <button type="button" className="btn btn-secondary btn-sm" disabled={isImageUploading} onClick={() => frontInputRef.current?.click()} data-testid="button-upload-front">{isImageUploading ? 'Yüklənir...' : 'Şəkil seç'}</button>
                         </div>
                       </div>
                     )}
-                    <input type="file" ref={frontInputRef} onChange={(e) => handleImageUpload(e, 'frontImage')} accept="image/png, image/jpeg, image/jpg" className="hidden" />
+                    <input type="file" ref={frontInputRef} disabled={isImageUploading} onChange={(e) => handleImageUpload(e, 'frontImage')} accept="image/png, image/jpeg, image/jpg" className="hidden" />
                   </div>
                   {frontImageError && <span className="field-error-text" data-testid="error-front-image">{frontImageError}</span>}
                 </div>
@@ -464,7 +526,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
                       <div className="image-preview">
                         <img src={sellerImageUrl(formData.sideImage)} alt="Yan görünüş" />
                         <div className="image-actions">
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => sideInputRef.current?.click()}>Dəyiş</button>
+                          <button type="button" className="btn btn-secondary btn-sm" disabled={isImageUploading} onClick={() => sideInputRef.current?.click()}>Dəyiş</button>
                           <button type="button" className="icon-button text-danger bg-white" onClick={() => { setFormData(prev => ({ ...prev, sideImage: '' })); setSideImageError(''); }}>
                             <Trash2 size={16} />
                           </button>
@@ -475,11 +537,11 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
                         <div className="icon-circle"><ImageIcon size={24} /></div>
                         <p>Yan görünüş (90°)</p>
                         <div className="flex gap-2 justify-center mt-2">
-                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => sideInputRef.current?.click()} data-testid="button-upload-side">Şəkil seç</button>
+                          <button type="button" className="btn btn-secondary btn-sm" disabled={isImageUploading} onClick={() => sideInputRef.current?.click()} data-testid="button-upload-side">{isImageUploading ? 'Yüklənir...' : 'Şəkil seç'}</button>
                         </div>
                       </div>
                     )}
-                    <input type="file" ref={sideInputRef} onChange={(e) => handleImageUpload(e, 'sideImage')} accept="image/png, image/jpeg, image/jpg" className="hidden" />
+                    <input type="file" ref={sideInputRef} disabled={isImageUploading} onChange={(e) => handleImageUpload(e, 'sideImage')} accept="image/png, image/jpeg, image/jpg" className="hidden" />
                   </div>
                   {sideImageError && <span className="field-error-text" data-testid="error-side-image">{sideImageError}</span>}
                 </div>
@@ -601,6 +663,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
               className="btn btn-blue"
               disabled={
                 isSaving ||
+                isImageUploading ||
                 !formData.name ||
                 !formData.frontImage ||
                 !formData.sideImage ||

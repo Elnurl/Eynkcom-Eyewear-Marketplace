@@ -197,3 +197,118 @@ export const DeleteSellerProductParams = zod.object({
 export const DeleteSellerProductResponse = zod.void()
 
 
+/**
+ * @summary Get the currently authenticated user
+ */
+export const GetCurrentAuthUserHeader = zod.object({
+  "Authorization": zod.string().optional()
+})
+
+export const GetCurrentAuthUserResponse = zod.object({
+  "user": zod.union([zod.object({
+  "id": zod.string(),
+  "email": zod.string().email().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable(),
+  "profileImageUrl": zod.string().nullable()
+}),zod.null()])
+})
+
+
+/**
+ * @summary Start the browser login flow
+ */
+export const BeginBrowserLoginQueryParams = zod.object({
+  "returnTo": zod.coerce.string().optional()
+})
+
+export const BeginBrowserLoginResponse = zod.void()
+
+
+/**
+ * @summary Complete the browser login flow
+ */
+export const HandleBrowserLoginCallbackResponse = zod.void()
+
+
+/**
+ * @summary Clear the browser session
+ */
+export const logoutBrowserSessionQueryReturnToDefault = `/`;
+
+export const LogoutBrowserSessionQueryParams = zod.object({
+  "returnTo": zod.coerce.string().default(logoutBrowserSessionQueryReturnToDefault)
+})
+
+export const LogoutBrowserSessionHeader = zod.object({
+  "Authorization": zod.string().optional()
+})
+
+export const LogoutBrowserSessionResponse = zod.void()
+
+
+/**
+ * @summary Request a presigned URL for direct file upload
+ */
+
+export const requestUploadUrlBodySizeMax = 10485760;
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().int().min(1).max(requestUploadUrlBodySizeMax),
+  "contentType": zod.enum(['image/jpeg', 'image/png'])
+})
+
+
+export const requestUploadUrlResponseMetadataSizeMax = 10485760;
+
+
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string(),
+  "metadata": zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().int().min(1).max(requestUploadUrlResponseMetadataSizeMax),
+  "contentType": zod.enum(['image/jpeg', 'image/png'])
+})
+})
+
+
+/**
+ * @summary Finalize an uploaded object and assign ownership
+ */
+export const completeUploadBodyObjectPathRegExp = new RegExp('^/objects/uploads/[A-Za-z0-9-]+$');
+
+
+export const CompleteUploadBody = zod.object({
+  "objectPath": zod.string().regex(completeUploadBodyObjectPathRegExp)
+})
+
+export const CompleteUploadResponse = zod.object({
+  "objectPath": zod.string()
+})
+
+
+/**
+ * @summary Serve a public storage asset
+ */
+export const GetPublicObjectParams = zod.object({
+  "filePath": zod.coerce.string()
+})
+
+export const GetPublicObjectResponse = zod.unknown()
+
+
+/**
+ * @summary Serve an uploaded product object
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string()
+})
+
+export const GetStorageObjectResponse = zod.unknown()
+
+
