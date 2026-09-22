@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Eynək.com Eyewear Marketplace"
+description = "A multi-vendor Azerbaijani eyewear marketplace for discovering optical frames and sunglasses, comparing independent optical stores, filtering by frame shape, and previewing virtual try-on experiences."
+version = "1.0.0"
+id = "artifacts/eynek-marketplace"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24031
+
+[services.development]
+run = "pnpm --filter @workspace/eynek-marketplace run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/eynek-marketplace", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/eynek-marketplace/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24031"
+BASE_PATH = "/"

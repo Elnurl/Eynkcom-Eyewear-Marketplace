@@ -1,6 +1,6 @@
-# [Project name]
+# Eynək.com Eyewear Marketplace
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Eynək.com is a multi-vendor Azerbaijani eyewear marketplace for discovering frames and sunglasses from independent Bakı optical stores.
 
 ## Run & Operate
 
@@ -22,23 +22,27 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/eynek-marketplace/src/App.tsx` — storefront routes, sample marketplace data, and interaction state
+- `artifacts/eynek-marketplace/src/index.css` — the storefront design system and responsive styles
+- `artifacts/eynek-marketplace/.replit-artifact/artifact.toml` — artifact routing and managed web workflow
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The first release is a frontend-first experience with local sample marketplace data so browsing and merchandising can be validated before adding persistence.
+- The site uses original Eynək.com brand language and visuals, using Zenni Optical only as a broad commerce reference.
+- Product, vendor, filter, cart, favorites, quick-view, and virtual try-on state live in the storefront so primary interactions work without a backend.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Users can browse optical frames and sunglasses, filter by shape and attributes, search and sort products, inspect seller details and frame measurements, save favorites, add items to cart, open vendor storefronts, and launch a virtual try-on overlay.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Use Zenni Optical for reference only; keep Eynək.com branding, product language, and visuals original.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- The storefront is currently local-data driven; connect API/database persistence before treating cart, inventory, or vendor catalog data as production records.
 
 ## Pointers
 
