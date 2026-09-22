@@ -1,0 +1,488 @@
+import { useState, useRef, FormEvent, useMemo, ChangeEvent, useEffect } from 'react';
+import { useLocation, Link } from 'wouter';
+import { 
+  LogOut, Plus, Search, MoreVertical, Edit2, Trash2, 
+  Image as ImageIcon, ArrowLeft, Store, Settings, 
+  Package, LayoutDashboard, X, Check, AlertCircle
+} from 'lucide-react';
+import { useDemoSeller, SellerProduct } from '@/hooks/use-demo-seller';
+
+function sellerImageUrl(image: string) {
+  if (image.startsWith('data:') || image.startsWith('http')) return image;
+  return `${import.meta.env.BASE_URL}${image}`;
+}
+
+export default function SellerPanel() {
+  const { session, logout, products, addProduct, updateProduct, deleteProduct } = useDemoSeller();
+  const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState<'overview' | 'products'>('products');
+  
+  // Product Form State
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Search and Filter
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  useEffect(() => {
+    if (!session.authenticated) setLocation('/seller-login');
+  }, [session.authenticated, setLocation]);
+
+  if (!session.authenticated) return null;
+
+  const handleLogout = () => {
+    logout();
+    setLocation('/seller-login');
+  };
+
+  const openAddForm = () => {
+    setEditingId(null);
+    setIsFormOpen(true);
+  };
+
+  const openEditForm = (id: string) => {
+    setEditingId(id);
+    setIsFormOpen(true);
+  };
+
+  const closeForm = () => {
+    setIsFormOpen(false);
+    setEditingId(null);
+  };
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => 
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      p.color.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
+
+  const activeCount = products.filter(p => p.status === 'Aktiv').length;
+  const draftCount = products.filter(p => p.status === 'Qaralama').length;
+  const outOfStockCount = products.filter(p => p.stock === 0).length;
+
+  return (
+    <div className="seller-panel-layout">
+      {/* Sidebar */}
+      <aside className="seller-sidebar">
+        <div className="seller-sidebar-header">
+          <Link href="/" className="brand" data-testid="link-brand-panel">
+            <span className="brand-word">EYNƏK<span className="brand-dot">.</span>com</span>
+          </Link>
+          <span className="seller-badge">Satıcı Paneli</span>
+        </div>
+        
+        <div className="seller-store-info">
+          <div className="store-avatar"><Store size={20} /></div>
+          <div>
+            <strong>{session.storeName}</strong>
+            <small>{session.email}</small>
+          </div>
+        </div>
+
+        <nav className="seller-nav">
+          <button 
+            className={`seller-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+            data-testid="nav-overview"
+          >
+            <LayoutDashboard size={18} /> İcmal
+          </button>
+          <button 
+            className={`seller-nav-item ${activeTab === 'products' ? 'active' : ''}`}
+            onClick={() => setActiveTab('products')}
+            data-testid="nav-products"
+          >
+            <Package size={18} /> Məhsullar
+            <span className="nav-count">{products.length}</span>
+          </button>
+        </nav>
+
+        <div className="seller-sidebar-footer">
+          <Link href="/" className="seller-nav-item" data-testid="link-back-storefront">
+            <ArrowLeft size={18} /> Vitrinə qayıt
+          </Link>
+          <button className="seller-nav-item text-danger" onClick={handleLogout} data-testid="button-logout">
+            <LogOut size={18} /> Çıxış et
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="seller-main">
+        {activeTab === 'overview' && (
+          <div className="seller-content fade-in">
+            <header className="seller-main-header">
+              <h1>Mağaza İcmalı</h1>
+              <p>Məhsullarınızın və mağazanızın ümumi vəziyyəti</p>
+            </header>
+
+            <div className="seller-stats-grid">
+              <div className="seller-stat-card">
+                <div className="stat-icon bg-blue-soft"><Package size={20} /></div>
+                <div className="stat-info">
+                  <h3>Cəmi Məhsul</h3>
+                  <strong>{products.length}</strong>
+                </div>
+              </div>
+              <div className="seller-stat-card">
+                <div className="stat-icon bg-green-soft"><Check size={20} /></div>
+                <div className="stat-info">
+                  <h3>Aktiv</h3>
+                  <strong>{activeCount}</strong>
+                </div>
+              </div>
+              <div className="seller-stat-card">
+                <div className="stat-icon bg-gray-soft"><Settings size={20} /></div>
+                <div className="stat-info">
+                  <h3>Qaralama</h3>
+                  <strong>{draftCount}</strong>
+                </div>
+              </div>
+              <div className="seller-stat-card">
+                <div className="stat-icon bg-red-soft"><AlertCircle size={20} /></div>
+                <div className="stat-info">
+                  <h3>Bitmiş Stok</h3>
+                  <strong className={outOfStockCount > 0 ? 'text-danger' : ''}>{outOfStockCount}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="seller-panel-section mt-10">
+              <h2>Son əlavə edilənlər</h2>
+              <div className="recent-products-list">
+                {products.slice(0, 4).map(p => (
+                  <div key={p.id} className="recent-product-item">
+                    <img src={sellerImageUrl(p.image)} alt={p.name} className="recent-product-img" />
+                    <div>
+                      <strong>{p.name}</strong>
+                      <span>{p.category}</span>
+                    </div>
+                    <div className="ml-auto text-right">
+                      <strong>{p.price} AZN</strong>
+                      <span className={`status-dot ${p.status === 'Aktiv' ? 'active' : 'draft'}`}>{p.status}</span>
+                    </div>
+                  </div>
+                ))}
+                {products.length === 0 && (
+                  <div className="empty-state-mini">Heç bir məhsul tapılmadı.</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'products' && (
+          <div className="seller-content fade-in">
+            <header className="seller-main-header with-actions">
+              <div>
+                <h1>Məhsullar</h1>
+                <p>İnventarınızı idarə edin, yeni məhsullar əlavə edin və stokları yeniləyin.</p>
+              </div>
+              <button className="btn btn-blue" onClick={openAddForm} data-testid="button-create-product">
+                <Plus size={16} /> Yeni Məhsul
+              </button>
+            </header>
+
+            <div className="seller-toolbar">
+              <div className="search-box">
+                <Search size={16} />
+                <input 
+                  type="search" 
+                  placeholder="Məhsul adı və ya rəngi axtar..." 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="seller-products-table-wrapper">
+              <table className="seller-table">
+                <thead>
+                  <tr>
+                    <th>Məhsul</th>
+                    <th>Kateqoriya</th>
+                    <th>Qiymət</th>
+                    <th>Stok</th>
+                    <th>Status</th>
+                    <th className="text-right">Əməliyyatlar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProducts.length > 0 ? (
+                    filteredProducts.map(product => (
+                      <tr key={product.id} data-testid={`row-product-${product.id}`}>
+                        <td>
+                          <div className="product-cell">
+                            <div className="product-cell-img">
+                              <img src={sellerImageUrl(product.image)} alt={product.name} />
+                            </div>
+                            <div>
+                              <strong>{product.name}</strong>
+                              <span>{product.color}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{product.category}</td>
+                        <td><strong>{product.price} AZN</strong></td>
+                        <td>
+                          <span className={`stock-badge ${product.stock === 0 ? 'out' : product.stock < 5 ? 'low' : 'good'}`}>
+                            {product.stock} ədəd
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${product.status === 'Aktiv' ? 'active' : 'draft'}`}>
+                            {product.status}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="table-actions">
+                            <button className="icon-button" onClick={() => openEditForm(product.id)} aria-label="Redaktə et" data-testid={`button-edit-${product.id}`}>
+                              <Edit2 size={16} />
+                            </button>
+                            <button className="icon-button text-danger" onClick={() => deleteProduct(product.id)} aria-label="Sil" data-testid={`button-delete-${product.id}`}>
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6}>
+                        <div className="empty-state">
+                          <Package size={24} />
+                          <h3>Məhsul tapılmadı</h3>
+                          <p>{searchQuery ? 'Axtarışınıza uyğun nəticə yoxdur.' : 'İnventarınızda heç bir məhsul yoxdur. Yeni məhsul əlavə edərək başlayın.'}</p>
+                          {!searchQuery && (
+                            <button className="btn btn-secondary mt-10" onClick={openAddForm} data-testid="button-empty-create">
+                              İlk məhsulu əlavə et
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Product Form Modal */}
+      {isFormOpen && (
+        <ProductFormModal 
+          product={editingId ? products.find(p => p.id === editingId) : undefined}
+          onClose={closeForm}
+          onSave={(data) => {
+            if (editingId) {
+              updateProduct(editingId, data);
+            } else {
+              addProduct(data);
+            }
+            closeForm();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProductFormModal({ product, onClose, onSave }: { 
+  product?: SellerProduct; 
+  onClose: () => void; 
+  onSave: (data: Omit<SellerProduct, 'id' | 'createdAt'>) => void;
+}) {
+  const [formData, setFormData] = useState<Omit<SellerProduct, 'id' | 'createdAt'>>({
+    name: product?.name || '',
+    category: product?.category || 'Optik çərçivə',
+    price: product?.price || 0,
+    stock: product?.stock || 0,
+    color: product?.color || '',
+    material: product?.material || 'Asetat',
+    status: product?.status || 'Qaralama',
+    image: product?.image || '',
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = (field: keyof typeof formData, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUseSampleImage = () => {
+    // Generate a placeholder via a generic image or sample from existing ones
+    setFormData(prev => ({ ...prev, image: 'product-images/mimoza-02.jpg' }));
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div className="seller-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="seller-modal" data-testid="modal-product-form">
+        <div className="seller-modal-header">
+          <h2>{product ? 'Məhsulu redaktə et' : 'Yeni məhsul əlavə et'}</h2>
+          <button className="icon-button" onClick={onClose} aria-label="Bağla" data-testid="button-close-modal">
+            <X size={20} />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="seller-modal-body">
+          <div className="form-grid">
+            {/* Image Upload Section */}
+            <div className="field full image-upload-field">
+              <label>Məhsul şəkli</label>
+              <div className="image-upload-area">
+                {formData.image ? (
+                  <div className="image-preview">
+                    <img src={sellerImageUrl(formData.image)} alt="Məhsul şəkli önizləməsi" />
+                    <div className="image-actions">
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()}>Dəyiş</button>
+                      <button type="button" className="icon-button text-danger bg-white" onClick={() => setFormData(prev => ({ ...prev, image: '' }))}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="image-upload-prompt">
+                    <div className="icon-circle"><ImageIcon size={24} /></div>
+                    <p>Şəkil yükləmək üçün toxunun və ya sürükləyin</p>
+                    <div className="flex gap-2 justify-center mt-2">
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} data-testid="button-upload-image">Şəkil seç</button>
+                      <button type="button" className="btn btn-secondary btn-sm" onClick={handleUseSampleImage} data-testid="button-sample-image">Nümunə istifadə et</button>
+                    </div>
+                  </div>
+                )}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImageUpload} 
+                  accept="image/png, image/jpeg, image/webp" 
+                  className="hidden" 
+                />
+              </div>
+            </div>
+
+            {/* General Info */}
+            <div className="field full">
+              <label htmlFor="product-name">Məhsul adı</label>
+              <input 
+                id="product-name" 
+                type="text" 
+                value={formData.name} 
+                onChange={(e) => handleChange('name', e.target.value)} 
+                required 
+                placeholder="Məs: Sahil 11"
+                data-testid="input-product-name"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-category">Kateqoriya</label>
+              <select 
+                id="product-category" 
+                value={formData.category} 
+                onChange={(e) => handleChange('category', e.target.value)}
+                data-testid="select-product-category"
+              >
+                <option value="Optik çərçivə">Optik çərçivə</option>
+                <option value="Gün eynəyi">Gün eynəyi</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-status">Status</label>
+              <select 
+                id="product-status" 
+                value={formData.status} 
+                onChange={(e) => handleChange('status', e.target.value)}
+                data-testid="select-product-status"
+              >
+                <option value="Aktiv">Aktiv</option>
+                <option value="Qaralama">Qaralama</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-price">Qiymət (AZN)</label>
+              <input 
+                id="product-price" 
+                type="number" 
+                min="0" 
+                step="0.01" 
+                value={formData.price || ''} 
+                onChange={(e) => handleChange('price', Number(e.target.value))} 
+                required 
+                data-testid="input-product-price"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-stock">Stok miqdarı</label>
+              <input 
+                id="product-stock" 
+                type="number" 
+                min="0" 
+                step="1" 
+                value={formData.stock || ''} 
+                onChange={(e) => handleChange('stock', Number(e.target.value))} 
+                required 
+                data-testid="input-product-stock"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-color">Rəng</label>
+              <input 
+                id="product-color" 
+                type="text" 
+                value={formData.color} 
+                onChange={(e) => handleChange('color', e.target.value)} 
+                required 
+                placeholder="Məs: Zeytun"
+                data-testid="input-product-color"
+              />
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-material">Material</label>
+              <select 
+                id="product-material" 
+                value={formData.material} 
+                onChange={(e) => handleChange('material', e.target.value)}
+                data-testid="select-product-material"
+              >
+                <option value="Asetat">Asetat</option>
+                <option value="Metal">Metal</option>
+                <option value="Titanium">Titanium</option>
+                <option value="Bio-nylon">Bio-nylon</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="seller-modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={onClose} data-testid="button-cancel-product">Ləğv et</button>
+            <button type="submit" className="btn btn-blue" disabled={!formData.name || !formData.image} data-testid="button-save-product">
+              {product ? 'Yenilə' : 'Əlavə et'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

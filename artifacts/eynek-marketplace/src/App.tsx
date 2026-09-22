@@ -26,6 +26,9 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 
+import SellerLogin from '@/pages/seller-login';
+import SellerPanel from '@/pages/seller-panel';
+
 const queryClient = new QueryClient();
 
 type Product = {
@@ -272,7 +275,7 @@ function SellerPage() {
     if (!Object.keys(next).length) setSent(true);
   };
   const field = (key: keyof SellerForm, label: string, required = false, type = 'text') => <div className="field"><label htmlFor={`seller-${key}`}>{label}{required ? ' *' : ''}</label><input id={`seller-${key}`} type={type} value={form[key]} onChange={(event) => update(key, event.target.value)} aria-invalid={Boolean(errors[key])} data-testid={`input-seller-${key}`} />{errors[key] && <span className="field-error">{errors[key]}</span>}</div>;
-  return <><main className="seller-page"><div className="container form-shell"><div className="seller-header"><div className="eyebrow">Satıcı onboarding</div><h1>EYNƏK-də sat.</h1><p>Mağazanızı EYNƏK-ə qoşun və məhsullarınızı Azərbaycanda daha çox müştəriyə çatdırın. Müraciət göndərildikdən sonra məlumatlar komanda tərəfindən nəzərdən keçirilir.</p></div>{sent ? <div className="form-success" data-testid="status-seller-application"><strong>Müraciət qəbul edildi.</strong><br />Məlumatlarınız nəzərdən keçirilmək üçün göndərildi. Status: Gözləmədə.</div> : <form className="seller-form" onSubmit={submit} noValidate>{field('storeName', 'Mağaza adı', true)}{field('owner', 'Məsul şəxs', true)}{field('phone', 'Telefon', true, 'tel')}{field('email', 'E-poçt', true, 'email')}<div className="field full"><label htmlFor="seller-business">Biznes haqqında *</label><textarea id="seller-business" value={form.business} onChange={(event) => update('business', event.target.value)} aria-invalid={Boolean(errors.business)} data-testid="input-seller-business" />{errors.business && <span className="field-error">{errors.business}</span>}</div>{field('tax', 'VÖEN (əgər varsa)')}{field('address', 'Mağaza ünvanı', true)}{field('instagram', 'Instagram')}{field('website', 'Veb-sayt')}{field('categories', 'Məhsul kateqoriyaları', true)}<div className="field full"><span className="field-help">Müraciət zamanı mağaza şəkilləri və tələb olunan sənədlər növbəti mərhələdə komanda tərəfindən istənilə bilər.</span></div><div className="form-actions"><button className="btn" type="submit" data-testid="button-submit-seller">Müraciəti göndər <ArrowRight size={14} /></button><span className="field-help">* məcburi sahələr</span></div></form>}</div></main><Footer /></>;
+  return <><main className="seller-page"><div className="container form-shell"><div className="seller-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start', maxWidth: '100%' }}><div style={{ maxWidth: '700px' }}><div className="eyebrow">Satıcı onboarding</div><h1>EYNƏK-də sat.</h1><p>Mağazanızı EYNƏK-ə qoşun və məhsullarınızı Azərbaycanda daha çox müştəriyə çatdırın. Müraciət göndərildikdən sonra məlumatlar komanda tərəfindən nəzərdən keçirilir.</p></div><Link href="/seller-login" className="btn btn-secondary" data-testid="link-seller-login">Mövcud satıcı? Daxil ol</Link></div>{sent ? <div className="form-success" data-testid="status-seller-application"><strong>Müraciət qəbul edildi.</strong><br />Məlumatlarınız nəzərdən keçirilmək üçün göndərildi. Status: Gözləmədə.</div> : <form className="seller-form" onSubmit={submit} noValidate>{field('storeName', 'Mağaza adı', true)}{field('owner', 'Məsul şəxs', true)}{field('phone', 'Telefon', true, 'tel')}{field('email', 'E-poçt', true, 'email')}<div className="field full"><label htmlFor="seller-business">Biznes haqqında *</label><textarea id="seller-business" value={form.business} onChange={(event) => update('business', event.target.value)} aria-invalid={Boolean(errors.business)} data-testid="input-seller-business" />{errors.business && <span className="field-error">{errors.business}</span>}</div>{field('tax', 'VÖEN (əgər varsa)')}{field('address', 'Mağaza ünvanı', true)}{field('instagram', 'Instagram')}{field('website', 'Veb-sayt')}{field('categories', 'Məhsul kateqoriyaları', true)}<div className="field full"><span className="field-help">Müraciət zamanı mağaza şəkilləri və tələb olunan sənədlər növbəti mərhələdə komanda tərəfindən istənilə bilər.</span></div><div className="form-actions"><button className="btn" type="submit" data-testid="button-submit-seller">Müraciəti göndər <ArrowRight size={14} /></button><span className="field-help">* məcburi sahələr</span></div></form>}</div></main><Footer /></>;
 }
 
 function WishlistPage({ likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
@@ -317,7 +320,7 @@ function Storefront() {
 }
 
 function App() {
-  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><RoutedErrorBoundary><Storefront /></RoutedErrorBoundary></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><RoutedErrorBoundary><Switch><Route path="/seller-login"><SellerLogin /></Route><Route path="/seller-panel"><SellerPanel /></Route><Route path="/seller-panel/*"><SellerPanel /></Route><Route><Storefront /></Route></Switch></RoutedErrorBoundary></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
 }
 
 export default App;

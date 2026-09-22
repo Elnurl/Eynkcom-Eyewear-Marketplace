@@ -31,10 +31,13 @@ EYNƏK is an Azerbaijan-first multi-vendor eyewear marketplace for discovering f
 - The current release is a frontend-first customer experience with clearly labeled development inventory; persistence and marketplace services are intentionally not faked.
 - The site uses original EYNƏK brand language and visuals, using major eyewear sites only as broad UX references.
 - The customer surface includes shop, stores, brands, seller onboarding, product detail, wishlist, cart, account, and integration-ready VTO routes.
+- A frontend-only seller demo is available at `/seller-login`; it persists the demo session and seller product CRUD in browser localStorage.
 
 ## Product
 
 Users can browse optical frames and sunglasses, filter by shape and attributes, search and sort products, inspect seller details and frame measurements, save favorites, add items to cart, open vendor storefronts, discover stores and brands, submit a seller application, and launch an integration-ready virtual try-on experience.
+
+Demo sellers can sign in with `seller@eynek.az` / `Demo1234`, review inventory, and add, edit, publish, or delete local demo products from `/seller-panel`.
 
 ## User preferences
 
@@ -43,6 +46,7 @@ Users can browse optical frames and sunglasses, filter by shape and attributes, 
 ## Gotchas
 
 - The customer experience is currently local-data driven; connect API/database persistence before treating cart, inventory, seller applications, or order flows as production records.
+- The seller login is intentionally a public demo, not production authentication; replace it with real auth and server-side authorization before launch.
 - The VTO surface is a provider boundary and preview state, not a real camera or face-tracking implementation.
 
 ## Pointers
