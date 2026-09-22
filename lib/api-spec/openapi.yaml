@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: products
+    description: Public catalog products
+  - name: seller-products
+    description: Demo seller product management
 paths:
   /healthz:
     get:
@@ -24,6 +28,109 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List active products
+      description: Returns active seller products for the public catalog.
+      responses:
+        "200":
+          description: Active products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SellerProduct"
+  /seller/products:
+    get:
+      operationId: listSellerProducts
+      tags: [seller-products]
+      summary: List seller products
+      description: Returns all products for the current demo seller.
+      responses:
+        "200":
+          description: Seller products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SellerProduct"
+    post:
+      operationId: createSellerProduct
+      tags: [seller-products]
+      summary: Create a seller product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerProduct"
+        "400":
+          description: Invalid product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /seller/products/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+    patch:
+      operationId: updateSellerProduct
+      tags: [seller-products]
+      summary: Update a seller product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerProductUpdate"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerProduct"
+        "400":
+          description: Invalid product update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteSellerProduct
+      tags: [seller-products]
+      summary: Delete a seller product
+      responses:
+        "204":
+          description: Product deleted
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +140,136 @@ components:
           type: string
       required:
         - status
+    SellerProduct:
+      type: object
+      required:
+        - id
+        - sellerId
+        - name
+        - category
+        - price
+        - stock
+        - color
+        - material
+        - status
+        - frontImage
+        - sideImage
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        sellerId:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          enum: [Optik çərçivə, Gün eynəyi]
+        price:
+          type: integer
+          minimum: 0
+        stock:
+          type: integer
+          minimum: 0
+        color:
+          type: string
+        material:
+          type: string
+        status:
+          type: string
+          enum: [Aktiv, Qaralama]
+        frontImage:
+          type: string
+        sideImage:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SellerProductInput:
+      type: object
+      required:
+        - name
+        - category
+        - price
+        - stock
+        - color
+        - material
+        - status
+        - frontImage
+        - sideImage
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        category:
+          type: string
+          enum: [Optik çərçivə, Gün eynəyi]
+        price:
+          type: integer
+          minimum: 0
+        stock:
+          type: integer
+          minimum: 0
+        color:
+          type: string
+          minLength: 1
+          maxLength: 100
+        material:
+          type: string
+          minLength: 1
+          maxLength: 100
+        status:
+          type: string
+          enum: [Aktiv, Qaralama]
+        frontImage:
+          type: string
+          minLength: 1
+        sideImage:
+          type: string
+          minLength: 1
+    SellerProductUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        category:
+          type: string
+          enum: [Optik çərçivə, Gün eynəyi]
+        price:
+          type: integer
+          minimum: 0
+        stock:
+          type: integer
+          minimum: 0
+        color:
+          type: string
+          minLength: 1
+          maxLength: 100
+        material:
+          type: string
+          minLength: 1
+          maxLength: 100
+        status:
+          type: string
+          enum: [Aktiv, Qaralama]
+        frontImage:
+          type: string
+          minLength: 1
+        sideImage:
+          type: string
+          minLength: 1
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
 

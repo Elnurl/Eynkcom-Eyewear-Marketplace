@@ -5,7 +5,7 @@ import {
   Image as ImageIcon, ArrowLeft, Store, Settings, 
   Package, LayoutDashboard, X, Check, AlertCircle
 } from 'lucide-react';
-import { useDemoSeller, SellerProduct } from '@/hooks/use-demo-seller';
+import { useDemoSeller, type SellerProduct, type SellerProductInput } from '@/hooks/use-demo-seller';
 
 function sellerImageUrl(image: string) {
   if (image.startsWith('data:') || image.startsWith('http')) return image;
@@ -13,7 +13,16 @@ function sellerImageUrl(image: string) {
 }
 
 export default function SellerPanel() {
-  const { session, logout, products, addProduct, updateProduct, deleteProduct } = useDemoSeller();
+  const {
+    session,
+    logout,
+    products,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    isSaving,
+    errorMessage,
+  } = useDemoSeller();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'overview' | 'products'>('products');
   
@@ -276,11 +285,13 @@ export default function SellerPanel() {
         <ProductFormModal 
           product={editingId ? products.find(p => p.id === editingId) : undefined}
           onClose={closeForm}
-          onSave={(data) => {
+          isSaving={isSaving}
+          serverError={errorMessage}
+          onSave={async (data) => {
             if (editingId) {
-              updateProduct(editingId, data);
+              await updateProduct(editingId, data);
             } else {
-              addProduct(data);
+              await addProduct(data);
             }
             closeForm();
           }}
@@ -290,12 +301,14 @@ export default function SellerPanel() {
   );
 }
 
-function ProductFormModal({ product, onClose, onSave }: { 
+function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: { 
   product?: SellerProduct; 
   onClose: () => void; 
-  onSave: (data: Omit<SellerProduct, 'id' | 'createdAt'>) => void;
+  onSave: (data: SellerProductInput) => Promise<void>;
+  isSaving: boolean;
+  serverError: string;
 }) {
-  const [formData, setFormData] = useState<Omit<SellerProduct, 'id' | 'createdAt'>>({
+  const [formData, setFormData] = useState<SellerProductInput>({
     name: product?.name || '',
     category: product?.category || 'Optik çərçivə',
     price: product?.price || 0,
@@ -309,6 +322,7 @@ function ProductFormModal({ product, onClose, onSave }: {
 
   const [frontImageError, setFrontImageError] = useState('');
   const [sideImageError, setSideImageError] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   const frontInputRef = useRef<HTMLInputElement>(null);
   const sideInputRef = useRef<HTMLInputElement>(null);
@@ -364,12 +378,23 @@ function ProductFormModal({ product, onClose, onSave }: {
     setSideImageError('');
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setSubmitError('');
     if (!formData.frontImage) setFrontImageError('Ön görünüş şəkli tələb olunur.');
     if (!formData.sideImage) setSideImageError('Yan görünüş şəkli tələb olunur.');
+    if (formData.frontImage.startsWith('data:') || formData.sideImage.startsWith('data:')) {
+      setSubmitError(
+        'Seçilmiş yerli şəkillər database-ə yazılmır. Təhlükəsiz App Storage aktiv edilənədək demo nümunəsini istifadə edin.',
+      );
+      return;
+    }
     if (formData.frontImage && formData.sideImage && !frontImageError && !sideImageError) {
-      onSave(formData);
+      try {
+        await onSave(formData);
+      } catch {
+        setSubmitError(serverError || 'Məhsul yadda saxlanmadı. Yenidən cəhd edin.');
+      }
     }
   };
 
@@ -565,14 +590,26 @@ function ProductFormModal({ product, onClose, onSave }: {
           </div>
 
           <div className="seller-modal-footer">
+            {(submitError || serverError) && (
+              <span className="field-error-text" role="alert">
+                {submitError || serverError}
+              </span>
+            )}
             <button type="button" className="btn btn-secondary" onClick={onClose} data-testid="button-cancel-product">Ləğv et</button>
             <button
               type="submit"
               className="btn btn-blue"
-              disabled={!formData.name || !formData.frontImage || !formData.sideImage || Boolean(frontImageError) || Boolean(sideImageError)}
+              disabled={
+                isSaving ||
+                !formData.name ||
+                !formData.frontImage ||
+                !formData.sideImage ||
+                Boolean(frontImageError) ||
+                Boolean(sideImageError)
+              }
               data-testid="button-save-product"
             >
-              {product ? 'Yenilə' : 'Əlavə et'}
+              {isSaving ? 'Yadda saxlanılır...' : product ? 'Yenilə' : 'Əlavə et'}
             </button>
           </div>
         </form>

@@ -28,6 +28,7 @@ import NotFound from '@/pages/not-found';
 
 import SellerLogin from '@/pages/seller-login';
 import SellerPanel from '@/pages/seller-panel';
+import { useListProducts } from '@workspace/api-client-react';
 
 const queryClient = new QueryClient();
 
@@ -326,32 +327,7 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function Storefront() {
-  const [sellerProductsData, setSellerProductsData] = useState<any[]>([]);
-
-  useEffect(() => {
-    const load = () => {
-      try {
-        const stored = localStorage.getItem('eynek_demo_seller_products');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            setSellerProductsData(parsed.map((product) => ({
-              ...product,
-              frontImage: product.frontImage || product.image || '',
-              sideImage: product.sideImage || product.image || '',
-            })));
-          }
-        }
-      } catch {}
-    };
-    load();
-    window.addEventListener('storage', load);
-    window.addEventListener('eynek-demo-products-updated', load);
-    return () => {
-      window.removeEventListener('storage', load);
-      window.removeEventListener('eynek-demo-products-updated', load);
-    };
-  }, []);
+  const { data: sellerProductsData = [] } = useListProducts();
 
   const allProducts = useMemo(() => {
     const activeSellerProducts = sellerProductsData

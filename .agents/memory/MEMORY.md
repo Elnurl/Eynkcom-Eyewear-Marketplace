@@ -1,0 +1,1 @@
+- [Seller product images](seller-product-images.md) — store paths in PostgreSQL; require real auth and App Storage before enabling persistent uploads.

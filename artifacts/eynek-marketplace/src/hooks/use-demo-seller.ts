@@ -1,4 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  createSellerProduct,
+  getListProductsQueryKey,
+  getListSellerProductsQueryKey,
+  useCreateSellerProduct,
+  useDeleteSellerProduct,
+  useListSellerProducts,
+  useUpdateSellerProduct,
+  type SellerProduct,
+  type SellerProductInput,
+  type SellerProductUpdate,
+} from '@workspace/api-client-react';
+
+export type { SellerProduct, SellerProductInput };
 
 export type DemoSellerSession = {
   authenticated: boolean;
@@ -6,53 +21,20 @@ export type DemoSellerSession = {
   storeName: string;
 };
 
-export type SellerProduct = {
-  id: string;
-  name: string;
-  category: 'Optik çərçivə' | 'Gün eynəyi';
-  price: number;
-  stock: number;
-  color: string;
-  material: string;
-  status: 'Aktiv' | 'Qaralama';
-  frontImage: string;
-  sideImage: string;
-  createdAt: string;
-};
-
 const SESSION_KEY = 'eynek_demo_seller_session';
 const PRODUCTS_KEY = 'eynek_demo_seller_products';
+const MIGRATION_KEY = 'eynek_demo_seller_products_migrated_v1';
 
-const DEFAULT_PRODUCTS: SellerProduct[] = [
-  {
-    id: 'prod_1',
-    name: 'Mimoza 02',
-    category: 'Optik çərçivə',
-    price: 118,
-    stock: 12,
-    color: 'Kərpic / şampan',
-    material: 'Asetat',
-    status: 'Aktiv',
-    frontImage: 'product-images/mimoza-02.jpg',
-    sideImage: 'product-images/mimoza-02.jpg',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod_2',
-    name: 'Sahil 11',
-    category: 'Gün eynəyi',
-    price: 145,
-    stock: 5,
-    color: 'Zeytun',
-    material: 'Asetat',
-    status: 'Aktiv',
-    frontImage: 'product-images/sahil-11.jpg',
-    sideImage: 'product-images/sahil-11.jpg',
-    createdAt: new Date().toISOString(),
+function getErrorMessage(error: unknown): string {
+  if (error && typeof error === 'object' && 'data' in error) {
+    const data = (error as { data?: { error?: string } }).data;
+    if (data?.error) return data.error;
   }
-];
+  return 'Serverlə əlaqə zamanı xəta baş verdi. Yenidən cəhd edin.';
+}
 
 export function useDemoSeller() {
+  const queryClient = useQueryClient();
   const [session, setSession] = useState<DemoSellerSession>(() => {
     try {
       const stored = localStorage.getItem(SESSION_KEY);
@@ -62,33 +44,79 @@ export function useDemoSeller() {
     }
   });
 
-  const [products, setProducts] = useState<SellerProduct[]>(() => {
-    try {
-      const stored = localStorage.getItem(PRODUCTS_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed.map((p: any) => ({
-            ...p,
-            frontImage: p.frontImage || p.image || '',
-            sideImage: p.sideImage || p.image || '',
-          }));
-        }
-      }
-      return DEFAULT_PRODUCTS;
-    } catch {
-      return DEFAULT_PRODUCTS;
-    }
+  const productsQuery = useListSellerProducts({
+    query: {
+      enabled: session.authenticated,
+      queryKey: getListSellerProductsQueryKey(),
+    },
   });
+  const createMutation = useCreateSellerProduct();
+  const updateMutation = useUpdateSellerProduct();
+  const deleteMutation = useDeleteSellerProduct();
+
+  const refreshProducts = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: getListSellerProductsQueryKey() }),
+      queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() }),
+    ]);
+  };
 
   useEffect(() => {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  }, [session]);
+    if (!session.authenticated || !productsQuery.isSuccess || localStorage.getItem(MIGRATION_KEY)) return;
 
-  useEffect(() => {
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-    window.dispatchEvent(new Event('eynek-demo-products-updated'));
-  }, [products]);
+    let cancelled = false;
+    const migrateLegacyProducts = async () => {
+      try {
+        const stored = localStorage.getItem(PRODUCTS_KEY);
+        const parsed: unknown = stored ? JSON.parse(stored) : [];
+        if (!Array.isArray(parsed)) {
+          localStorage.setItem(MIGRATION_KEY, 'done');
+          return;
+        }
+
+        const existing = productsQuery.data ?? [];
+        for (const item of parsed) {
+          if (!item || typeof item !== 'object') continue;
+          const legacy = item as Record<string, unknown>;
+          const frontImage = String(legacy.frontImage || legacy.image || '');
+          const sideImage = String(legacy.sideImage || legacy.image || '');
+          const alreadyExists = existing.some(
+            (product) => product.name === legacy.name && product.color === legacy.color,
+          );
+          if (
+            alreadyExists ||
+            !frontImage ||
+            !sideImage ||
+            frontImage.startsWith('data:') ||
+            sideImage.startsWith('data:')
+          ) {
+            continue;
+          }
+
+          await createSellerProduct({
+            name: String(legacy.name || ''),
+            category: legacy.category === 'Gün eynəyi' ? 'Gün eynəyi' : 'Optik çərçivə',
+            price: Number(legacy.price) || 0,
+            stock: Number(legacy.stock) || 0,
+            color: String(legacy.color || 'Təyin edilməyib'),
+            material: String(legacy.material || 'Təyin edilməyib'),
+            status: legacy.status === 'Aktiv' ? 'Aktiv' : 'Qaralama',
+            frontImage,
+            sideImage,
+          });
+        }
+        localStorage.setItem(MIGRATION_KEY, 'done');
+        if (!cancelled) await refreshProducts();
+      } catch {
+        // Keep legacy data untouched so migration can be retried later.
+      }
+    };
+
+    void migrateLegacyProducts();
+    return () => {
+      cancelled = true;
+    };
+  }, [productsQuery.data, productsQuery.isSuccess, session.authenticated]);
 
   const login = (email: string, storeName: string) => {
     const nextSession = { authenticated: true, email, storeName };
@@ -102,30 +130,37 @@ export function useDemoSeller() {
     setSession(nextSession);
   };
 
-  const addProduct = (product: Omit<SellerProduct, 'id' | 'createdAt'>) => {
-    const newProduct: SellerProduct = {
-      ...product,
-      id: `prod_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString(),
-    };
-    setProducts((prev) => [newProduct, ...prev]);
+  const addProduct = async (product: SellerProductInput) => {
+    await createMutation.mutateAsync({ data: product });
+    await refreshProducts();
   };
 
-  const updateProduct = (id: string, updates: Partial<SellerProduct>) => {
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+  const updateProduct = async (id: string, updates: SellerProductUpdate) => {
+    await updateMutation.mutateAsync({ id, data: updates });
+    await refreshProducts();
   };
 
-  const deleteProduct = (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
+  const deleteProduct = async (id: string) => {
+    await deleteMutation.mutateAsync({ id });
+    await refreshProducts();
   };
+
+  const mutationError = createMutation.error ?? updateMutation.error ?? deleteMutation.error;
 
   return {
     session,
     login,
     logout,
-    products,
+    products: productsQuery.data ?? [],
     addProduct,
     updateProduct,
     deleteProduct,
+    isLoading: productsQuery.isLoading,
+    isSaving: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    errorMessage: productsQuery.error
+      ? getErrorMessage(productsQuery.error)
+      : mutationError
+        ? getErrorMessage(mutationError)
+        : '',
   };
 }
