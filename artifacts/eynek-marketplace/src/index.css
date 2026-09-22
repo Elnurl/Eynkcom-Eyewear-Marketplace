@@ -184,7 +184,9 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .product-image.tone-3 { background: #E1E1E7; }
 .product-image.tone-4 { background: #E8E1C9; }
 .product-image.tone-5 { background: #D9E3E5; }
-.product-image::before { content: ''; position: absolute; width: 110px; height: 210px; left: 50%; top: 31px; transform: translateX(-50%) rotate(-19deg); border-radius: 50%; background: rgba(255,255,255,.25); }
+.product-image::before { content: ''; position: absolute; z-index: 1; inset: 0; background: linear-gradient(180deg, transparent 62%, rgba(17,17,17,.08)); pointer-events: none; }
+.product-photo { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .35s ease; }
+.product-card:hover .product-photo { transform: scale(1.035); }
 .frame-visual { position: absolute; left: 50%; top: 115px; transform: translateX(-50%) rotate(-8deg); display: flex; gap: 9px; align-items: center; }
 .frame-visual span { display: block; width: 76px; height: 56px; border: 7px solid var(--navy); }
 .frame-visual span:first-child { border-radius: 54% 46% 44% 51%; }
@@ -239,10 +241,11 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .breadcrumbs a:hover { color: var(--blue); }
 .detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(350px, .82fr); gap: 58px; align-items: start; }
 .detail-art { height: 555px; position: relative; overflow: hidden; border-radius: 12px; background: #E2E4EF; }
-.detail-art::before { content: ''; position: absolute; width: 390px; height: 520px; left: 50%; top: 56%; transform: translate(-50%,-50%) rotate(20deg); border-radius: 48% 52% 20% 20%; background: rgba(255,255,255,.25); }
+.detail-art::before { content: ''; position: absolute; z-index: 1; inset: 0; background: linear-gradient(180deg, transparent 72%, rgba(17,17,17,.14)); pointer-events: none; }
+.detail-photo { width: 100%; height: 100%; display: block; object-fit: cover; }
 .detail-art .frame-visual { z-index: 1; top: 47%; transform: translateX(-50%) rotate(-7deg) scale(1.8); }
 .detail-art .frame-visual span { border-width: 5px; }
-.detail-art .art-label { position: absolute; left: 25px; bottom: 22px; z-index: 2; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
+.detail-art .art-label { position: absolute; left: 25px; bottom: 22px; z-index: 2; color: var(--white); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; text-shadow: 0 1px 7px rgba(0,0,0,.35); }
 .detail-info .eyebrow { margin-bottom: 15px; }
 .detail-info h1 { margin: 0; color: var(--navy); font-size: clamp(40px, 5vw, 65px); line-height: .95; letter-spacing: -.075em; }
 .detail-price { margin: 20px 0 7px; color: var(--navy); font-size: 26px; font-weight: 800; }
