@@ -140,7 +140,7 @@ function Footer() {
         <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/collection">Çatdırılma məlumatı</Link></div>
         <div><h3>Satıcılar üçün</h3><Link href="/seller">EYNƏK-də sat</Link><a href="mailto:sat@eynek.com">Bizimlə əlaqə</a><a href="#support">Dəstək</a></div>
       </div>
-      <div className="container footer-bottom"><span>© 2024 EYNƏK</span><span>Bakı • Azərbaycan</span></div>
+      <div className="container footer-bottom"><span>© {new Date().getFullYear()} EYNƏK</span><span>Bakı • Azərbaycan</span></div>
     </footer>
   );
 }
