@@ -799,9 +799,10 @@ body { background: #f8faff; }
   body { padding-bottom: 0; }
   .announcement { padding: 7px 12px; text-align: center; font-size: 10px; }
   .nav { min-height: 66px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; }
-  .nav .brand { min-width: 0; }
+  .nav > .brand { grid-column: auto; grid-row: auto; width: auto; min-width: 0; justify-self: start; }
+  .nav > .nav-actions { grid-column: auto; grid-row: auto; margin-left: 0; justify-self: end; }
   .nav .brand-image { width: 145px; max-width: 100%; }
-  .nav-actions { margin-left: 0; justify-self: end; gap: 7px; }
+  .nav-actions { gap: 7px; }
   .nav-actions .nav-search { min-width: 44px; width: 44px; min-height: 44px; }
   .nav-actions .icon-button { width: 44px; height: 44px; }
   .detail-brand-image { width: 130px; }
