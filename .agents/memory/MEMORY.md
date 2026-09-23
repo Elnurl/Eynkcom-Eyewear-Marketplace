@@ -7,3 +7,4 @@
 - [Marketplace launch catalog](marketplace-launch-catalog.md) — launch with sunglasses and optical frames only; no prescription-lens configuration.
 - [Marketplace returns](marketplace-returns.md) — EYNƏK.com receives buyer return requests first and coordinates with the selling shop.
 - [Marketplace order confirmation](marketplace-order-confirmation.md) — each selling shop must confirm availability after an order is placed.
+- [Marketplace guest checkout](marketplace-guest-checkout.md) — buyers can order without registering; account creation is optional.
