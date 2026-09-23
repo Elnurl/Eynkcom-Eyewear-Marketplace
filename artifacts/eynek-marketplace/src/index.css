@@ -539,8 +539,32 @@ body { background: #f8faff; }
 .nav-links a { min-height: 38px; border: 1px solid transparent; border-radius: 999px; padding: 0 13px; }
 .nav-links a:hover, .nav-links a.active { color: #111317; border-color: #d7dae3; background: white; }
 .nav-actions { gap: 9px; }
+.nav-search-wrap { position: relative; }
 .nav-search { min-width: 255px; min-height: 45px; display: flex; align-items: center; gap: 12px; border: 1px solid #d8dce7; border-radius: 999px; padding: 0 17px; background: white; color: #626a77; box-shadow: 0 7px 23px rgba(23,26,58,.035); font-size: 12px; }
 .nav-search:hover { border-color: #aeb7c5; }
+.nav-search[aria-expanded="true"] { border-color: #647184; color: #142232; }
+.header-search-panel { position: absolute; top: calc(100% + 12px); right: 0; z-index: 35; width: min(460px, calc(100vw - 28px)); max-height: min(680px, calc(100dvh - 110px)); overflow-y: auto; border: 1px solid #e4e8ee; border-radius: 21px; background: #fff; box-shadow: 0 24px 75px rgba(23,35,54,.22); color: #152337; text-align: left; }
+.header-search-form { display: flex; align-items: center; gap: 12px; padding: 14px 17px; background: #202d3a; color: #fff; }
+.header-search-form input { flex: 1; min-width: 0; height: 36px; border: 0; outline: 0; background: transparent; color: #fff; font: inherit; font-size: 16px; }
+.header-search-form input::placeholder { color: #d4dce3; }
+.header-search-form input::-webkit-search-cancel-button { display: none; }
+.header-search-close { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border: 0; border-radius: 50%; background: rgba(255,255,255,.12); color: white; cursor: pointer; }
+.header-search-close:hover { background: rgba(255,255,255,.24); }
+.header-search-section { padding: 16px 18px 9px; }
+.header-search-section + .header-search-section { border-top: 8px solid #f5f6fa; }
+.header-search-section h3 { margin: 0 0 9px; color: #717d8e; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.header-search-item { min-height: 62px; display: flex; align-items: center; gap: 13px; padding: 8px 5px; border-bottom: 1px solid #eef0f4; color: #172638; text-decoration: none; font-size: 14px; }
+.header-search-item:last-child { border-bottom: 0; }
+.header-search-item:hover, .header-search-item:focus-visible { border-radius: 10px; background: #f5f7fa; }
+.header-search-item-icon { width: 45px; height: 45px; flex: 0 0 45px; display: grid; place-items: center; overflow: hidden; border-radius: 13px; background: #f3f0ed; color: #35495b; }
+.header-search-item-icon img { width: 100%; height: 100%; object-fit: contain; }
+.header-search-item-text { min-width: 0; display: flex; flex: 1; flex-direction: column; gap: 3px; }
+.header-search-item-text strong { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.header-search-item-text small { color: #788391; font-size: 11px; }
+.header-search-arrow { margin-left: auto; flex: 0 0 auto; color: #9aa3b0; }
+.header-search-empty-recent, .header-search-no-results { margin: 11px 5px 15px; color: #737f8d; font-size: 13px; }
+.header-search-all { width: calc(100% - 36px); min-height: 43px; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 18px 18px; padding: 0 14px; border: 1px solid #dce2e9; border-radius: 10px; background: #f7f8fa; color: #172638; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.header-search-all:hover { background: #e9eef4; }
 .nav-seller { min-height: 42px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 0 14px; background: white; color: #111317; white-space: nowrap; }
 .nav-actions .icon-button { border: 1px solid #e0e4ec; border-radius: 50%; background: white; }
 .nav-actions .cart-button { background: #111317; color: white; border-color: #111317; }
@@ -727,7 +751,8 @@ body { background: #f8faff; }
   .detail-related .product-card-actions { bottom: 40px; opacity: 1; }
   .detail-related .quick-view { display: none; }
   .nav { min-height: 68px; }
-  .nav-actions .nav-search { display: none; }
+  .nav-actions .nav-search { display: flex; }
+  .header-search-panel { position: fixed; top: 73px; right: 14px; left: 14px; width: auto; max-height: calc(100dvh - 145px); }
   .home-page .hero { padding-top: 12px; }
   .hero-panel { min-height: 0; flex-direction: column; gap: 28px; padding: 31px 25px; border-radius: 28px; }
   .hero-panel { min-height: 550px; padding-bottom: 190px; }

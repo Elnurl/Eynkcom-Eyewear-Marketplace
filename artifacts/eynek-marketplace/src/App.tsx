@@ -20,9 +20,10 @@ import {
   Video,
   X,
 } from 'lucide-react';
-import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
+import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { BrandLogo } from '@/components/brand-logo';
+import { HeaderSearch } from '@/components/header-search';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
@@ -105,7 +106,7 @@ function FrameVisual({ shape, frameStyle = 'clear', sunglasses = false }: { shap
   );
 }
 
-function Header({ cartCount, onMenu }: { cartCount: number; onMenu: () => void }) {
+function Header({ cartCount, onMenu, products }: { cartCount: number; onMenu: () => void; products: Product[] }) {
   const [location] = useLocation();
   return (
     <>
@@ -120,7 +121,7 @@ function Header({ cartCount, onMenu }: { cartCount: number; onMenu: () => void }
             <Link href="/stores" className={location.startsWith('/stores') ? 'active' : ''} data-testid="link-stores">Mağazalar</Link>
           </nav>
           <div className="nav-actions">
-            <Link href="/collection" className="nav-search" aria-label="Eynək axtar" data-testid="link-search"><Search size={17} /><span>Eynək və mağaza axtar</span></Link>
+            <HeaderSearch products={products.map((product) => ({ id: product.id, name: product.name, vendor: product.vendor, type: product.type, shape: product.shape, color: product.color, imageUrl: product.image.startsWith('data:') || product.image.startsWith('http') ? product.image : assetUrl(product.image) }))} stores={vendors} />
             <Link href="/wishlist" className="icon-button" aria-label="Seçilmişlər" data-testid="link-wishlist"><Heart size={17} /></Link>
             <Link href="/seller" className="nav-seller" data-testid="link-seller-cta"><Store size={15} /> EYNƏK-də sat</Link>
             <Link href="/account" className="icon-button" aria-label="Hesab" data-testid="link-account"><UserRound size={17} /></Link>
@@ -236,9 +237,12 @@ function Filters({ filters, setFilters, open }: { filters: { gender: string; mat
 }
 
 function Collection({ products, likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
-  const [location, setLocation] = useLocation();
-  const params = new URLSearchParams(location.split('?')[1] ?? '');
-  const [query, setQuery] = useState('');
+  const [, setLocation] = useLocation();
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const searchParam = params.get('q') ?? '';
+  const [query, setQuery] = useState(searchParam);
+  useEffect(() => setQuery(searchParam), [searchParam]);
   const [focused, setFocused] = useState(false);
   const [sort, setSort] = useState('Tövsiyə olunan');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -257,7 +261,7 @@ function Collection({ products, likedIds, onFavorite, onQuickView, onTryOn }: Co
     if (sort === 'Qiymət: yuxarıdan aşağı') return [...list].sort((a, b) => b.price - a.price);
     if (sort === 'Ada görə') return [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [filters, query, queryType, shape, sort]);
+  }, [products, filters, query, queryType, shape, sort]);
   const clearFilters = () => { setFilters({ gender: '', material: '', type: '', maxPrice: 1000, size: '', seller: '' }); setQuery(''); setLocation('/collection'); };
   const suggestion = (value: string) => { setQuery(value); setFocused(false); };
   return (
@@ -445,7 +449,7 @@ function Storefront() {
   const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { setCartItems((current) => [...current, ...Array.from({ length: Math.min(10, Math.max(1, quantity)) }, () => product)]); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
   const removeFromCart = (id: number | string) => setCartItems((current) => { const index = current.findIndex((item) => item.id === id); return index === -1 ? current : current.filter((_, itemIndex) => itemIndex !== index); });
   const common: CommonProps = { products: allProducts, likedIds, onFavorite: toggleFavorite, onQuickView: (product: Product) => setQuickProduct(product), onTryOn: (product: Product) => setTryOnProduct(product) };
-  return <div className="app-shell"><Header cartCount={cartCount} onMenu={() => setMobileMenu(!mobileMenu)} />{mobileMenu && <div style={{ position: 'fixed', zIndex: 19, top: 100, left: 0, right: 0, background: 'var(--paper)', borderBottom: '1px solid var(--line)', padding: 18 }}><div className="container" style={{ display: 'grid', gap: 14, fontSize: 13 }}><Link href="/collection" onClick={() => setMobileMenu(false)} data-testid="link-mobile-collection">Eynəklər</Link><Link href="/brands" onClick={() => setMobileMenu(false)} data-testid="link-mobile-brands">Brendlər</Link><Link href="/stores" onClick={() => setMobileMenu(false)} data-testid="link-mobile-stores">Mağazalar</Link><Link href="/seller" onClick={() => setMobileMenu(false)} data-testid="link-mobile-seller">EYNƏK-də sat</Link></div></div>}<Switch><Route path="/collection"><Collection {...common} /></Route><Route path="/stores"><StoresPage /></Route><Route path="/brands"><BrandsPage {...common} /></Route><Route path="/seller"><SellerPage /></Route><Route path="/wishlist"><WishlistPage {...common} /></Route><Route path="/cart"><CartPage items={cartItems} onRemove={removeFromCart} onCheckout={() => showToast('Ödəniş mərhələsi hazırlanır')} /></Route><Route path="/account"><AccountPage /></Route><Route path="/vendor/:slug"><VendorPage {...common} /></Route><Route path="/product/:id"><ProductDetail products={allProducts} onAdd={addToCart} onTryOn={setTryOnProduct} onQuickView={setQuickProduct} onFavorite={toggleFavorite} likedIds={likedIds} /></Route><Route path="/"><Home {...common} /></Route><Route component={NotFound} /></Switch><MobileBottomNav onTryOn={() => setTryOnProduct(allProducts[0])} />{quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={setTryOnProduct} />}{tryOnProduct && <VirtualTryOn products={allProducts} product={tryOnProduct} onClose={() => setTryOnProduct(null)} onSelect={setTryOnProduct} onAdd={addToCart} onSave={toggleFavorite} />}{toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}</div>;
+  return <div className="app-shell"><Header cartCount={cartCount} products={allProducts} onMenu={() => setMobileMenu(!mobileMenu)} />{mobileMenu && <div style={{ position: 'fixed', zIndex: 19, top: 100, left: 0, right: 0, background: 'var(--paper)', borderBottom: '1px solid var(--line)', padding: 18 }}><div className="container" style={{ display: 'grid', gap: 14, fontSize: 13 }}><Link href="/collection" onClick={() => setMobileMenu(false)} data-testid="link-mobile-collection">Eynəklər</Link><Link href="/brands" onClick={() => setMobileMenu(false)} data-testid="link-mobile-brands">Brendlər</Link><Link href="/stores" onClick={() => setMobileMenu(false)} data-testid="link-mobile-stores">Mağazalar</Link><Link href="/seller" onClick={() => setMobileMenu(false)} data-testid="link-mobile-seller">EYNƏK-də sat</Link></div></div>}<Switch><Route path="/collection"><Collection {...common} /></Route><Route path="/stores"><StoresPage /></Route><Route path="/brands"><BrandsPage {...common} /></Route><Route path="/seller"><SellerPage /></Route><Route path="/wishlist"><WishlistPage {...common} /></Route><Route path="/cart"><CartPage items={cartItems} onRemove={removeFromCart} onCheckout={() => showToast('Ödəniş mərhələsi hazırlanır')} /></Route><Route path="/account"><AccountPage /></Route><Route path="/vendor/:slug"><VendorPage {...common} /></Route><Route path="/product/:id"><ProductDetail products={allProducts} onAdd={addToCart} onTryOn={setTryOnProduct} onQuickView={setQuickProduct} onFavorite={toggleFavorite} likedIds={likedIds} /></Route><Route path="/"><Home {...common} /></Route><Route component={NotFound} /></Switch><MobileBottomNav onTryOn={() => setTryOnProduct(allProducts[0])} />{quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={setTryOnProduct} />}{tryOnProduct && <VirtualTryOn products={allProducts} product={tryOnProduct} onClose={() => setTryOnProduct(null)} onSelect={setTryOnProduct} onAdd={addToCart} onSave={toggleFavorite} />}{toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}</div>;
 }
 
 function App() {
