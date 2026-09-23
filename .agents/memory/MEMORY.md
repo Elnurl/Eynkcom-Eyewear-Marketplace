@@ -1,2 +1,3 @@
 - [Seller product images](seller-product-images.md) — demo CRUD stays available, while App Storage writes require authenticated presigned uploads.
 - [Eyewear sample imagery](eyewear-sample-imagery.md) — transparent packshots can bake checker patterns into clear lenses; verify on white before use.
+- [Managed workflow port conflicts](managed-workflow-port-conflicts.md) — a failed restart can leave an older server holding the port; verify listeners before retrying.
