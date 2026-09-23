@@ -705,7 +705,7 @@ body { background: #f8faff; }
 .hero-background { position: absolute; z-index: -2; top: 0; right: 0; height: 100%; width: auto; max-width: none; pointer-events: none; }
 .hero-panel::before { content: ''; position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(90deg, #f6f5f0 0%, rgba(246,245,240,.97) 35%, rgba(246,245,240,.15) 75%, transparent 100%); }
 .hero-kicker { border-color: #bfc2c3; }
-.home-page .hero h1 { color: #142232; }
+.home-page .hero h1 { color: #142232; font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: -.065em; }
 .home-page .hero-sub { color: #505c65; }
 .hero-cta { border-color: #142232; background: #142232; color: white; }
 .hero-cta:hover { border-color: #354454; background: #354454; }
