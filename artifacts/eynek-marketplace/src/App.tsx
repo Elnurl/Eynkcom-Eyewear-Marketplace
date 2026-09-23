@@ -145,17 +145,18 @@ function Footer() {
   );
 }
 
-function ProductCard({ product, liked, onFavorite, onQuickView, onTryOn }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void }) {
+function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void }) {
   const [hovered, setHovered] = useState(false);
   const displayImage = hovered && product.sideImage ? product.sideImage : product.image;
   return (
     <article className="product-card" data-testid={`card-product-${product.id}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <div className={`product-image ${product.tone}`}>
-        <img className={`product-photo ${hovered && product.sideImage ? 'side-view' : ''}`} src={displayImage.startsWith('data:') || displayImage.startsWith('http') ? displayImage : assetUrl(displayImage)} alt={`${product.name} — ${product.color} eynək modeli ${hovered && product.sideImage ? 'yan görünüş' : 'ön görünüş'}`} loading="lazy" />
-        <span className="product-badge"><span className="badge-light" /> VTO demo</span>
+        <Link href={`/product/${product.id}`} className="product-image-link" aria-label={`${product.name} məhsul səhifəsini aç`} data-testid={`link-product-image-${product.id}`}>
+          <img className={`product-photo ${hovered && product.sideImage ? 'side-view' : ''}`} src={displayImage.startsWith('data:') || displayImage.startsWith('http') ? displayImage : assetUrl(displayImage)} alt={`${product.name} — ${product.color} eynək modeli ${hovered && product.sideImage ? 'yan görünüş' : 'ön görünüş'}`} loading="lazy" />
+        </Link>
         <button className={`heart-button ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} seçilmişlərə əlavə et`} data-testid={`button-favorite-${product.id}`}><Heart size={23} strokeWidth={1.8} fill={liked ? 'currentColor' : 'none'} /></button>
         <div className="product-card-actions">
-          <button className="quick-view" onClick={() => onQuickView(product)} data-testid={`button-quick-view-${product.id}`}>Baxış</button>
+          <Link href={`/product/${product.id}`} className="quick-view" data-testid={`button-quick-view-${product.id}`}>Məhsula bax</Link>
           <button className="try-card" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}><ScanFace size={17} strokeWidth={2} /> Önizlə</button>
         </div>
       </div>
@@ -286,7 +287,7 @@ function ProductDetail({ products, onAdd, onTryOn, onQuickView, onFavorite, like
           <div className="detail-gallery">
             <div className="detail-art">
               <img className="detail-photo" src={galleryImage.startsWith('data:') || galleryImage.startsWith('http') ? galleryImage : assetUrl(galleryImage)} alt={`${product.name} — ${showSide ? 'yan' : 'ön'} görünüş`} />
-              <button className="detail-try-on" onClick={() => onTryOn(product)} data-testid="button-try-on-detail"><ScanFace size={15} /> VTO demo önizləmə</button>
+              <button className="detail-try-on" onClick={() => onTryOn(product)} data-testid="button-try-on-detail"><ScanFace size={15} /> Virtual önizlə</button>
             </div>
             {product.sideImage && product.sideImage !== product.image && <div className="detail-gallery-dots" aria-label="Şəkil görünüşü"><button className={!showSide ? 'active' : ''} onClick={() => setShowSide(false)} aria-label="Ön görünüş" /><button className={showSide ? 'active' : ''} onClick={() => setShowSide(true)} aria-label="Yan görünüş" /></div>}
           </div>
