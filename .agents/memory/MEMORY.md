@@ -9,3 +9,4 @@
 - [Marketplace order confirmation](marketplace-order-confirmation.md) — each selling shop must confirm availability after an order is placed.
 - [Marketplace guest checkout](marketplace-guest-checkout.md) — buyers can order without registering; account creation is optional.
 - [Marketplace buyer notifications](marketplace-buyer-notifications.md) — order confirmation, rejection, and delivery updates go by email and SMS.
+- [Marketplace admin access](marketplace-admin-access.md) — MVP admin access belongs to the owner alone; staff roles are deferred.
