@@ -2,7 +2,7 @@ import { useEffect, useState, FormEvent } from 'react';
 import { useLocation, Link } from 'wouter';
 import { ArrowRight, Store, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useDemoSeller } from '@/hooks/use-demo-seller';
-import { BrandLogo } from '@/components/brand-logo';
+import { BrandLogo, BrandWord } from '@/components/brand-logo';
 
 export default function SellerLogin() {
   const [email, setEmail] = useState('');
@@ -118,7 +118,7 @@ export default function SellerLogin() {
         </form>
         
         <div className="seller-auth-footer">
-          Hələ satıcı deyilsən? <Link href="/seller" data-testid="link-login-to-register">EYNƏK-də sat</Link>
+          Hələ satıcı deyilsən? <Link href="/seller" data-testid="link-login-to-register"><BrandWord />-də sat</Link>
         </div>
       </div>
     </div>

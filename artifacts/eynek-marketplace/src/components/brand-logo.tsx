@@ -9,3 +9,11 @@ export function BrandLogo({ className = '' }: { className?: string }) {
     />
   );
 }
+
+export function BrandWord() {
+  return (
+    <span className="brand-word">
+      <img src={`${import.meta.env.BASE_URL}eynek-name.png`} width={476} height={86} alt="EYNƏK" />
+    </span>
+  );
+}

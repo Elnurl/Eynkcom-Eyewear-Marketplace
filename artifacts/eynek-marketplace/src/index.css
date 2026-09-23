@@ -67,6 +67,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .nav { min-height: 76px; display: flex; align-items: center; gap: 28px; }
 .brand { display: inline-flex; align-items: center; flex: 0 0 auto; }
 .brand-image { display: block; width: 190px; height: auto; }
+.brand-word { display: inline-block; line-height: 1; vertical-align: -.09em; white-space: nowrap; }
+.brand-word img { display: block; width: auto; height: .8em; }
+.vendor-hero .brand-word img { filter: brightness(0) invert(1); }
+.account-panel h2 .brand-word { margin-right: .12em; }
+.seller-header p .brand-word { margin-left: .12em; }
 .nav-links { display: flex; align-items: stretch; gap: 23px; color: var(--muted); font-size: 12px; }
 .nav-links a { display: flex; align-items: center; min-height: 76px; border-bottom: 2px solid transparent; }
 .nav-links a:hover, .nav-links a.active { color: var(--navy); border-bottom-color: var(--blue); }
@@ -151,9 +156,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .feature-card .btn-secondary:hover { background: rgba(255,255,255,.1); }
 .feature-card:last-child .btn { background: var(--white); color: var(--navy); border-color: var(--white); }
 .seller-banner { display: flex; align-items: center; justify-content: space-between; gap: 25px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 28px 0; }
-.seller-banner h2 { margin: 0; color: var(--navy); font-size: 27px; letter-spacing: -.05em; }
-.banner-brand-word { white-space: nowrap; }
-.banner-brand-word img { display: inline-block; width: auto; height: .96em; vertical-align: -.12em; }
+.seller-banner h2 { margin: 0; color: var(--navy); font-size: 25px; letter-spacing: -.045em; }
+.banner-brand-word { margin-inline: .17em .2em; white-space: nowrap; }
 
 .collection-page, .directory-page, .account-page, .cart-page, .seller-page { padding: 53px 0 88px; }
 .collection-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding-bottom: 32px; }
