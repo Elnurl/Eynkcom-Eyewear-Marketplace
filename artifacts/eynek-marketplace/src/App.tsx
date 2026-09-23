@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useMemo, useState, useEffect } from 'react';
+import { type FormEvent, type ReactNode, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   ArrowRight,
@@ -106,13 +106,13 @@ function FrameVisual({ shape, frameStyle = 'clear', sunglasses = false }: { shap
   );
 }
 
-function Header({ cartCount, onMenu, products }: { cartCount: number; onMenu: () => void; products: Product[] }) {
+function Header({ cartCount, onMenu, menuOpen, products }: { cartCount: number; onMenu: () => void; menuOpen: boolean; products: Product[] }) {
   const [location] = useLocation();
   return (
     <>
       <header className="topbar">
         <div className="container nav">
-          <button className="icon-button mobile-menu" onClick={onMenu} aria-label="Menyunu aç" data-testid="button-menu"><Menu size={19} /></button>
+          <button className="icon-button mobile-menu" onClick={onMenu} aria-label="Menyunu aç" aria-expanded={menuOpen} aria-controls="mobile-drawer" data-testid="button-menu"><Menu size={19} /></button>
           <Link href="/" className="brand" data-testid="link-brand"><BrandLogo /></Link>
           <nav className="nav-links" aria-label="Əsas menyu">
             <Link href="/collection" className={location.startsWith('/collection') ? 'active' : ''} data-testid="link-collection">Kəşf et</Link>
@@ -181,7 +181,22 @@ function Home({ products, onQuickView, likedIds, onFavorite, onTryOn }: CommonPr
   return (
     <>
       <main className="home-page">
-        <section className="hero"><div className="container hero-panel"><img className="hero-background" src={`${import.meta.env.BASE_URL}hero-eyewear.webp`} alt="" aria-hidden="true" /><div className="hero-content"><div className="hero-kicker">YENİ BAXIŞ</div><h1>Sənə yaraşan çərçivəni tap.</h1><p className="hero-sub">Bəyəndiyini seç, almazdan əvvəl yoxla.</p><div className="hero-actions"><Link href="/collection" className="btn hero-cta" data-testid="link-hero-collection">Eynəkləri kəşf et <ArrowRight size={16} /></Link><button className="hero-preview-link" onClick={() => onTryOn(products[0])} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button></div><div className="hero-note"><Info size={14} /> Nümunə inventar · virtual sınaq demo görünüşüdür</div></div></div></section>
+        <section className="hero">
+          <div className="container hero-panel">
+            <img className="hero-background hero-background--desktop" src={`${import.meta.env.BASE_URL}hero-eyewear.webp`} alt="" aria-hidden="true" />
+            <img className="hero-background hero-background--mobile" src={`${import.meta.env.BASE_URL}hero-eyewear-mobile.webp`} alt="" aria-hidden="true" />
+            <div className="hero-content">
+              <div className="hero-kicker">YENİ BAXIŞ</div>
+              <h1>Sənə yaraşan çərçivəni tap.</h1>
+              <p className="hero-sub">Bəyəndiyini seç, almazdan əvvəl yoxla.</p>
+              <div className="hero-actions">
+                <Link href="/collection" className="btn hero-cta" data-testid="link-hero-collection">Eynəkləri kəşf et <ArrowRight size={16} /></Link>
+                <button className="hero-preview-link" onClick={() => onTryOn(products[0])} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
+              </div>
+              <div className="hero-note"><Info size={14} /> Nümunə inventar · virtual sınaq demo görünüşüdür</div>
+            </div>
+          </div>
+        </section>
         <section className="section home-discover"><div className="container"><div className="section-head"><div><div className="home-overline">Sənin üçün seçildi</div><h2 className="section-title">Eynəkləri kəşf et</h2></div><Link href="/collection" className="home-count" data-testid="link-view-all">{products.length} model <ArrowRight size={14} /></Link></div><div className="home-filter-pills" aria-label="Kateqoriyalar"><Link href="/collection" className="selected">Hamısı</Link><Link href="/collection?type=sunglasses">Gün eynəyi</Link><Link href="/collection?type=optical">Optik çərçivə</Link><Link href="/brands">Brendlər</Link></div><div className="product-grid">{(featured.length === 4 ? featured : products.slice(0, 4)).map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />)}</div></div></section>
         <section className="section">
           <div className="container">
@@ -405,12 +420,79 @@ function MobileBottomNav({ onTryOn }: { onTryOn: () => void }) {
   return <nav className="mobile-bottom-nav" aria-label="Mobil menyu"><Link href="/" className={location === '/' ? 'active' : ''} data-testid="mobile-nav-home"><Store size={16} />Ana səhifə</Link><Link href="/collection" className={location.startsWith('/collection') ? 'active' : ''} data-testid="mobile-nav-shop"><Search size={16} />Shop</Link><button className="vto-nav" onClick={onTryOn} data-testid="mobile-nav-vto"><ScanFace size={19} />VTO</button><Link href="/wishlist" className={location.startsWith('/wishlist') ? 'active' : ''} data-testid="mobile-nav-wishlist"><Heart size={16} />Seçilmişlər</Link><Link href="/account" className={location.startsWith('/account') ? 'active' : ''} data-testid="mobile-nav-account"><UserRound size={16} />Hesab</Link></nav>;
 }
 
+function MobileDrawer({ onClose }: { onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab' || !drawerRef.current) return;
+      const focusable = Array.from(drawerRef.current.querySelectorAll<HTMLElement>('button, a[href]'));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+      previouslyFocused?.focus();
+    };
+  }, [onClose]);
+
+  return (
+    <div className="mobile-drawer-layer">
+      <button type="button" className="mobile-drawer-backdrop" onClick={onClose} aria-label="Menyunu bağla" tabIndex={-1} />
+      <aside ref={drawerRef} id="mobile-drawer" className="mobile-drawer-panel" role="dialog" aria-modal="true" aria-label="Mobil menyu" data-testid="mobile-drawer">
+        <div className="mobile-drawer-header">
+          <Link href="/" onClick={onClose} aria-label="EYNƏK.com ana səhifə"><BrandLogo /></Link>
+          <button ref={closeRef} type="button" className="mobile-drawer-close" onClick={onClose} aria-label="Menyunu bağla" data-testid="button-close-menu"><X size={21} /></button>
+        </div>
+        <div className="mobile-drawer-body">
+          <div className="mobile-drawer-account">
+            <span className="mobile-drawer-avatar"><UserRound size={23} /></span>
+            <div><strong>Xoş gəlmisən!</strong><p>Seçdiklərini və səbətini bir yerdə gör.</p></div>
+            <Link href="/account" className="mobile-drawer-account-link" onClick={onClose}>Hesabıma bax <ArrowRight size={16} /></Link>
+          </div>
+          <div className="mobile-drawer-label">KƏŞF ET</div>
+          <nav className="mobile-drawer-links" aria-label="Mobil bölmələr">
+            <Link href="/collection" onClick={onClose} data-testid="link-mobile-collection">Bütün eynəklər <ChevronRight size={18} /></Link>
+            <Link href="/collection?type=sunglasses" onClick={onClose}>Gün eynəkləri <ChevronRight size={18} /></Link>
+            <Link href="/collection?type=optical" onClick={onClose}>Optik çərçivələr <ChevronRight size={18} /></Link>
+            <Link href="/brands" onClick={onClose} data-testid="link-mobile-brands">Brendlər <ChevronRight size={18} /></Link>
+            <Link href="/stores" onClick={onClose} data-testid="link-mobile-stores">Mağazalar <ChevronRight size={18} /></Link>
+          </nav>
+          <div className="mobile-drawer-label mobile-drawer-label--secondary">SƏNİN ÜÇÜN</div>
+          <nav className="mobile-drawer-links" aria-label="Şəxsi keçidlər">
+            <Link href="/wishlist" onClick={onClose}>Seçilmişlər <ChevronRight size={18} /></Link>
+            <Link href="/cart" onClick={onClose}>Səbətim <ChevronRight size={18} /></Link>
+            <Link href="/seller" onClick={onClose} data-testid="link-mobile-seller"><span><BrandWord />-də sat</span><ChevronRight size={18} /></Link>
+          </nav>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   return <ErrorBoundary resetKey={location}>{children}</ErrorBoundary>;
 }
 
 function Storefront() {
+  const [location] = useLocation();
   const { data: sellerProductsData = [] } = useListProducts();
 
   const allProducts = useMemo(() => {
@@ -443,13 +525,15 @@ function Storefront() {
   const [tryOnProduct, setTryOnProduct] = useState<Product | null>(null);
   const [toast, setToast] = useState('');
   const [mobileMenu, setMobileMenu] = useState(false);
+  const closeMobileMenu = useCallback(() => setMobileMenu(false), []);
+  useEffect(() => { closeMobileMenu(); }, [location, closeMobileMenu]);
   const cartCount = cartItems.length;
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id)) { next.delete(id); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
   const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { setCartItems((current) => [...current, ...Array.from({ length: Math.min(10, Math.max(1, quantity)) }, () => product)]); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
   const removeFromCart = (id: number | string) => setCartItems((current) => { const index = current.findIndex((item) => item.id === id); return index === -1 ? current : current.filter((_, itemIndex) => itemIndex !== index); });
   const common: CommonProps = { products: allProducts, likedIds, onFavorite: toggleFavorite, onQuickView: (product: Product) => setQuickProduct(product), onTryOn: (product: Product) => setTryOnProduct(product) };
-  return <div className="app-shell"><Header cartCount={cartCount} products={allProducts} onMenu={() => setMobileMenu(!mobileMenu)} />{mobileMenu && <div style={{ position: 'fixed', zIndex: 19, top: 100, left: 0, right: 0, background: 'var(--paper)', borderBottom: '1px solid var(--line)', padding: 18 }}><div className="container" style={{ display: 'grid', gap: 14, fontSize: 13 }}><Link href="/collection" onClick={() => setMobileMenu(false)} data-testid="link-mobile-collection">Eynəklər</Link><Link href="/brands" onClick={() => setMobileMenu(false)} data-testid="link-mobile-brands">Brendlər</Link><Link href="/stores" onClick={() => setMobileMenu(false)} data-testid="link-mobile-stores">Mağazalar</Link><Link href="/seller" onClick={() => setMobileMenu(false)} data-testid="link-mobile-seller"><BrandWord />-də sat</Link></div></div>}<Switch><Route path="/collection"><Collection {...common} /></Route><Route path="/stores"><StoresPage /></Route><Route path="/brands"><BrandsPage {...common} /></Route><Route path="/seller"><SellerPage /></Route><Route path="/wishlist"><WishlistPage {...common} /></Route><Route path="/cart"><CartPage items={cartItems} onRemove={removeFromCart} onCheckout={() => showToast('Ödəniş mərhələsi hazırlanır')} /></Route><Route path="/account"><AccountPage /></Route><Route path="/vendor/:slug"><VendorPage {...common} /></Route><Route path="/product/:id"><ProductDetail products={allProducts} onAdd={addToCart} onTryOn={setTryOnProduct} onQuickView={setQuickProduct} onFavorite={toggleFavorite} likedIds={likedIds} /></Route><Route path="/"><Home {...common} /></Route><Route component={NotFound} /></Switch><MobileBottomNav onTryOn={() => setTryOnProduct(allProducts[0])} />{quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={setTryOnProduct} />}{tryOnProduct && <VirtualTryOn products={allProducts} product={tryOnProduct} onClose={() => setTryOnProduct(null)} onSelect={setTryOnProduct} onAdd={addToCart} onSave={toggleFavorite} />}{toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}</div>;
+  return <div className="app-shell"><Header cartCount={cartCount} products={allProducts} menuOpen={mobileMenu} onMenu={() => setMobileMenu((open) => !open)} />{mobileMenu && <MobileDrawer onClose={closeMobileMenu} />}<Switch><Route path="/collection"><Collection {...common} /></Route><Route path="/stores"><StoresPage /></Route><Route path="/brands"><BrandsPage {...common} /></Route><Route path="/seller"><SellerPage /></Route><Route path="/wishlist"><WishlistPage {...common} /></Route><Route path="/cart"><CartPage items={cartItems} onRemove={removeFromCart} onCheckout={() => showToast('Ödəniş mərhələsi hazırlanır')} /></Route><Route path="/account"><AccountPage /></Route><Route path="/vendor/:slug"><VendorPage {...common} /></Route><Route path="/product/:id"><ProductDetail products={allProducts} onAdd={addToCart} onTryOn={setTryOnProduct} onQuickView={setQuickProduct} onFavorite={toggleFavorite} likedIds={likedIds} /></Route><Route path="/"><Home {...common} /></Route><Route component={NotFound} /></Switch><MobileBottomNav onTryOn={() => setTryOnProduct(allProducts[0])} />{quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={setTryOnProduct} />}{tryOnProduct && <VirtualTryOn products={allProducts} product={tryOnProduct} onClose={() => setTryOnProduct(null)} onSelect={setTryOnProduct} onAdd={addToCart} onSave={toggleFavorite} />}{toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}</div>;
 }
 
 function App() {

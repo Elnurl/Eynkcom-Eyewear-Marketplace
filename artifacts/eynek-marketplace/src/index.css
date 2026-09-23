@@ -536,6 +536,32 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .footer-bottom { display: flex; justify-content: space-between; gap: 12px; margin-top: 34px; padding-top: 17px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
 .mobile-bottom-nav { display: none; }
 
+/* Mobile navigation drawer */
+.mobile-drawer-layer { position: fixed; z-index: 60; inset: 0; }
+.mobile-drawer-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(18,27,44,.56); animation: fade-in .2s ease both; }
+.mobile-drawer-panel { position: absolute; top: 0; bottom: 0; left: 0; width: min(360px, 88vw); display: flex; flex-direction: column; overflow: hidden; background: #fff; color: #192738; box-shadow: 18px 0 50px rgba(14,26,43,.18); animation: drawer-slide-in .25s cubic-bezier(.2,.75,.25,1) both; }
+.mobile-drawer-header { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 21px; border-bottom: 1px solid #edf0f4; }
+.mobile-drawer-header .brand-image { width: 156px; max-width: 100%; }
+.mobile-drawer-close { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border: 0; border-radius: 50%; background: #f3f5f7; color: #192738; }
+.mobile-drawer-close:hover { background: #e8edf1; }
+.mobile-drawer-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 22px 21px 36px; }
+.mobile-drawer-account { display: grid; grid-template-columns: 44px 1fr; gap: 11px 13px; align-items: center; margin-bottom: 28px; }
+.mobile-drawer-avatar { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid #dbe1e8; border-radius: 50%; color: #293b4b; }
+.mobile-drawer-account strong { display: block; font-size: 15px; }
+.mobile-drawer-account p { margin: 3px 0 0; color: #697582; font-size: 11px; line-height: 1.5; }
+.mobile-drawer-account-link { min-height: 44px; grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; background: #192738; color: #fff; font-size: 12px; font-weight: 700; }
+.mobile-drawer-account-link:hover { background: #324658; }
+.mobile-drawer-label { margin: 0 0 8px; color: #87929d; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.mobile-drawer-label--secondary { margin-top: 24px; }
+.mobile-drawer-links { display: grid; }
+.mobile-drawer-links a { min-height: 53px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #edf0f4; color: #192738; font-size: 14px; font-weight: 600; }
+.mobile-drawer-links a:hover { color: #526c80; }
+.mobile-drawer-links svg { flex: 0 0 auto; color: #84909b; }
+@keyframes drawer-slide-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .mobile-drawer-backdrop, .mobile-drawer-panel { animation: none; }
+}
+
 /* Editorial storefront refresh */
 body { background: #f8faff; }
 .topbar { background: rgba(248,250,255,.97); border-bottom: 0; }
@@ -703,6 +729,7 @@ body { background: #f8faff; }
 .home-page .hero-note { margin-top: 10px; }
 .hero-panel { position: relative; isolation: isolate; overflow: hidden; background: #f6f5f0; color: #142232; }
 .hero-background { position: absolute; z-index: -2; top: 0; right: 0; height: 100%; width: auto; max-width: none; pointer-events: none; }
+.hero-background--mobile { display: none; }
 .hero-panel::before { content: ''; position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(90deg, #f6f5f0 0%, rgba(246,245,240,.97) 35%, rgba(246,245,240,.15) 75%, transparent 100%); }
 .hero-kicker { border-color: #bfc2c3; }
 .home-page .hero h1 { color: #142232; font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: -.065em; }
@@ -776,6 +803,8 @@ body { background: #f8faff; }
   .hero-panel { min-height: 0; flex-direction: column; align-items: stretch; gap: 12px; padding: 28px 22px 0; border-radius: 24px; }
   .hero-content { order: 1; width: 100%; }
   .hero-background { position: relative; z-index: 0; order: 2; top: auto; right: auto; bottom: auto; display: block; width: calc(100% + 44px); height: auto; margin: 0 -22px; }
+  .hero-background--desktop { display: none; }
+  .hero-background--mobile { display: block; }
   .hero-panel::before { display: none; }
   .home-page .hero h1 { margin: 20px 0 15px; font-size: clamp(41px, 10vw, 56px); }
   .home-page .hero-actions { flex-direction: column; align-items: stretch; gap: 6px; }
