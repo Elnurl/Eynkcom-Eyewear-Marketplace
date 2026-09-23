@@ -1,1 +1,2 @@
 - [Seller product images](seller-product-images.md) — demo CRUD stays available, while App Storage writes require authenticated presigned uploads.
+- [Eyewear sample imagery](eyewear-sample-imagery.md) — transparent packshots can bake checker patterns into clear lenses; verify on white before use.

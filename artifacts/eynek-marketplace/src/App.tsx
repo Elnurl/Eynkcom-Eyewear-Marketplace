@@ -89,6 +89,9 @@ function money(value: number) {
 
 function assetUrl(path: string) {
   if (path.startsWith('/objects/')) return `/api/storage${path}`;
+  const sampleCutouts = new Set(['mimoza-02', 'sahil-11', 'nisan-07', 'xezer-air', 'luna-24', 'merdekan-03', 'iceriseher-09', 'caspian-sun']);
+  const sampleName = /^product-images\/([a-z0-9-]+)\.jpg$/.exec(path)?.[1];
+  if (sampleName && sampleCutouts.has(sampleName)) return `${import.meta.env.BASE_URL}product-images/${sampleName}-cutout.png`;
   return `${import.meta.env.BASE_URL}${path}`;
 }
 
@@ -149,7 +152,7 @@ function ProductCard({ product, liked, onFavorite, onQuickView, onTryOn }: { pro
     <article className="product-card" data-testid={`card-product-${product.id}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
       <div className={`product-image ${product.tone}`}>
         <img className={`product-photo ${hovered && product.sideImage ? 'side-view' : ''}`} src={displayImage.startsWith('data:') || displayImage.startsWith('http') ? displayImage : assetUrl(displayImage)} alt={`${product.name} — ${product.color} eynək modeli ${hovered && product.sideImage ? 'yan görünüş' : 'ön görünüş'}`} loading="lazy" />
-        <span className="product-badge"><span className="badge-light" /> VTO önizləmə</span>
+        <span className="product-badge"><span className="badge-light" /> VTO demo</span>
         <button className={`heart-button ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} seçilmişlərə əlavə et`} data-testid={`button-favorite-${product.id}`}><Heart size={23} strokeWidth={1.8} fill={liked ? 'currentColor' : 'none'} /></button>
         <div className="product-card-actions">
           <button className="quick-view" onClick={() => onQuickView(product)} data-testid={`button-quick-view-${product.id}`}>Baxış</button>
@@ -248,11 +251,19 @@ function VendorPage({ products, likedIds, onFavorite, onQuickView, onTryOn }: Co
   return <><main className="vendor-page"><div className="container"><div className="vendor-hero"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}>EYNƏK satıcısı</div><h1>{vendor.name}</h1><p>{vendor.description}</p></div><Link href="/stores" className="btn btn-secondary" data-testid="link-vendor-back">Bütün mağazalar</Link></div><div className="vendor-details"><span><MapPin size={14} /> {vendor.location}</span><span>{vendor.since}</span><span><ShoppingBag size={14} /> {vendor.count} model</span></div><section className="section" style={{ padding: '45px 0 0' }}><div className="section-head"><div><div className="eyebrow">Mağaza seçimi</div><h2 className="section-title">Bu vitrində</h2></div></div><div className="product-grid">{items.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />)}</div></section></div></main><Footer /></>;
 }
 
-function ProductDetail({ products, onAdd, onTryOn, onQuickView, onFavorite, likedIds }: { products: Product[]; onAdd: (product: Product, message?: string) => void; onTryOn: (product: Product) => void; onQuickView: (product: Product) => void; onFavorite: (id: number | string) => void; likedIds: Set<number | string> }) {
+function ProductDetail({ products, onAdd, onTryOn, onQuickView, onFavorite, likedIds }: { products: Product[]; onAdd: (product: Product, message?: string, quantity?: number) => void; onTryOn: (product: Product) => void; onQuickView: (product: Product) => void; onFavorite: (id: number | string) => void; likedIds: Set<number | string> }) {
   const { id = '1' } = useParams<{ id: string }>();
   const product = products.find((item) => String(item.id) === id) ?? products[0];
-  const related = products.filter((item) => item.id !== product.id && item.shape === product.shape).slice(0, 2);
-
+  const [quantity, setQuantity] = useState(1);
+  const [showSide, setShowSide] = useState(false);
+  useEffect(() => {
+    setQuantity(1);
+    setShowSide(false);
+  }, [id]);
+  const galleryImage = showSide && product.sideImage ? product.sideImage : product.image;
+  const related = products.filter((item) => item.id !== product.id).slice(0, 3);
+  const sizeLetter = product.size.slice(0, 1).toUpperCase();
+  const swatchColor = { coral: '#bd8170', olive: '#565b45', clear: '#8a8f97', gold: '#bea56d', sunglass: '#272a2d' }[product.frameStyle] ?? '#343840';
   const isPublicUrl = product.image.startsWith('http://') || product.image.startsWith('https://');
   const jsonLd = isPublicUrl ? {
     "@context": "https://schema.org",
@@ -260,15 +271,50 @@ function ProductDetail({ products, onAdd, onTryOn, onQuickView, onFavorite, like
     "name": product.name,
     "image": [product.image, ...(product.sideImage?.startsWith('http') ? [product.sideImage] : [])],
     "description": product.description,
-    "offers": {
-      "@type": "Offer",
-      "priceCurrency": "AZN",
-      "price": product.price,
-      "availability": "https://schema.org/InStock"
-    }
+    "offers": { "@type": "Offer", "priceCurrency": "AZN", "price": product.price, "availability": "https://schema.org/InStock" }
   } : null;
 
-  return <>{jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}<main className="detail-page"><div className="container"><div className="breadcrumbs"><Link href="/collection">Eynəklər</Link><ChevronRight size={12} /><Link href={`/vendor/${product.vendorSlug}`}>{product.vendor}</Link><ChevronRight size={12} /><span>{product.name}</span></div><div className="detail-layout"><div className={`detail-art ${product.tone}`}><img className="detail-photo" src={product.image.startsWith('data:') || product.image.startsWith('http') ? product.image : assetUrl(product.image)} alt={`${product.name} məhsul fotosu (ön)`} /><span className="art-label">{product.shape} / {product.material}</span></div><div className="detail-info"><div className="eyebrow">{product.type} · {product.shape}</div><h1>{product.name}</h1><div className="detail-price">{money(product.price)}</div><div className="detail-installment">Qiymət satıcı tərəfindən təqdim olunan nümunə inventarına əsaslanır.</div><p className="detail-copy">{product.description} Məhsulun satıcısı və ölçüləri ilə tanış olduqdan sonra səbətə əlavə edə bilərsən.</p><div className="seller-box"><span><span className="seller-avatar">{vendors.find((vendor) => vendor.slug === product.vendorSlug)?.initials || 'S'}</span><span><strong>{product.vendor}</strong><small style={{ display: 'block', color: 'var(--muted)', marginTop: 3 }}>Bakı · EYNƏK satıcısı</small></span></span><Link href={`/vendor/${product.vendorSlug}`} data-testid="link-detail-vendor">Vitrinə bax</Link></div><dl className="spec-list"><div><dt>Material</dt><dd>{product.material}</dd></div><div><dt>Ölçü</dt><dd>{product.size}</dd></div><div><dt>Rəng</dt><dd>{product.color}</dd></div><div><dt>Linza</dt><dd>{product.type === 'Gün eynəyi' ? 'Gün eynəyi linzası' : 'Optikə uyğun demo linza'}</dd></div></dl><div className="detail-actions"><button className="btn btn-blue" onClick={() => onTryOn(product)} data-testid="button-try-on-detail"><ScanFace size={15} /> Üzümdə yoxla</button><button className="btn btn-secondary" onClick={() => onAdd(product)} data-testid="button-add-cart-detail"><ShoppingBag size={15} /> Səbətə əlavə et</button></div><button className={`try-link ${likedIds.has(product.id) ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} data-testid="button-detail-favorite"><Heart size={14} fill={likedIds.has(product.id) ? 'currentColor' : 'none'} /> {likedIds.has(product.id) ? 'Seçilmişlərdədir' : 'Seçilmişlərə əlavə et'}</button></div></div><section className="section" style={{ paddingBottom: 0 }}><div className="section-head"><div><div className="eyebrow">Bənzər forma</div><h2 className="section-title">Buna da bax.</h2></div></div><div className="product-grid">{related.length ? related.map((item) => <ProductCard key={item.id} product={item} liked={likedIds.has(item.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <p className="section-copy">Bu forma üçün başqa model yoxdur.</p>}</div></section></div></main><Footer /></>;
+  return <>
+    {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />}
+    <main className="detail-page">
+      <div className="container">
+        <div className="detail-topline">
+          <Link href="/collection" className="detail-back"><ArrowRight size={13} /> Eynəklərə qayıt</Link>
+          <span className="detail-top-brand">EYNƏK<span>.</span>com</span>
+        </div>
+        <div className="detail-layout">
+          <div className="detail-gallery">
+            <div className="detail-art">
+              <img className="detail-photo" src={galleryImage.startsWith('data:') || galleryImage.startsWith('http') ? galleryImage : assetUrl(galleryImage)} alt={`${product.name} — ${showSide ? 'yan' : 'ön'} görünüş`} />
+              <button className="detail-try-on" onClick={() => onTryOn(product)} data-testid="button-try-on-detail"><ScanFace size={15} /> VTO demo önizləmə</button>
+            </div>
+            {product.sideImage && product.sideImage !== product.image && <div className="detail-gallery-dots" aria-label="Şəkil görünüşü"><button className={!showSide ? 'active' : ''} onClick={() => setShowSide(false)} aria-label="Ön görünüş" /><button className={showSide ? 'active' : ''} onClick={() => setShowSide(true)} aria-label="Yan görünüş" /></div>}
+          </div>
+          <div className="detail-info">
+            <div className="detail-heading">
+              <div><div className="eyebrow">{product.vendor.toUpperCase()} · {product.type}</div><h1>{product.name}</h1></div>
+              <strong className="detail-price">{money(product.price)}</strong>
+            </div>
+            <p className="detail-copy">{product.description}</p>
+            <Link href={`/vendor/${product.vendorSlug}`} className="detail-seller" data-testid="link-detail-vendor">
+              <span className="seller-avatar">{vendors.find((vendor) => vendor.slug === product.vendorSlug)?.initials || 'S'}</span>
+              <span><strong>{product.vendor}</strong><small>Satıcının vitrininə bax · Bakı</small></span>
+              <ArrowRight size={16} />
+            </Link>
+            <div className="detail-options">
+              <div className="detail-option"><div className="detail-option-label">ÇƏRÇİVƏ ÖLÇÜSÜ</div><div className="detail-size-row"><span className="detail-size-selected">{sizeLetter}</span><span className="detail-option-note">{product.size} · mövcud ölçü</span></div></div>
+              <div className="detail-option"><div className="detail-option-label">RƏNG</div><div className="detail-color-row"><span className="detail-color-swatch" style={{ background: swatchColor }} aria-hidden="true" /><span>{product.color}</span></div></div>
+            </div>
+            <div className="detail-quantity"><div><div className="detail-option-label">SAY</div><small>Nümunə inventar · ödəniş hazır deyil</small></div><div className="quantity-stepper"><button onClick={() => setQuantity((count) => Math.max(1, count - 1))} aria-label="Sayı azalt">−</button><span aria-live="polite">{quantity}</span><button onClick={() => setQuantity((count) => Math.min(10, count + 1))} aria-label="Sayı artır">+</button></div></div>
+            <div className="detail-purchase"><button className={`detail-favorite ${likedIds.has(product.id) ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label="Seçilmişlərə əlavə et" data-testid="button-detail-favorite"><Heart size={19} fill={likedIds.has(product.id) ? 'currentColor' : 'none'} /></button><button className="detail-add" onClick={() => onAdd(product, `${quantity} ədəd ${product.name} səbətə əlavə edildi`, quantity)} data-testid="button-add-cart-detail"><ShoppingBag size={17} /> Səbətə əlavə et · {money(product.price * quantity)}</button></div>
+            <p className="detail-disclaimer">Sifariş və ödəniş mərhələsi hazırlanır. Bu məhsullar nümunə inventardır.</p>
+          </div>
+        </div>
+        <section className="detail-related"><div className="section-head"><h2>Digər modellər</h2><Link href="/collection" className="home-count">Hamısına bax <ArrowRight size={14} /></Link></div><div className="product-grid">{related.map((item) => <ProductCard key={item.id} product={item} liked={likedIds.has(item.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />)}</div></section>
+      </div>
+    </main>
+    <Footer />
+  </>;
 }
 
 function QuickView({ product, onClose, onAdd, onTryOn }: { product: Product; onClose: () => void; onAdd: (product: Product, message?: string) => void; onTryOn: (product: Product) => void }) {
@@ -361,7 +407,7 @@ function Storefront() {
   const cartCount = cartItems.length;
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id)) { next.delete(id); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
-  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`) => { setCartItems((current) => [...current, product]); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
+  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { setCartItems((current) => [...current, ...Array.from({ length: Math.min(10, Math.max(1, quantity)) }, () => product)]); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
   const removeFromCart = (id: number | string) => setCartItems((current) => { const index = current.findIndex((item) => item.id === id); return index === -1 ? current : current.filter((_, itemIndex) => itemIndex !== index); });
   const common: CommonProps = { products: allProducts, likedIds, onFavorite: toggleFavorite, onQuickView: (product: Product) => setQuickProduct(product), onTryOn: (product: Product) => setTryOnProduct(product) };
   return <div className="app-shell"><Header cartCount={cartCount} onMenu={() => setMobileMenu(!mobileMenu)} />{mobileMenu && <div style={{ position: 'fixed', zIndex: 19, top: 100, left: 0, right: 0, background: 'var(--paper)', borderBottom: '1px solid var(--line)', padding: 18 }}><div className="container" style={{ display: 'grid', gap: 14, fontSize: 13 }}><Link href="/collection" onClick={() => setMobileMenu(false)} data-testid="link-mobile-collection">Eynəklər</Link><Link href="/brands" onClick={() => setMobileMenu(false)} data-testid="link-mobile-brands">Brendlər</Link><Link href="/stores" onClick={() => setMobileMenu(false)} data-testid="link-mobile-stores">Mağazalar</Link><Link href="/seller" onClick={() => setMobileMenu(false)} data-testid="link-mobile-seller">EYNƏK-də sat</Link></div></div>}<Switch><Route path="/collection"><Collection {...common} /></Route><Route path="/stores"><StoresPage /></Route><Route path="/brands"><BrandsPage {...common} /></Route><Route path="/seller"><SellerPage /></Route><Route path="/wishlist"><WishlistPage {...common} /></Route><Route path="/cart"><CartPage items={cartItems} onRemove={removeFromCart} onCheckout={() => showToast('Ödəniş mərhələsi hazırlanır')} /></Route><Route path="/account"><AccountPage /></Route><Route path="/vendor/:slug"><VendorPage {...common} /></Route><Route path="/product/:id"><ProductDetail products={allProducts} onAdd={addToCart} onTryOn={setTryOnProduct} onQuickView={setQuickProduct} onFavorite={toggleFavorite} likedIds={likedIds} /></Route><Route path="/"><Home {...common} /></Route><Route component={NotFound} /></Switch><MobileBottomNav onTryOn={() => setTryOnProduct(allProducts[0])} />{quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={setTryOnProduct} />}{tryOnProduct && <VirtualTryOn products={allProducts} product={tryOnProduct} onClose={() => setTryOnProduct(null)} onSelect={setTryOnProduct} onAdd={addToCart} onSave={toggleFavorite} />}{toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}</div>;
