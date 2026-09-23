@@ -186,7 +186,6 @@ function Home({ products, onQuickView, likedIds, onFavorite, onTryOn }: CommonPr
             <img className="hero-background hero-background--desktop" src={`${import.meta.env.BASE_URL}hero-eyewear.webp`} alt="" aria-hidden="true" />
             <img className="hero-background hero-background--mobile" src={`${import.meta.env.BASE_URL}hero-eyewear-mobile.webp`} alt="" aria-hidden="true" />
             <div className="hero-content">
-              <div className="hero-kicker">YENİ BAXIŞ</div>
               <h1>Sənə yaraşan çərçivəni tap.</h1>
               <p className="hero-sub">Bəyəndiyini seç, almazdan əvvəl yoxla.</p>
               <div className="hero-actions">
