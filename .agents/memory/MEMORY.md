@@ -2,3 +2,4 @@
 - [Eyewear sample imagery](eyewear-sample-imagery.md) — transparent packshots can bake checker patterns into clear lenses; verify on white before use.
 - [Managed workflow port conflicts](managed-workflow-port-conflicts.md) — a failed restart can leave an older server holding the port; verify listeners before retrying.
 - [Wouter query routing](wouter-query-routing.md) — query strings need their own reactive hook; pathname-only location misses search changes.
+- [Marketplace seller model](marketplace-seller-model.md) — optical shops sell the goods; EYNƏK.com earns a service fee rather than selling inventory.
