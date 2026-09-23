@@ -6,3 +6,4 @@
 - [Marketplace launch area](marketplace-launch-area.md) — first real orders should be limited to Bakı and Abşeron, not nationwide.
 - [Marketplace launch catalog](marketplace-launch-catalog.md) — launch with sunglasses and optical frames only; no prescription-lens configuration.
 - [Marketplace returns](marketplace-returns.md) — EYNƏK.com receives buyer return requests first and coordinates with the selling shop.
+- [Marketplace order confirmation](marketplace-order-confirmation.md) — each selling shop must confirm availability after an order is placed.
