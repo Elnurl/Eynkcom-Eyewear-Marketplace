@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { BrandLogo } from '@/components/brand-logo';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
@@ -111,7 +112,7 @@ function Header({ cartCount, onMenu }: { cartCount: number; onMenu: () => void }
       <header className="topbar">
         <div className="container nav">
           <button className="icon-button mobile-menu" onClick={onMenu} aria-label="Menyunu aç" data-testid="button-menu"><Menu size={19} /></button>
-          <Link href="/" className="brand" data-testid="link-brand"><span className="brand-word">EYNƏK<span className="brand-dot">.</span>com</span></Link>
+          <Link href="/" className="brand" data-testid="link-brand"><BrandLogo /></Link>
           <nav className="nav-links" aria-label="Əsas menyu">
             <Link href="/collection" className={location.startsWith('/collection') ? 'active' : ''} data-testid="link-collection">Kəşf et</Link>
             <Link href="/collection?type=sunglasses" data-testid="link-sunglasses">Gün eynəkləri</Link>
@@ -135,7 +136,7 @@ function Footer() {
   return (
     <footer className="footer">
       <div className="container footer-grid">
-        <div><div className="brand"><span className="brand-word">EYNƏK<span className="brand-dot">.</span>com</span></div><p>Bütün eynəklər. Bir marketplace. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p></div>
+        <div><div className="brand"><BrandLogo /></div><p>Bütün eynəklər. Bir marketplace. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p></div>
         <div><h3>Kəşf et</h3><Link href="/collection">Eynəklər</Link><Link href="/brands">Brendlər</Link><Link href="/stores">Mağazalar</Link></div>
         <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/collection">Çatdırılma məlumatı</Link></div>
         <div><h3>Satıcılar üçün</h3><Link href="/seller">EYNƏK-də sat</Link><a href="mailto:sat@eynek.com">Bizimlə əlaqə</a><a href="#support">Dəstək</a></div>
@@ -314,7 +315,7 @@ function ProductDetail({ products, onAdd, onTryOn, onQuickView, onFavorite, like
       <div className="container">
         <div className="detail-topline">
           <Link href="/collection" className="detail-back"><ArrowRight size={13} /> Eynəklərə qayıt</Link>
-          <span className="detail-top-brand">EYNƏK<span>.</span>com</span>
+          <BrandLogo className="detail-brand-image" />
         </div>
         <div className="detail-layout">
           <div className="detail-gallery">

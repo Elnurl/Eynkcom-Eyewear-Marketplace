@@ -8,6 +8,7 @@ import {
   Package, LayoutDashboard, X, Check, AlertCircle
 } from 'lucide-react';
 import { useDemoSeller, type SellerProduct, type SellerProductInput } from '@/hooks/use-demo-seller';
+import { BrandLogo } from '@/components/brand-logo';
 
 function sellerImageUrl(image: string) {
   if (image.startsWith('data:') || image.startsWith('http')) return image;
@@ -81,7 +82,7 @@ export default function SellerPanel() {
       <aside className="seller-sidebar">
         <div className="seller-sidebar-header">
           <Link href="/" className="brand" data-testid="link-brand-panel">
-            <span className="brand-word">EYNƏK<span className="brand-dot">.</span>com</span>
+            <BrandLogo />
           </Link>
           <span className="seller-badge">Satıcı Paneli</span>
         </div>

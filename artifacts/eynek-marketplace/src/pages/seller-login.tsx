@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from 'react';
 import { useLocation, Link } from 'wouter';
 import { ArrowRight, Store, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useDemoSeller } from '@/hooks/use-demo-seller';
+import { BrandLogo } from '@/components/brand-logo';
 
 export default function SellerLogin() {
   const [email, setEmail] = useState('');
@@ -38,7 +39,7 @@ export default function SellerLogin() {
       <div className="seller-auth-container">
         <div className="seller-auth-header">
           <Link href="/" className="brand" data-testid="link-brand-login">
-            <span className="brand-word">EYNƏK<span className="brand-dot">.</span>com</span>
+            <BrandLogo />
           </Link>
           <div className="eyebrow" style={{ marginTop: '30px' }}>Satıcı Paneli</div>
           <h1>Hesaba daxil ol</h1>
