@@ -665,6 +665,24 @@ body { background: #f8faff; }
 .detail-related .product-card-actions { bottom: 47px; opacity: 0; }
 .detail-related .product-card:hover .product-card-actions, .detail-related .product-card:focus-within .product-card-actions { opacity: 1; }
 
+/* Reference-inspired storefront rhythm while retaining EYNƏK's own catalog data. */
+.container { width: min(1216px, calc(100% - 64px)); }
+.hero-panel { min-height: 376px; padding: 44px 48px; }
+.home-page .hero h1 { max-width: 520px; margin: 17px 0 9px; font-size: clamp(42px, 4.3vw, 60px); line-height: 1.02; }
+.home-page .hero-sub { margin-bottom: 12px; font-size: 13px; line-height: 1.5; }
+.hero-cta { min-height: 44px; }
+.home-page .hero-note { margin-top: 10px; }
+.home-discover .product-image,
+.home-discover .product-image[class*="tone-"] {
+  height: 335px;
+  background: radial-gradient(ellipse at 50% 70%, #f2f6fc 0%, #fff 65%);
+}
+.product-label { display: block; color: #717783; font-size: 10px; font-weight: 800; letter-spacing: .025em; text-transform: uppercase; }
+.product-card .product-name { margin: 4px 0 3px; }
+.product-card .product-price { display: block; font-size: 14px; }
+.product-card .product-meta { margin-top: 6px; }
+.home-discover .product-vendor { font-size: 10px; font-weight: 600; text-transform: none; }
+
 @media (max-width: 1150px) {
   .nav-search { min-width: 44px; width: 44px; justify-content: center; padding: 0; }
   .nav-search span { display: none; }
