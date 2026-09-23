@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, Link } from 'wouter';
-import { ArrowRight, Clock3, Search, Store, X } from 'lucide-react';
+import { ArrowRight, History, Search, Store, X } from 'lucide-react';
 
 export type SearchProduct = {
   id: number | string;
@@ -42,6 +42,8 @@ export function HeaderSearch({ products, stores }: { products: SearchProduct[]; 
   useEffect(() => {
     if (!open) return;
     inputRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const onPointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
@@ -54,6 +56,7 @@ export function HeaderSearch({ products, stores }: { products: SearchProduct[]; 
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     return () => {
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
@@ -84,6 +87,7 @@ export function HeaderSearch({ products, stores }: { products: SearchProduct[]; 
   const featured: SearchItem[] = [
     ...categories,
     ...stores.slice(0, 2).map((store) => ({ label: store.name, description: 'Optika mağazası', href: `/vendor/${store.slug}`, store: true })),
+    ...products.slice(0, 2).map((product) => ({ label: product.name, description: `${product.type} · ${product.vendor}`, href: `/product/${product.id}`, imageUrl: product.imageUrl })),
   ];
   const normalized = term.trim().toLocaleLowerCase('az');
   const results: SearchItem[] = normalized
@@ -100,16 +104,18 @@ export function HeaderSearch({ products, stores }: { products: SearchProduct[]; 
       <button ref={triggerRef} type="button" className="nav-search" aria-label="Eynək və mağaza axtar" aria-expanded={open} aria-controls="header-search-panel" onClick={() => setOpen((current) => !current)} data-testid="link-search">
         <Search size={17} /><span>Eynək və mağaza axtar</span>
       </button>
-      {open && <div className="header-search-panel" id="header-search-panel" role="dialog" aria-label="Eynək və mağaza axtarışı" data-testid="header-search-dropdown">
+      {open && <>
+        <button type="button" className="header-search-backdrop" onClick={() => setOpen(false)} aria-label="Axtarışı bağla" tabIndex={-1} />
+        <div className={`header-search-panel${normalized ? ' has-query' : ''}`} id="header-search-panel" role="dialog" aria-label="Eynək və mağaza axtarışı" data-testid="header-search-dropdown">
         <form className="header-search-form" role="search" onSubmit={(event) => { event.preventDefault(); submit(term); }}>
-          <Search size={20} aria-hidden="true" />
+          <Search size={26} aria-hidden="true" />
           <input ref={inputRef} type="search" value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Nə axtarırsan?" aria-label="Eynək, model və ya mağaza axtar" data-testid="input-header-search" />
           <button type="button" className="header-search-close" onClick={() => { setOpen(false); triggerRef.current?.focus(); }} aria-label="Axtarışı bağla"><X size={18} /></button>
         </form>
         <div className="header-search-content">
           {!normalized && <section className="header-search-section">
             <h3>Son axtarışlar</h3>
-            {recent.length ? recent.map((value) => <Link key={value} href={searchHref(value)} className="header-search-item" onClick={() => { remember(value); setOpen(false); }}><span className="header-search-item-icon"><Clock3 size={19} /></span><span>{value}</span></Link>) : <p className="header-search-empty-recent">Hələ axtarış edilməyib.</p>}
+            {recent.length ? recent.map((value) => <Link key={value} href={searchHref(value)} className="header-search-item" onClick={() => { remember(value); setOpen(false); }}><span className="header-search-item-icon header-search-item-icon--recent"><History size={27} /></span><span>{value}</span></Link>) : <p className="header-search-empty-recent">Hələ axtarış edilməyib.</p>}
           </section>}
           <section className="header-search-section">
             <h3>{normalized ? 'Uyğun nəticələr' : 'Kəşf et'}</h3>
@@ -121,7 +127,8 @@ export function HeaderSearch({ products, stores }: { products: SearchProduct[]; 
           </section>
           {normalized && <button type="button" className="header-search-all" onClick={() => submit(term)}>Bütün modellərdə “{term.trim()}” axtar <ArrowRight size={15} /></button>}
         </div>
-      </div>}
+        </div>
+      </>}
     </div>
   );
 }
