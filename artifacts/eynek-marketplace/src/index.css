@@ -151,7 +151,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .feature-card .btn-secondary:hover { background: rgba(255,255,255,.1); }
 .feature-card:last-child .btn { background: var(--white); color: var(--navy); border-color: var(--white); }
 .seller-banner { display: flex; align-items: center; justify-content: space-between; gap: 25px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 28px 0; }
-.seller-banner h2 { margin: 7px 0 0; color: var(--navy); font-size: 27px; letter-spacing: -.05em; }
+.seller-banner h2 { margin: 0; color: var(--navy); font-size: 27px; letter-spacing: -.05em; }
+.banner-brand-word { white-space: nowrap; }
+.banner-brand-word img { display: inline-block; width: auto; height: .96em; vertical-align: -.12em; }
 
 .collection-page, .directory-page, .account-page, .cart-page, .seller-page { padding: 53px 0 88px; }
 .collection-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding-bottom: 32px; }
@@ -533,7 +535,10 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 /* Editorial storefront refresh */
 body { background: #f8faff; }
 .topbar { background: rgba(248,250,255,.97); border-bottom: 0; }
-.nav { min-height: 96px; gap: 27px; }
+.nav { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 27px; row-gap: 10px; padding: 18px 0 14px; }
+.nav > .brand { grid-column: 1 / -1; grid-row: 1; width: max-content; }
+.nav > .nav-links { grid-column: 1; grid-row: 2; }
+.nav > .nav-actions { grid-column: 2; grid-row: 2; margin-left: 0; }
 .seller-auth-header .brand-image { width: 210px; }
 .nav-links { gap: 8px; color: #191b20; font-weight: 700; }
 .nav-links a { min-height: 38px; border: 1px solid transparent; border-radius: 999px; padding: 0 13px; }
@@ -722,7 +727,7 @@ body { background: #f8faff; }
   .detail-layout { grid-template-columns: 1fr; gap: 25px; }
   .detail-gallery { max-width: 700px; width: 100%; margin: auto; }
   .detail-art { height: 430px; }
-  .nav { min-height: 76px; }
+  .nav { min-height: 76px; display: flex; padding: 0; }
   .hero-panel { align-items: flex-start; padding: 38px; }
   .home-discover .product-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .container { width: min(100% - 42px, 760px); }
