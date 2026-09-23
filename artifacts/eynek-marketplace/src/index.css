@@ -139,19 +139,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .shape-card[data-shape="aviator"] i { border-radius: 50% 50% 42% 42%; height: 29px; }
 .shape-card p { margin: 0; text-align: center; font-size: 11px; font-weight: 700; }
 .feature-layout { display: grid; grid-template-columns: 1.18fr .82fr; gap: 15px; }
-.feature-card { min-height: 300px; padding: 31px; border: 1px solid var(--line); border-radius: 12px; position: relative; overflow: hidden; background: var(--surface); }
-.feature-card:first-child { background: var(--navy); color: var(--white); }
+.feature-card { min-height: 300px; padding: 31px; border: 1px solid var(--line); border-radius: 18px; position: relative; isolation: isolate; overflow: hidden; background: #f5f3ee; }
+.feature-card--dark { background: #1b203d; border-color: #1b203d; color: var(--white); }
+.feature-card--light { color: #171a24; }
+.feature-card-photo { position: absolute; z-index: -2; top: 0; right: 0; width: 68%; height: 100%; object-fit: cover; }
+.feature-card::before { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #1b203d 0%, #1b203d 35%, rgba(27,32,61,.88) 48%, rgba(27,32,61,0) 100%); }
+.feature-card--light::before { background: linear-gradient(90deg, #f5f3ee 0%, #f5f3ee 35%, rgba(245,243,238,.89) 50%, rgba(245,243,238,0) 100%); }
+.feature-card--sunglasses .feature-card-photo { object-position: center 30%; }
+.feature-card--virtual .feature-card-photo { width: 73%; object-position: 50% center; }
+.feature-card--virtual::before { background: linear-gradient(90deg, #1b203d 0%, #1b203d 34%, rgba(27,32,61,.64) 49%, rgba(27,32,61,0) 76%); }
+.feature-card--store .feature-card-photo { object-position: 65% center; }
+.feature-card--store h3 { max-width: 270px; }
 .feature-card h3 { max-width: 360px; margin: 13px 0 10px; font-size: 30px; line-height: 1.04; letter-spacing: -.06em; }
-.feature-card p { max-width: 340px; margin: 0; color: #B7B9C9; font-size: 12px; line-height: 1.65; }
-.feature-card .btn { position: absolute; bottom: 28px; left: 31px; }
+.feature-card p { max-width: 290px; margin: 0; font-size: 12px; line-height: 1.65; }
+.feature-card--dark p { color: #d5d7e4; }
+.feature-card--dark .eyebrow { color: #b7b9c9; }
+.feature-card--light p { color: #43454e; }
+.feature-card .btn { position: absolute; bottom: 28px; left: 31px; z-index: 1; }
 .feature-card .btn-secondary { border-color: rgba(255,255,255,.32); color: var(--white); }
 .feature-card .btn-secondary:hover { background: rgba(255,255,255,.1); }
 .feature-card:last-child .btn { background: var(--white); color: var(--navy); border-color: var(--white); }
-.mini-frame { position: absolute; right: 38px; bottom: 40px; transform: rotate(-12deg); }
-.mini-frame .shape-glasses { width: 170px; gap: 9px; }
-.mini-frame .shape-glasses i { width: 77px; height: 51px; border-width: 6px; border-color: #BFC5F1; }
-.feature-card:last-child .mini-frame { right: 24px; bottom: 31px; transform: rotate(10deg); }
-.feature-card:last-child .mini-frame .shape-glasses i { border-color: var(--blue); }
 .seller-banner { display: flex; align-items: center; justify-content: space-between; gap: 25px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 28px 0; }
 .seller-banner h2 { margin: 7px 0 0; color: var(--navy); font-size: 27px; letter-spacing: -.05em; }
 
@@ -768,7 +775,14 @@ body { background: #f8faff; }
   .section-head { align-items: start; flex-direction: column; }
   .shape-row { grid-template-columns: repeat(2, 1fr); }
   .feature-layout { grid-template-columns: 1fr; }
-  .feature-card { min-height: 265px; }
+  .feature-card { min-height: 300px; padding: 152px 22px 24px; }
+  .feature-card-photo, .feature-card--virtual .feature-card-photo { top: 0; right: 0; width: 100%; height: 135px; }
+  .feature-card--sunglasses .feature-card-photo { object-position: center 10%; }
+  .feature-card::before, .feature-card--light::before { display: none; }
+  .feature-card h3 { max-width: none; margin: 8px 0 6px; font-size: 25px; }
+  .feature-card p { max-width: none; font-size: 11px; line-height: 1.5; }
+  .feature-card--virtual, .feature-card--store { min-height: 390px; }
+  .feature-card .btn { left: 22px; bottom: 18px; }
   .seller-banner { align-items: start; flex-direction: column; }
   .collection-page, .directory-page, .account-page, .cart-page, .seller-page { padding: 32px 0 65px; }
   .collection-intro, .directory-header { align-items: start; flex-direction: column; }
