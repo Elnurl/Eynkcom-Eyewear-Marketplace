@@ -7,6 +7,8 @@ Optical shops, not EYNƏK.com, sell the eyewear. EYNƏK.com provides the marketp
 
 At launch, customers should be able to pay online by card or when receiving the item. For online card payments, the owner wants funds to go first to EYNƏK.com and then be settled to the selling optical shop. This is a desired operating model, not confirmation that an acquiring provider or legal structure permits it.
 
+Customers should be able to buy from several optical shops in one checkout, with fulfillment, delivery charges, and seller settlement separated by shop (Birmarket-like marketplace experience).
+
 **Why:** The owner explicitly distinguished EYNƏK.com's service role from the shops' sales role and approved a low-friction commission-only pilot to avoid inflating product prices while attracting shops.
 
-**How to apply:** Design seller, checkout, and order flows around independent shops as sellers, offering online and pay-on-receipt options. Calculate pilot commission from successfully delivered, non-returned sales, not orders merely placed or paid. For online payments, plan reconciliation and settlement from EYNƏK.com to shops, but validate acquiring, legal, tax, refund, and payout requirements before processing live funds. Do not infer that EYNƏK.com owns the goods solely because it receives the payment.
+**How to apply:** Design seller, checkout, and order flows around independent shops as sellers, offering online and pay-on-receipt options. A multi-shop checkout must still retain distinct shop-level fulfillments, delivery fees, returns, and settlement records. Calculate pilot commission from successfully delivered, non-returned sales, not orders merely placed or paid. For online payments, plan reconciliation and settlement from EYNƏK.com to shops, but validate acquiring, legal, tax, refund, and payout requirements before processing live funds. Do not infer that EYNƏK.com owns the goods solely because it receives the payment.
