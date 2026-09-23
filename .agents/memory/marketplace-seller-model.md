@@ -5,8 +5,8 @@ description: The agreed commercial role of EYNƏK.com relative to optical shops.
 
 Optical shops, not EYNƏK.com, sell the eyewear. EYNƏK.com provides the marketplace service. For the initial 2–3 month pilot, shops pay no monthly platform fee; EYNƏK.com earns 5% only on delivered sales that are not returned. Revisit pricing using actual sales, seller margins, and operating costs after the pilot.
 
-At launch, customers should be able to pay online by card or when receiving the item. The recipient of online payments has not yet been decided.
+At launch, customers should be able to pay online by card or when receiving the item. For online card payments, the owner wants funds to go first to EYNƏK.com and then be settled to the selling optical shop. This is a desired operating model, not confirmation that an acquiring provider or legal structure permits it.
 
 **Why:** The owner explicitly distinguished EYNƏK.com's service role from the shops' sales role and approved a low-friction commission-only pilot to avoid inflating product prices while attracting shops.
 
-**How to apply:** Design seller, checkout, and order flows around independent shops as sellers, offering online and pay-on-receipt options. Calculate pilot commission from successfully delivered, non-returned sales, not orders merely placed or paid. Do not assume EYNƏK.com owns the merchandise or is the merchant of record. Confirm who receives customer payments before integrating payments or writing commercial terms.
+**How to apply:** Design seller, checkout, and order flows around independent shops as sellers, offering online and pay-on-receipt options. Calculate pilot commission from successfully delivered, non-returned sales, not orders merely placed or paid. For online payments, plan reconciliation and settlement from EYNƏK.com to shops, but validate acquiring, legal, tax, refund, and payout requirements before processing live funds. Do not infer that EYNƏK.com owns the goods solely because it receives the payment.
