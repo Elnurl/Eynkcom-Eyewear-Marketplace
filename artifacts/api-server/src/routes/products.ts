@@ -18,6 +18,7 @@ import {
 } from "@workspace/api-zod";
 import { db, sellerProductsTable, sellerStoresTable } from "@workspace/db";
 import { requireMarketplaceAdmin, requireUserEmail } from "./access";
+import { cleanupReplacedImages, imageBelongsToSeller, isUploadedImage } from "../lib/productImages";
 
 const router: IRouter = Router();
 
@@ -29,8 +30,20 @@ function serializeSellerProduct(product: typeof sellerProductsTable.$inferSelect
   };
 }
 
-function containsInlineImage(value: string | undefined): boolean {
-  return value?.startsWith("data:") ?? false;
+async function validImages(
+  front: string | undefined,
+  side: string | undefined,
+  sellerId: string,
+  previous?: { frontImage: string; sideImage: string },
+) {
+  for (const [path, old] of [[front, previous?.frontImage], [side, previous?.sideImage]]) {
+    if (!path) continue;
+    if (path === old) continue;
+    if (isUploadedImage(path) && path !== old && !(await imageBelongsToSeller(path, sellerId))) return false;
+    if (path.startsWith("/objects/") && !/^\/objects\/uploads\/[a-f0-9-]{36}$/.test(path)) return false;
+    if (!isUploadedImage(path) && !/^product-images\/[a-z0-9-]+\.jpg$/.test(path)) return false;
+  }
+  return true;
 }
 
 async function findApprovedStore(email: string) {
@@ -113,9 +126,9 @@ router.post("/seller/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Məhsul məlumatları düzgün deyil." });
     return;
   }
-  if (containsInlineImage(parsed.data.frontImage) || containsInlineImage(parsed.data.sideImage)) {
+  if (!(await validImages(parsed.data.frontImage, parsed.data.sideImage, store.id))) {
     res.status(400).json({
-      error: "Şəkillər database-ə base64 kimi yazılmır. Public şəkil yolu istifadə edin.",
+      error: "Şəkil yolu düzgün deyil və ya bu mağazaya məxsus deyil.",
     });
     return;
   }
@@ -149,9 +162,16 @@ router.patch("/seller/products/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: "Məhsul yeniləməsi düzgün deyil." });
     return;
   }
-  if (containsInlineImage(parsed.data.frontImage) || containsInlineImage(parsed.data.sideImage)) {
+  const [existing] = await db.select().from(sellerProductsTable)
+    .where(and(eq(sellerProductsTable.id, params.data.id), eq(sellerProductsTable.sellerId, store.id)))
+    .limit(1);
+  if (!existing) {
+    res.status(404).json({ error: "Məhsul tapılmadı." });
+    return;
+  }
+  if (!(await validImages(parsed.data.frontImage, parsed.data.sideImage, store.id, existing))) {
     res.status(400).json({
-      error: "Şəkillər database-ə base64 kimi yazılmır. Public şəkil yolu istifadə edin.",
+      error: "Şəkil yolu düzgün deyil və ya bu mağazaya məxsus deyil.",
     });
     return;
   }
@@ -173,6 +193,9 @@ router.patch("/seller/products/:id", async (req, res): Promise<void> => {
   }
 
   req.log.info({ productId: product.id }, "Seller product updated");
+  await cleanupReplacedImages(
+    [existing.frontImage, existing.sideImage], [product.frontImage, product.sideImage], store.id,
+  );
   res.json(UpdateSellerProductResponse.parse(serializeSellerProduct(product)));
 });
 
@@ -193,12 +216,13 @@ router.delete("/seller/products/:id", async (req, res): Promise<void> => {
   const [product] = await db
     .delete(sellerProductsTable)
     .where(and(eq(sellerProductsTable.id, params.data.id), eq(sellerProductsTable.sellerId, store.id)))
-    .returning({ id: sellerProductsTable.id });
+    .returning({ id: sellerProductsTable.id, frontImage: sellerProductsTable.frontImage, sideImage: sellerProductsTable.sideImage });
   if (!product) {
     res.status(404).json({ error: "Məhsul tapılmadı." });
     return;
   }
   req.log.info({ productId: product.id }, "Seller product deleted");
+  await cleanupReplacedImages([product.frontImage, product.sideImage], [], store.id);
   res.sendStatus(204);
 });
 

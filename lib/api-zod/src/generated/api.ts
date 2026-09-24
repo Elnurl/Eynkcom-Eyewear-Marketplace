@@ -1085,6 +1085,19 @@ export const CompleteUploadResponse = zod.object({
 
 
 /**
+ * @summary Discard an unused image owned by the authenticated seller
+ */
+export const discardUploadBodyObjectPathRegExp = new RegExp('^/objects/uploads/[A-Za-z0-9-]+$');
+
+
+export const DiscardUploadBody = zod.object({
+  "objectPath": zod.string().regex(discardUploadBodyObjectPathRegExp)
+})
+
+export const DiscardUploadResponse = zod.void()
+
+
+/**
  * @summary Serve a public storage asset
  */
 export const GetPublicObjectParams = zod.object({

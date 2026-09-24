@@ -1,10 +1,10 @@
 ---
-name: Seller product image persistence
-description: Why product records store image paths and real seller uploads remain gated by authentication and App Storage.
+name: Seller product image ownership
+description: Why product image writes must be tied to the approved shop and verified before database references or deletion.
 ---
 
-Seller product records store public sample paths or App Storage `/objects/...` paths, but never base64 image data or file bytes in PostgreSQL.
+Seller product records store sample paths or App Storage object paths, never base64 bytes. Signed uploads need an ownership record tied to the approved shop and account before completion or product assignment.
 
-**Why:** The seller login remains intentionally demo-only, while App Storage write URLs require a separate authenticated browser session. This preserves the demo while preventing anonymous callers from minting upload URLs.
+**Why:** A signed URL by itself does not prove who requested it; authenticating only the completion request lets another signed-in account claim an object path. Metadata changes and storage deletion must not operate on another shop's object.
 
-**How to apply:** Keep metadata CRUD usable with sample paths. For new files, require authenticated presigned uploads, finalize owner/public ACL metadata, and save only the returned object path.
+**How to apply:** Keep sample path CRUD working. For new files, check the approved shop, issued upload ownership, finalized ACL, and live product references before replacing or deleting an object.

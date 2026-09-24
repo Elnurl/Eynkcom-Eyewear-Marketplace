@@ -20,5 +20,6 @@
 export * from "./auth";
 export * from "./seller-applications";
 export * from "./seller-products";
+export * from "./product-image-uploads";
 export * from "./seller-stores";
 export * from "./marketplace-orders";

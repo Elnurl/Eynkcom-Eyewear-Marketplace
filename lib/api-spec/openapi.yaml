@@ -712,6 +712,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /storage/uploads/discard:
+    post:
+      tags: [Storage]
+      operationId: discardUpload
+      summary: Discard an unused image owned by the authenticated seller
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadCompleteRequest"
+      responses:
+        "204":
+          description: Unused upload removed; referenced images are retained
+        "400":
+          description: Invalid object path
+        "401":
+          description: Authentication required
+        "403":
+          description: Image does not belong to seller
+        "500":
+          description: Image could not be removed
   /storage/public-objects/{filePath}:
     get:
       tags: [Storage]

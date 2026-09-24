@@ -1,4 +1,4 @@
-- [Seller product images](seller-product-images.md) — demo CRUD stays available, while App Storage writes require authenticated presigned uploads.
+- [Seller product images](seller-product-images.md) — approved shops need ownership-verified uploads before assigning or deleting stored images.
 - [Eyewear sample imagery](eyewear-sample-imagery.md) — transparent packshots can bake checker patterns into clear lenses; verify on white before use.
 - [Managed workflow port conflicts](managed-workflow-port-conflicts.md) — a failed restart can leave an older server holding the port; verify listeners before retrying.
 - [Wouter query routing](wouter-query-routing.md) — query strings need their own reactive hook; pathname-only location misses search changes.

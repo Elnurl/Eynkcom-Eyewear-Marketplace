@@ -1,6 +1,6 @@
 import { useState, useRef, FormEvent, useMemo, ChangeEvent, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
-import { completeUpload, requestUploadUrl } from '@workspace/api-client-react';
+import { completeUpload, discardUpload, requestUploadUrl } from '@workspace/api-client-react';
 import { useAuth } from '@workspace/replit-auth-web';
 import { 
   LogOut, Plus, Search, MoreVertical, Edit2, Trash2, 
@@ -383,7 +383,6 @@ export default function SellerPanel() {
             } else {
               await addProduct(data);
             }
-            closeForm();
           }}
         />
       )}
@@ -424,9 +423,28 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
   const [sideImageError, setSideImageError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const pendingUploads = useRef(new Set<string>());
 
   const frontInputRef = useRef<HTMLInputElement>(null);
   const sideInputRef = useRef<HTMLInputElement>(null);
+
+  const discardPending = async (keep: string[] = []) => {
+    for (const path of pendingUploads.current) {
+      if (keep.includes(path)) continue;
+      try {
+        await discardUpload({ objectPath: path });
+        pendingUploads.current.delete(path);
+      } catch {
+        // The server retains ownership records for a later cleanup attempt.
+      }
+    }
+  };
+
+  const closeForm = async () => {
+    if (isImageUploading || isSaving) return;
+    await discardPending();
+    onClose();
+  };
 
   const handleChange = (field: keyof typeof formData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -474,12 +492,14 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
       const result = await validateImage(file);
       if (result.valid) {
         setIsImageUploading(true);
+        let uploadedPath: string | undefined;
         try {
           const upload = await requestUploadUrl({
             name: file.name,
             size: file.size,
             contentType: file.type as 'image/jpeg' | 'image/png',
           });
+          uploadedPath = upload.objectPath;
           const uploadResponse = await fetch(upload.uploadURL, {
             method: 'PUT',
             headers: { 'Content-Type': file.type },
@@ -488,10 +508,14 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
           if (!uploadResponse.ok) throw new Error('Storage upload failed');
 
           const completed = await completeUpload({ objectPath: upload.objectPath });
+          pendingUploads.current.add(completed.objectPath);
           setFormData(prev => ({ ...prev, [type]: completed.objectPath }));
           if (type === 'frontImage') setFrontImageError('');
           else setSideImageError('');
         } catch {
+          if (uploadedPath) {
+            try { await discardUpload({ objectPath: uploadedPath }); } catch { /* The upload may not exist yet. */ }
+          }
           const message = 'Şəkil yüklənmədi. Yenidən cəhd edin.';
           if (type === 'frontImage') setFrontImageError(message);
           else setSideImageError(message);
@@ -531,6 +555,8 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
     if (formData.frontImage && formData.sideImage && !frontImageError && !sideImageError) {
       try {
         await onSave(formData);
+        await discardPending([formData.frontImage, formData.sideImage]);
+        onClose();
       } catch {
         setSubmitError(serverError || 'Məhsul yadda saxlanmadı. Yenidən cəhd edin.');
       }
@@ -538,11 +564,11 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
   };
 
   return (
-    <div className="seller-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="seller-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) void closeForm(); }}>
       <div className="seller-modal" data-testid="modal-product-form">
         <div className="seller-modal-header">
           <h2>{product ? 'Məhsulu redaktə et' : 'Yeni məhsul əlavə et'}</h2>
-          <button className="icon-button" onClick={onClose} aria-label="Bağla" data-testid="button-close-modal">
+          <button className="icon-button" disabled={isImageUploading || isSaving} onClick={() => void closeForm()} aria-label="Bağla" data-testid="button-close-modal">
             <X size={20} />
           </button>
         </div>
@@ -592,7 +618,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
                         <img src={sellerImageUrl(formData.frontImage)} alt="Ön görünüş" />
                         <div className="image-actions">
                           <button type="button" className="btn btn-secondary btn-sm" disabled={isImageUploading} onClick={() => frontInputRef.current?.click()}>Dəyiş</button>
-                          <button type="button" className="icon-button text-danger bg-white" onClick={() => { setFormData(prev => ({ ...prev, frontImage: '' })); setFrontImageError(''); }}>
+                          <button type="button" className="icon-button text-danger bg-white" disabled={isImageUploading} onClick={() => { setFormData(prev => ({ ...prev, frontImage: '' })); setFrontImageError(''); }}>
                             <Trash2 size={16} />
                           </button>
                         </div>
@@ -619,7 +645,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
                         <img src={sellerImageUrl(formData.sideImage)} alt="Yan görünüş" />
                         <div className="image-actions">
                           <button type="button" className="btn btn-secondary btn-sm" disabled={isImageUploading} onClick={() => sideInputRef.current?.click()}>Dəyiş</button>
-                          <button type="button" className="icon-button text-danger bg-white" onClick={() => { setFormData(prev => ({ ...prev, sideImage: '' })); setSideImageError(''); }}>
+                          <button type="button" className="icon-button text-danger bg-white" disabled={isImageUploading} onClick={() => { setFormData(prev => ({ ...prev, sideImage: '' })); setSideImageError(''); }}>
                             <Trash2 size={16} />
                           </button>
                         </div>
