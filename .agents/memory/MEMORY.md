@@ -10,3 +10,4 @@
 - [Marketplace guest checkout](marketplace-guest-checkout.md) — buyers can order without registering; account creation is optional.
 - [Marketplace buyer notifications](marketplace-buyer-notifications.md) — order confirmation, rejection, and delivery updates go by email and SMS.
 - [Marketplace admin access](marketplace-admin-access.md) — MVP admin access belongs to the owner alone; staff roles are deferred.
+- [API test module resolution](api-test-module-resolution.md) — test bundles must resolve workspace-library dependencies from their owning packages, not the server artifact.
