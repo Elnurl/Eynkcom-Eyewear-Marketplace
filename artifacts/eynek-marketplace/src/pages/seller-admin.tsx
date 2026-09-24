@@ -12,7 +12,7 @@ import {
   useReviewSellerApplication,
   useReviewSellerProduct,
 } from '@workspace/api-client-react';
-import { useAuth } from '@workspace/replit-auth-web';
+import { useAuth, useClerk, useUser } from '@clerk/react';
 import { BrandLogo } from '@/components/brand-logo';
 
 type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'needs_changes';
@@ -41,14 +41,16 @@ function errorMessage(error: unknown): string {
 }
 
 export default function SellerAdminPage() {
-  const auth = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const applications = useListAdminSellerApplications(undefined, {
-    query: { queryKey: getListAdminSellerApplicationsQueryKey(), enabled: auth.isAuthenticated, retry: false },
+    query: { queryKey: getListAdminSellerApplicationsQueryKey(), enabled: isLoaded && Boolean(isSignedIn), retry: false },
   });
   const products = useListAdminProducts(undefined, {
-    query: { queryKey: getListAdminProductsQueryKey(), enabled: auth.isAuthenticated, retry: false },
+    query: { queryKey: getListAdminProductsQueryKey(), enabled: isLoaded && Boolean(isSignedIn), retry: false },
   });
   const reviewApplication = useReviewSellerApplication();
   const reviewProduct = useReviewSellerProduct();
@@ -57,10 +59,10 @@ export default function SellerAdminPage() {
   const [actionError, setActionError] = useState('');
 
   useEffect(() => {
-    if (!auth.isLoading && !auth.isAuthenticated) setLocation('/seller-login?returnTo=/seller-admin');
-  }, [auth.isLoading, auth.isAuthenticated, setLocation]);
+    if (isLoaded && !isSignedIn) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-admin')}`);
+  }, [isLoaded, isSignedIn, setLocation]);
 
-  if (auth.isLoading || !auth.isAuthenticated) return null;
+  if (!isLoaded || !isSignedIn) return null;
 
   const saveApplicationStatus = async (id: string, status: ApplicationStatus) => {
     setActionError('');
@@ -101,7 +103,7 @@ export default function SellerAdminPage() {
         </div>
         <div className="seller-store-info">
           <div className="store-avatar"><ShieldCheck size={20} /></div>
-          <div><strong>İdarəetmə</strong><small>{auth.user?.email}</small></div>
+          <div><strong>İdarəetmə</strong><small>{user?.primaryEmailAddress?.emailAddress}</small></div>
         </div>
         <nav className="seller-nav">
           <a className="seller-nav-item active" href="#applications"><ShieldCheck size={18} /> Satıcı müraciətləri</a>
@@ -109,7 +111,7 @@ export default function SellerAdminPage() {
         </nav>
         <div className="seller-sidebar-footer">
           <Link href="/" className="seller-nav-item">Mağazaya qayıt</Link>
-          <button className="seller-nav-item text-danger" onClick={auth.logout}><LogOut size={18} /> Çıxış et</button>
+          <button className="seller-nav-item text-danger" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })}><LogOut size={18} /> Çıxış et</button>
         </div>
       </aside>
 

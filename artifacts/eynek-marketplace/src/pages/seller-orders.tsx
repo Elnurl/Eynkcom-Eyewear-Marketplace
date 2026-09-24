@@ -9,7 +9,7 @@ import {
   useUpdateSellerOrder,
 } from '@workspace/api-client-react';
 import type { SellerOrder, SellerOrderUpdate } from '@workspace/api-client-react';
-import { useAuth } from '@workspace/replit-auth-web';
+import { useAuth, useClerk, useUser } from '@clerk/react';
 import { BrandLogo } from '@/components/brand-logo';
 import { LoadingCard, QueryError, StatePill, dateLabel, money, paymentStatusLabel, sellerStatusLabel } from './order-ui';
 import './order-pages.css';
@@ -38,18 +38,20 @@ function errorText(error: unknown) {
 }
 
 export default function SellerOrdersPage() {
-  const auth = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const orders = useListSellerOrders({ query: { enabled: auth.isAuthenticated, queryKey: getListSellerOrdersQueryKey(), retry: false } });
+  const orders = useListSellerOrders({ query: { enabled: isLoaded && Boolean(isSignedIn), queryKey: getListSellerOrdersQueryKey(), retry: false } });
   const updateOrder = useUpdateSellerOrder();
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [error, setError] = useState('');
   const [savedId, setSavedId] = useState('');
 
   useEffect(() => {
-    if (!auth.isLoading && !auth.isAuthenticated) setLocation('/seller-login?returnTo=/seller-orders');
-  }, [auth.isLoading, auth.isAuthenticated, setLocation]);
+    if (isLoaded && !isSignedIn) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-orders')}`);
+  }, [isLoaded, isSignedIn, setLocation]);
 
   const sellerOrders = orders.data ?? [];
   const totalEarnings = useMemo(() => sellerOrders.reduce((sum, order) => sum + (order.sellerEarningsAzN ?? 0), 0), [sellerOrders]);
@@ -83,15 +85,15 @@ export default function SellerOrdersPage() {
     }
   };
 
-  if (auth.isLoading || !auth.isAuthenticated) return null;
+  if (!isLoaded || !isSignedIn) return null;
 
   return (
     <div className="seller-panel-layout">
       <aside className="seller-sidebar">
         <div className="seller-sidebar-header"><Link href="/" className="brand" data-testid="link-seller-orders-brand"><BrandLogo /></Link><span className="seller-badge">Satıcı Paneli</span></div>
-        <div className="seller-store-info"><div className="store-avatar"><Store size={20} /></div><div><strong>Sifarişlər</strong><small>{auth.user?.email}</small></div></div>
+        <div className="seller-store-info"><div className="store-avatar"><Store size={20} /></div><div><strong>Sifarişlər</strong><small>{user?.primaryEmailAddress?.emailAddress}</small></div></div>
         <nav className="seller-nav"><Link href="/seller-panel" className="seller-nav-item"><Package size={18} /> Məhsullar</Link><Link href="/seller-orders" className="seller-nav-item active"><Truck size={18} /> Sifarişlər</Link></nav>
-        <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Vitrinə qayıt</Link><button className="seller-nav-item text-danger" onClick={() => { auth.logout(); setLocation('/seller-login'); }} data-testid="button-seller-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
+        <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Vitrinə qayıt</Link><button className="seller-nav-item text-danger" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })} data-testid="button-seller-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
       </aside>
       <main className="seller-main">
         <div className="seller-content">
@@ -112,7 +114,7 @@ export default function SellerOrdersPage() {
                 </article>;
               })}
             </div>
-          ) : <div className="empty-state"><Package size={22} /><h3>Hələ sifariş yoxdur.</h3><p>Mağazanız üçün yeni sifarişlər burada görünəcək.</p></div>}
+          ) : <div className="empty-state" data-testid="status-seller-orders-loaded"><Package size={22} /><h3>Hələ sifariş yoxdur.</h3><p>Mağazanız üçün yeni sifarişlər burada görünəcək.</p></div>}
         </div>
       </main>
     </div>

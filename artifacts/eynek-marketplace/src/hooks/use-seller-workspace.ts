@@ -15,7 +15,7 @@ import {
   type SellerProductUpdate,
   type SellerStoreUpdate,
 } from '@workspace/api-client-react';
-import { useAuth } from '@workspace/replit-auth-web';
+import { useAuth, useClerk, useUser } from '@clerk/react';
 
 export type { SellerProduct, SellerProductInput, SellerProductUpdate };
 
@@ -29,12 +29,14 @@ function getErrorMessage(error: unknown): string {
 
 export function useSellerWorkspace() {
   const queryClient = useQueryClient();
-  const auth = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const storeQuery = useGetSellerStore({
-    query: { queryKey: getGetSellerStoreQueryKey(), enabled: auth.isAuthenticated, retry: false },
+    query: { queryKey: getGetSellerStoreQueryKey(), enabled: isLoaded && Boolean(isSignedIn), retry: false },
   });
   const productsQuery = useListSellerProducts({
-    query: { queryKey: getListSellerProductsQueryKey(), enabled: auth.isAuthenticated && storeQuery.isSuccess },
+    query: { queryKey: getListSellerProductsQueryKey(), enabled: isLoaded && Boolean(isSignedIn) && storeQuery.isSuccess },
   });
   const createMutation = useCreateSellerProduct();
   const updateMutation = useUpdateSellerProduct();
@@ -72,11 +74,10 @@ export function useSellerWorkspace() {
 
   const error = storeQuery.error ?? productsQuery.error ?? createMutation.error ?? updateMutation.error ?? deleteMutation.error ?? updateStoreMutation.error;
   return {
-    user: auth.user,
-    isAuthenticated: auth.isAuthenticated,
-    isAuthLoading: auth.isLoading,
-    login: auth.login,
-    logout: auth.logout,
+    user,
+    isAuthenticated: Boolean(isSignedIn),
+    isAuthLoading: !isLoaded,
+    signOut,
     store: storeQuery.data,
     storeError: storeQuery.error ? getErrorMessage(storeQuery.error) : '',
     products: productsQuery.data ?? [],
@@ -84,7 +85,7 @@ export function useSellerWorkspace() {
     updateProduct,
     deleteProduct,
     updateStore,
-    isLoading: auth.isLoading || (auth.isAuthenticated && storeQuery.isLoading) || (storeQuery.isSuccess && productsQuery.isLoading),
+    isLoading: !isLoaded || (isSignedIn && storeQuery.isLoading) || (storeQuery.isSuccess && productsQuery.isLoading),
     isSaving: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || updateStoreMutation.isPending,
     errorMessage: error ? getErrorMessage(error) : '',
   };

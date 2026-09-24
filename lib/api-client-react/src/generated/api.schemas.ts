@@ -725,22 +725,6 @@ export interface Error {
   error: string;
 }
 
-export interface AuthUser {
-  id: string;
-  /** @nullable */
-  email: string | null;
-  /** @nullable */
-  firstName: string | null;
-  /** @nullable */
-  lastName: string | null;
-  /** @nullable */
-  profileImageUrl: string | null;
-}
-
-export interface AuthUserEnvelope {
-  user: AuthUser | null;
-}
-
 export interface ErrorEnvelope {
   error: string;
 }
@@ -779,21 +763,11 @@ export interface UploadCompleteResponse {
   objectPath: string;
 }
 
-export type AuthorizationSessionHeaderParameter = string;
-
 export type ListAdminSellerApplicationsParams = {
 status?: SellerApplicationStatus;
 };
 
 export type ListAdminProductsParams = {
 approvalStatus?: ProductApprovalStatus;
-};
-
-export type BeginBrowserLoginParams = {
-returnTo?: string;
-};
-
-export type LogoutBrowserSessionParams = {
-returnTo?: string;
 };
 

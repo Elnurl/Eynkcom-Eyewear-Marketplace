@@ -990,56 +990,6 @@ export const ReviewSellerProductResponse = zod.object({
 
 
 /**
- * @summary Get the currently authenticated user
- */
-export const GetCurrentAuthUserHeader = zod.object({
-  "Authorization": zod.string().optional()
-})
-
-export const GetCurrentAuthUserResponse = zod.object({
-  "user": zod.union([zod.object({
-  "id": zod.string(),
-  "email": zod.string().email().nullable(),
-  "firstName": zod.string().nullable(),
-  "lastName": zod.string().nullable(),
-  "profileImageUrl": zod.string().nullable()
-}),zod.null()])
-})
-
-
-/**
- * @summary Start the browser login flow
- */
-export const BeginBrowserLoginQueryParams = zod.object({
-  "returnTo": zod.coerce.string().optional()
-})
-
-export const BeginBrowserLoginResponse = zod.void()
-
-
-/**
- * @summary Complete the browser login flow
- */
-export const HandleBrowserLoginCallbackResponse = zod.void()
-
-
-/**
- * @summary Clear the browser session
- */
-export const logoutBrowserSessionQueryReturnToDefault = `/`;
-
-export const LogoutBrowserSessionQueryParams = zod.object({
-  "returnTo": zod.coerce.string().default(logoutBrowserSessionQueryReturnToDefault)
-})
-
-export const LogoutBrowserSessionHeader = zod.object({
-  "Authorization": zod.string().optional()
-})
-
-export const LogoutBrowserSessionResponse = zod.void()
-
-
-/**
  * @summary Request a presigned URL for direct file upload
  */
 

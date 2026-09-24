@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-zod";
 import { db, sellerProductsTable, sellerStoresTable } from "@workspace/db";
 import { requireUserEmail } from "./access";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
@@ -60,7 +61,7 @@ router.get("/stores", async (req, res): Promise<void> => {
   res.json(ListStoresResponse.parse(stores.map((store) => formatStore(store, counts.get(store.id) ?? 0))));
 });
 
-router.get("/seller/store", async (req, res): Promise<void> => {
+router.get("/seller/store", requireAuth, async (req, res): Promise<void> => {
   const email = requireUserEmail(req, res);
   if (!email) return;
 
@@ -78,7 +79,7 @@ router.get("/seller/store", async (req, res): Promise<void> => {
   res.json(GetSellerStoreResponse.parse(formatStore(store, counts.get(store.id) ?? 0)));
 });
 
-router.patch("/seller/store", async (req, res): Promise<void> => {
+router.patch("/seller/store", requireAuth, async (req, res): Promise<void> => {
   const email = requireUserEmail(req, res);
   if (!email) return;
   const parsed = UpdateSellerStoreBody.safeParse(req.body);

@@ -18,6 +18,7 @@ import {
   usersTable,
 } from "@workspace/db";
 import { requireMarketplaceAdmin, requireUserEmail } from "./access";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
@@ -64,7 +65,7 @@ router.post("/seller/applications", async (req, res): Promise<void> => {
   res.status(201).json(CreateSellerApplicationResponse.parse(serializeApplication(saved)));
 });
 
-router.get("/seller/applications/mine", async (req, res): Promise<void> => {
+router.get("/seller/applications/mine", requireAuth, async (req, res): Promise<void> => {
   const email = requireUserEmail(req, res);
   if (!email) return;
   const applications = await db
@@ -75,7 +76,7 @@ router.get("/seller/applications/mine", async (req, res): Promise<void> => {
   res.json(ListMySellerApplicationsResponse.parse(applications.map(serializeApplication)));
 });
 
-router.get("/admin/seller-applications", async (req, res): Promise<void> => {
+router.get("/admin/seller-applications", requireAuth, async (req, res): Promise<void> => {
   if (!requireMarketplaceAdmin(req, res)) return;
   const query = ListAdminSellerApplicationsQueryParams.safeParse(req.query);
   if (!query.success) {
@@ -94,7 +95,7 @@ router.get("/admin/seller-applications", async (req, res): Promise<void> => {
   res.json(ListAdminSellerApplicationsResponse.parse(applications.map(serializeApplication)));
 });
 
-router.patch("/admin/seller-applications/:id", async (req, res): Promise<void> => {
+router.patch("/admin/seller-applications/:id", requireAuth, async (req, res): Promise<void> => {
   if (!requireMarketplaceAdmin(req, res)) return;
   const params = ReviewSellerApplicationParams.safeParse(req.params);
   const body = ReviewSellerApplicationBody.safeParse(req.body);

@@ -8,7 +8,7 @@ import {
   useRecordOrderRefund,
 } from '@workspace/api-client-react';
 import type { AdminOrder, OrderRefundInput } from '@workspace/api-client-react';
-import { useAuth } from '@workspace/replit-auth-web';
+import { useAuth, useClerk, useUser } from '@clerk/react';
 import { BrandLogo } from '@/components/brand-logo';
 import { LoadingCard, QueryError, StatePill, dateLabel, money, orderStatusLabel, paymentStatusLabel, sellerStatusLabel } from './order-ui';
 import './order-pages.css';
@@ -21,18 +21,20 @@ function errorText(error: unknown) {
 }
 
 export default function SellerAdminOrdersPage() {
-  const auth = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useClerk();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const orders = useListAdminOrders({ query: { enabled: auth.isAuthenticated, queryKey: getListAdminOrdersQueryKey(), retry: false } });
+  const orders = useListAdminOrders({ query: { enabled: isLoaded && Boolean(isSignedIn), queryKey: getListAdminOrdersQueryKey(), retry: false } });
   const recordRefund = useRecordOrderRefund();
   const [drafts, setDrafts] = useState<Record<string, RefundDraft>>({});
   const [error, setError] = useState('');
   const [savedId, setSavedId] = useState('');
 
   useEffect(() => {
-    if (!auth.isLoading && !auth.isAuthenticated) setLocation('/seller-login?returnTo=/seller-admin/orders');
-  }, [auth.isLoading, auth.isAuthenticated, setLocation]);
+    if (isLoaded && !isSignedIn) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-admin/orders')}`);
+  }, [isLoaded, isSignedIn, setLocation]);
 
   const list = orders.data ?? [];
   const totalGross = useMemo(() => list.reduce((sum, order) => sum + (order.totalAzN ?? 0), 0), [list]);
@@ -78,14 +80,14 @@ export default function SellerAdminOrdersPage() {
     }
   };
 
-  if (auth.isLoading || !auth.isAuthenticated) return null;
+  if (!isLoaded || !isSignedIn) return null;
 
   return <div className="seller-panel-layout">
     <aside className="seller-sidebar">
       <div className="seller-sidebar-header"><Link href="/" className="brand" data-testid="link-admin-orders-brand"><BrandLogo /></Link><span className="seller-badge">Marketplace Admin</span></div>
-      <div className="seller-store-info"><div className="store-avatar"><ShieldCheck size={20} /></div><div><strong>İdarəetmə</strong><small>{auth.user?.email}</small></div></div>
+      <div className="seller-store-info"><div className="store-avatar"><ShieldCheck size={20} /></div><div><strong>İdarəetmə</strong><small>{user?.primaryEmailAddress?.emailAddress}</small></div></div>
       <nav className="seller-nav"><Link href="/seller-admin" className="seller-nav-item"><ShieldCheck size={18} /> Yoxlama</Link><Link href="/seller-admin/orders" className="seller-nav-item active"><ClipboardList size={18} /> Sifarişlər</Link></nav>
-      <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Mağazaya qayıt</Link><button className="seller-nav-item text-danger" onClick={() => { auth.logout(); setLocation('/seller-login'); }} data-testid="button-admin-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
+      <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Mağazaya qayıt</Link><button className="seller-nav-item text-danger" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })} data-testid="button-admin-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
     </aside>
     <main className="seller-main"><div className="seller-content">
       <div className="management-toolbar"><div><div className="eyebrow">Maliyyə nəzarəti</div><h1>Sifarişlər və geri ödənişlər.</h1></div><p>Bütün marketplace sifarişlərinin ödəniş statusunu, mağaza bölgüsünü və geri ödəniş qeydlərini idarə edin.</p></div>

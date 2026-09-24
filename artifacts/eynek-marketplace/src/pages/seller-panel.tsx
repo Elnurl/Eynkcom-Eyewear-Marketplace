@@ -1,7 +1,7 @@
 import { useState, useRef, FormEvent, useMemo, ChangeEvent, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
 import { completeUpload, discardUpload, requestUploadUrl } from '@workspace/api-client-react';
-import { useAuth } from '@workspace/replit-auth-web';
+import { useAuth } from '@clerk/react';
 import { 
   LogOut, Plus, Search, MoreVertical, Edit2, Trash2, 
   Image as ImageIcon, ArrowLeft, Store, Settings, 
@@ -23,7 +23,7 @@ export default function SellerPanel() {
     user,
     isAuthenticated,
     isAuthLoading,
-    logout,
+    signOut,
     store,
     storeError,
     products,
@@ -48,7 +48,7 @@ export default function SellerPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   
   useEffect(() => {
-    if (!isAuthLoading && !isAuthenticated) setLocation('/seller-login?returnTo=/seller-panel');
+    if (!isAuthLoading && !isAuthenticated) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-panel')}`);
   }, [isAuthLoading, isAuthenticated, setLocation]);
 
   useEffect(() => {
@@ -62,6 +62,13 @@ export default function SellerPanel() {
       });
     }
   }, [store]);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(p =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.color.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
 
   if (isAuthLoading || !isAuthenticated || isLoading) return null;
   if (!store) {
@@ -81,8 +88,7 @@ export default function SellerPanel() {
   }
 
   const handleLogout = () => {
-    logout();
-    setLocation('/seller-login');
+    void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' });
   };
 
   const openAddForm = () => {
@@ -99,13 +105,6 @@ export default function SellerPanel() {
     setIsFormOpen(false);
     setEditingId(null);
   };
-
-  const filteredProducts = useMemo(() => {
-    return products.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      p.color.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [products, searchQuery]);
 
   const activeCount = products.filter(p => p.status === 'Aktiv' && p.approvalStatus === 'approved').length;
   const draftCount = products.filter(p => p.status === 'Qaralama').length;
@@ -143,7 +142,7 @@ export default function SellerPanel() {
           <div className="store-avatar"><Store size={20} /></div>
           <div>
             <strong>{store.name}</strong>
-            <small>{user?.email}</small>
+            <small>{user?.primaryEmailAddress?.emailAddress}</small>
           </div>
         </div>
 
@@ -397,11 +396,10 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
   isSaving: boolean;
   serverError: string;
 }) {
-  const {
-    isAuthenticated: canUpload,
-    isLoading: isAuthLoading,
-    login: beginUploadLogin,
-  } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
+  const canUpload = Boolean(isSignedIn);
+  const isAuthLoading = !isLoaded;
+  const [, setLocation] = useLocation();
   const [formData, setFormData] = useState<SellerProductInput>({
     name: product?.name || '',
     category: product?.category || 'Optik çərçivə',
@@ -591,7 +589,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
               <div className="google-index-note">
                 <AlertCircle size={12} />
                 <span>Real şəkil yükləməsi üçün təhlükəsiz giriş tələb olunur.</span>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => beginUploadLogin()}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-panel')}`)}>
                   Giriş et
                 </button>
               </div>

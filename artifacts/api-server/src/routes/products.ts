@@ -19,6 +19,7 @@ import {
 import { db, sellerProductsTable, sellerStoresTable } from "@workspace/db";
 import { requireMarketplaceAdmin, requireUserEmail } from "./access";
 import { cleanupReplacedImages, imageBelongsToSeller, isUploadedImage } from "../lib/productImages";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
@@ -96,7 +97,7 @@ router.get("/products", async (_req, res): Promise<void> => {
   );
 });
 
-router.get("/seller/products", async (req, res): Promise<void> => {
+router.get("/seller/products", requireAuth, async (req, res): Promise<void> => {
   const email = requireUserEmail(req, res);
   if (!email) return;
   const store = await findApprovedStore(email);
@@ -112,7 +113,7 @@ router.get("/seller/products", async (req, res): Promise<void> => {
   res.json(ListSellerProductsResponse.parse(products.map(serializeSellerProduct)));
 });
 
-router.post("/seller/products", async (req, res): Promise<void> => {
+router.post("/seller/products", requireAuth, async (req, res): Promise<void> => {
   const email = requireUserEmail(req, res);
   if (!email) return;
   const store = await findApprovedStore(email);
@@ -147,7 +148,7 @@ router.post("/seller/products", async (req, res): Promise<void> => {
   res.status(201).json(CreateSellerProductResponse.parse(serializeSellerProduct(product)));
 });
 
-router.patch("/seller/products/:id", async (req, res): Promise<void> => {
+router.patch("/seller/products/:id", requireAuth, async (req, res): Promise<void> => {
   const email = requireUserEmail(req, res);
   if (!email) return;
   const store = await findApprovedStore(email);
@@ -199,7 +200,7 @@ router.patch("/seller/products/:id", async (req, res): Promise<void> => {
   res.json(UpdateSellerProductResponse.parse(serializeSellerProduct(product)));
 });
 
-router.delete("/seller/products/:id", async (req, res): Promise<void> => {
+router.delete("/seller/products/:id", requireAuth, async (req, res): Promise<void> => {
   const email = requireUserEmail(req, res);
   if (!email) return;
   const store = await findApprovedStore(email);
@@ -226,7 +227,7 @@ router.delete("/seller/products/:id", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.get("/admin/products", async (req, res): Promise<void> => {
+router.get("/admin/products", requireAuth, async (req, res): Promise<void> => {
   if (!requireMarketplaceAdmin(req, res)) return;
   const query = ListAdminProductsQueryParams.safeParse(req.query);
   if (!query.success) {
@@ -245,7 +246,7 @@ router.get("/admin/products", async (req, res): Promise<void> => {
   res.json(ListAdminProductsResponse.parse(products.map(serializeSellerProduct)));
 });
 
-router.patch("/admin/products/:id/approval", async (req, res): Promise<void> => {
+router.patch("/admin/products/:id/approval", requireAuth, async (req, res): Promise<void> => {
   if (!requireMarketplaceAdmin(req, res)) return;
   const params = ReviewSellerProductParams.safeParse(req.params);
   const body = ReviewSellerProductBody.safeParse(req.body);

@@ -1,5 +1,8 @@
 import { type FormEvent, type ReactNode, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
+import { publishableKeyFromHost } from '@clerk/react/internal';
+import { shadcn } from '@clerk/themes';
 import {
   ArrowRight,
   Camera,
@@ -21,7 +24,7 @@ import {
   Video,
   X,
 } from 'lucide-react';
-import { Link, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
+import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { BrandLogo, BrandWord } from '@/components/brand-logo';
 import { HeaderSearch } from '@/components/header-search';
@@ -37,17 +40,83 @@ import OrderPage from '@/pages/order';
 import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
 import {
+  getGetSellerStoreQueryKey,
   getListMySellerApplicationsQueryKey,
   useCreateSellerApplication,
+  useGetSellerStore,
   useListMySellerApplications,
   useListProducts,
   useListStores,
   type PublicProduct,
   type SellerStore,
 } from '@workspace/api-client-react';
-import { useAuth } from '@workspace/replit-auth-web';
 
 const queryClient = new QueryClient();
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || '/'
+    : path;
+}
+
+if (!clerkPubKey) {
+  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
+}
+
+const clerkAppearance = {
+  theme: shadcn,
+  cssLayerName: 'clerk',
+  options: {
+    logoPlacement: 'inside' as const,
+    logoLinkUrl: basePath || '/',
+    logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
+  },
+  variables: {
+    colorPrimary: '#171A3A',
+    colorForeground: '#111111',
+    colorMutedForeground: '#626262',
+    colorDanger: '#B42318',
+    colorBackground: '#FAFAF8',
+    colorInput: '#FFFFFF',
+    colorInputForeground: '#111111',
+    colorNeutral: '#D8D8D2',
+    fontFamily: 'Manrope, sans-serif',
+    borderRadius: '0.75rem',
+  },
+  elements: {
+    rootBox: 'w-full flex justify-center',
+    cardBox: 'bg-[#FAFAF8] rounded-2xl w-[440px] max-w-full overflow-hidden',
+    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
+    headerTitle: 'text-[#111111] font-bold',
+    headerSubtitle: 'text-[#626262]',
+    socialButtonsBlockButtonText: 'text-[#171A3A] font-semibold',
+    formFieldLabel: 'text-[#171A3A] font-semibold',
+    footerActionLink: 'text-[#171A3A] font-semibold',
+    footerActionText: 'text-[#626262]',
+    dividerText: 'text-[#626262]',
+    identityPreviewEditButton: 'text-[#171A3A]',
+    formFieldSuccessText: 'text-[#18794E]',
+    alertText: 'text-[#8B1E16]',
+    logoBox: 'mb-5',
+    logoImage: 'max-h-10',
+    socialButtonsBlockButton: 'border-[#D8D8D2] bg-white text-[#171A3A]',
+    formButtonPrimary: 'bg-[#171A3A] text-white hover:bg-[#292D5C]',
+    formFieldInput: 'border-[#D8D8D2] bg-white text-[#111111]',
+    footerAction: 'border-t border-[#E6E6E2]',
+    dividerLine: 'bg-[#E6E6E2]',
+    alert: 'border-[#F1B8B2] bg-[#FFF4F2]',
+    otpCodeFieldInput: 'border-[#D8D8D2] bg-white text-[#111111]',
+    formFieldRow: 'text-[#171A3A]',
+    main: 'text-[#111111]',
+  },
+};
 
 type Product = {
   id: number | string;
@@ -426,18 +495,19 @@ type SellerForm = { storeName: string; owner: string; phone: string; email: stri
 const initialSellerForm: SellerForm = { storeName: '', owner: '', phone: '', email: '', business: '', tax: '', address: '', instagram: '', website: '', categories: '' };
 
 function SellerPage() {
-  const auth = useAuth();
+  const { user, isLoaded } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
   const queryClient = useQueryClient();
   const createApplication = useCreateSellerApplication();
-  const myApplications = useListMySellerApplications({ query: { queryKey: getListMySellerApplicationsQueryKey(), enabled: Boolean(auth.user?.email) } });
+  const myApplications = useListMySellerApplications({ query: { queryKey: getListMySellerApplicationsQueryKey(), enabled: isLoaded && Boolean(userEmail) } });
   const [form, setForm] = useState<SellerForm>(initialSellerForm);
   const [errors, setErrors] = useState<Partial<Record<keyof SellerForm, string>>>({});
   const [sent, setSent] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const update = (key: keyof SellerForm, value: string) => setForm((current) => ({ ...current, [key]: value }));
   useEffect(() => {
-    if (auth.user?.email) setForm((current) => current.email ? current : { ...current, email: auth.user!.email! });
-  }, [auth.user?.email]);
+    if (userEmail) setForm((current) => current.email ? current : { ...current, email: userEmail });
+  }, [userEmail]);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const next: Partial<Record<keyof SellerForm, string>> = {};
@@ -462,7 +532,7 @@ function SellerPage() {
         },
       });
       setSent(true);
-      if (auth.user?.email) await queryClient.invalidateQueries({ queryKey: getListMySellerApplicationsQueryKey() });
+      if (userEmail) await queryClient.invalidateQueries({ queryKey: getListMySellerApplicationsQueryKey() });
     } catch {
       setSubmitError('Müraciət göndərilmədi. Məlumatları yoxlayıb yenidən cəhd edin.');
     }
@@ -472,7 +542,7 @@ function SellerPage() {
   const latestApplication = applications[0];
   const statusText: Record<string, string> = { pending: 'Gözləmədə', approved: 'Təsdiqləndi', rejected: 'Rədd edildi', needs_changes: 'Dəyişiklik tələb olunur' };
   const hasPendingOrApproved = applications.some((application) => application.status === 'pending' || application.status === 'approved');
-  return <><main className="seller-page"><div className="container form-shell"><div className="seller-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start', maxWidth: '100%' }}><div style={{ maxWidth: '700px' }}><div className="eyebrow">Satıcı onboarding</div><h1><BrandWord />-də sat.</h1><p>Mağazanızı <BrandWord />-ə qoşun və məhsullarınızı Azərbaycanda daha çox müştəriyə çatdırın. Müraciətlər saxlanılır və təsdiqdən sonra satıcı hesabı aktivləşdirilir.</p></div><Link href="/seller-login" className="btn btn-secondary" data-testid="link-seller-login">Mövcud satıcı? Daxil ol</Link></div>{(sent || latestApplication) && <div className="form-success" data-testid="status-seller-application"><strong>Müraciət statusu: {statusText[latestApplication?.status ?? 'pending']}</strong>{latestApplication?.reviewNotes && <p>{latestApplication.reviewNotes}</p>}{latestApplication?.status === 'approved' && <p>Satıcı hesabınız aktivdir. <Link href="/seller-panel">Panelə keç</Link></p>}{sent && <p>Məlumatlarınız nəzərdən keçirilmək üçün saxlanıldı.</p>}</div>}{!hasPendingOrApproved && !sent && <form className="seller-form" onSubmit={submit} noValidate>{field('storeName', 'Mağaza adı', true)}{field('owner', 'Məsul şəxs', true)}{field('phone', 'Telefon', true, 'tel')}{field('email', 'E-poçt', true, 'email')}<div className="field full"><label htmlFor="seller-business">Biznes haqqında *</label><textarea id="seller-business" value={form.business} onChange={(event) => update('business', event.target.value)} aria-invalid={Boolean(errors.business)} data-testid="input-seller-business" />{errors.business && <span className="field-error">{errors.business}</span>}</div>{field('tax', 'VÖEN (əgər varsa)')}{field('address', 'Mağaza ünvanı', true)}{field('instagram', 'Instagram')}{field('website', 'Veb-sayt')}{field('categories', 'Məhsul kateqoriyaları', true)}<div className="field full"><span className="field-help">Müraciət zamanı mağaza şəkilləri və tələb olunan sənədlər növbəti mərhələdə komanda tərəfindən istənilə bilər.</span></div>{submitError && <div className="field-error" role="alert">{submitError}</div>}<div className="form-actions"><button className="btn" type="submit" disabled={createApplication.isPending} data-testid="button-submit-seller">{createApplication.isPending ? 'Göndərilir...' : 'Müraciəti göndər'} <ArrowRight size={14} /></button><span className="field-help">* məcburi sahələr</span></div></form>}</div></main><Footer /></>;
+  return <><main className="seller-page"><div className="container form-shell"><div className="seller-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start', maxWidth: '100%' }}><div style={{ maxWidth: '700px' }}><div className="eyebrow">Satıcı onboarding</div><h1><BrandWord />-də sat.</h1><p>Mağazanızı <BrandWord />-ə qoşun və məhsullarınızı Azərbaycanda daha çox müştəriyə çatdırın. Müraciətlər saxlanılır və təsdiqdən sonra satıcı hesabı aktivləşdirilir.</p></div><Link href="/seller-login" className="btn btn-secondary" data-testid="link-seller-login">Mövcud satıcı? Daxil ol</Link></div>{myApplications.isSuccess && !latestApplication && <p data-testid="status-my-applications-loaded">Hələ müraciətiniz yoxdur.</p>}{(sent || latestApplication) && <div className="form-success" data-testid="status-seller-application"><strong>Müraciət statusu: {statusText[latestApplication?.status ?? 'pending']}</strong>{latestApplication?.reviewNotes && <p>{latestApplication.reviewNotes}</p>}{latestApplication?.status === 'approved' && <p>Satıcı hesabınız aktivdir. <Link href="/seller-panel">Panelə keç</Link></p>}{sent && <p>Məlumatlarınız nəzərdən keçirilmək üçün saxlanıldı.</p>}</div>}{!hasPendingOrApproved && !sent && <form className="seller-form" onSubmit={submit} noValidate>{field('storeName', 'Mağaza adı', true)}{field('owner', 'Məsul şəxs', true)}{field('phone', 'Telefon', true, 'tel')}{field('email', 'E-poçt', true, 'email')}<div className="field full"><label htmlFor="seller-business">Biznes haqqında *</label><textarea id="seller-business" value={form.business} onChange={(event) => update('business', event.target.value)} aria-invalid={Boolean(errors.business)} data-testid="input-seller-business" />{errors.business && <span className="field-error">{errors.business}</span>}</div>{field('tax', 'VÖEN (əgər varsa)')}{field('address', 'Mağaza ünvanı', true)}{field('instagram', 'Instagram')}{field('website', 'Veb-sayt')}{field('categories', 'Məhsul kateqoriyaları', true)}<div className="field full"><span className="field-help">Müraciət zamanı mağaza şəkilləri və tələb olunan sənədlər növbəti mərhələdə komanda tərəfindən istənilə bilər.</span></div>{submitError && <div className="field-error" role="alert">{submitError}</div>}<div className="form-actions"><button className="btn" type="submit" disabled={createApplication.isPending} data-testid="button-submit-seller">{createApplication.isPending ? 'Göndərilir...' : 'Müraciəti göndər'} <ArrowRight size={14} /></button><span className="field-help">* məcburi sahələr</span></div></form>}</div></main><Footer /></>;
 }
 
 function WishlistPage({ products, likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
@@ -487,7 +557,10 @@ function CartPage({ items, stores, onRemove, onCheckout }: { items: Product[]; s
 }
 
 function AccountPage() {
-  return <><main className="account-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Müştəri hesabı</div><h1>Hesabın.</h1></div><p>Qonaq rejimində seçilmişlər və səbət bu brauzerdə işləyir. Hesab inteqrasiyası növbəti mərhələ üçün hazırlaşdırılır.</p></div><div className="account-panel"><UserRound size={20} /><h2><BrandWord /> hesabı</h2><p>Sifarişləri, ünvanları və bildirişləri bir yerdən idarə etmək üçün hesab yaratma axını burada yerləşəcək.</p><Link href="/wishlist" className="btn btn-secondary" data-testid="link-account-wishlist">Seçilmişlərə bax <ArrowRight size={14} /></Link></div></div></main><Footer /></>;
+  const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
+  const email = user?.primaryEmailAddress?.emailAddress;
+  return <><main className="account-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Müştəri hesabı</div><h1>Hesabın.</h1></div><p>Hesab yaratmaq istəyə bağlıdır. Qonaq kimi seçilmişlərə baxa və sifarişini tamamlaya bilərsən.</p></div><div className="account-panel"><UserRound size={20} /><h2><BrandWord /> hesabı</h2>{!isLoaded ? <p>Hesab məlumatları yüklənir…</p> : isSignedIn ? <><p>{user?.fullName || email} ilə daxil olmusunuz.</p><div className="form-actions"><Link href="/wishlist" className="btn btn-secondary" data-testid="link-account-wishlist">Seçilmişlərə bax <ArrowRight size={14} /></Link><button className="btn btn-secondary" type="button" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })}>Çıxış et</button></div></> : <><p>Daxil olmaq və ya hesab yaratmaqla hesab məlumatlarınıza keçid əldə edin. Bu, qonaq sifarişinə mane olmur.</p><div className="form-actions"><Link href="/sign-in" className="btn" data-testid="link-account-sign-in">Daxil ol <ArrowRight size={14} /></Link><Link href="/sign-up" className="btn btn-secondary" data-testid="link-account-sign-up">Hesab yarat</Link><Link href="/wishlist" className="btn btn-secondary" data-testid="link-account-wishlist">Seçilmişlərə bax</Link></div></>}</div></div></main><Footer /></>;
 }
 
 function MobileBottomNav({ onTryOn }: { onTryOn: () => void }) {
@@ -695,8 +768,120 @@ function Storefront() {
   );
 }
 
+function HomeRedirect() {
+  const { isLoaded, isSignedIn, user } = useUser();
+  const sellerStore = useGetSellerStore({ query: { queryKey: getGetSellerStoreQueryKey(), enabled: isLoaded && Boolean(isSignedIn), retry: false } });
+  if (!isLoaded) return <Storefront />;
+  if (!isSignedIn) return <Storefront />;
+  const role = String(user?.publicMetadata.role ?? user?.publicMetadata.accountType ?? '').toLowerCase();
+  if (role === 'admin') return <Redirect to="/seller-admin" />;
+  if (role === 'seller') return <Redirect to="/seller-panel" />;
+  if (sellerStore.isLoading) return null;
+  return <Redirect to={sellerStore.data ? '/seller-panel' : '/account'} />;
+}
+
+function SignInPage() {
+  const search = useSearch();
+  const requestedTarget = new URLSearchParams(search).get('redirect_url');
+  const safeTargets = ['/account', '/seller-panel', '/seller-orders', '/seller-admin', '/seller-admin/orders'];
+  const target = requestedTarget && safeTargets.includes(requestedTarget) ? requestedTarget : '/account';
+  const forceRedirectUrl = `${basePath}${target}` || '/';
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#FAFAF8] px-4 py-8">
+      <SignIn
+        routing="path"
+        path={`${basePath}/sign-in`}
+        signUpUrl={`${basePath}/sign-up`}
+        forceRedirectUrl={forceRedirectUrl}
+      />
+    </div>
+  );
+}
+
+function SignUpPage() {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[#FAFAF8] px-4 py-8">
+      <SignUp
+        routing="path"
+        path={`${basePath}/sign-up`}
+        signInUrl={`${basePath}/sign-in`}
+        forceRedirectUrl={`${basePath}/account` || '/'}
+      />
+    </div>
+  );
+}
+
+function ClerkQueryClientCacheInvalidator() {
+  const { addListener } = useClerk();
+  const queryClientInstance = useQueryClient();
+  const prevUserIdRef = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    const unsubscribe = addListener(({ user }) => {
+      const userId = user?.id ?? null;
+      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
+        queryClientInstance.clear();
+      }
+      prevUserIdRef.current = userId;
+    });
+    return unsubscribe;
+  }, [addListener, queryClientInstance]);
+
+  return null;
+}
+
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
+  return (
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      proxyUrl={clerkProxyUrl}
+      appearance={clerkAppearance}
+      signInUrl={`${basePath}/sign-in`}
+      signUpUrl={`${basePath}/sign-up`}
+      localization={{
+        signIn: {
+          start: {
+            title: 'Yenidən xoş gəldiniz',
+            subtitle: 'Hesabınıza daxil olun',
+          },
+        },
+        signUp: {
+          start: {
+            title: 'Hesabınızı yaradın',
+            subtitle: 'EYNƏK.com-a qoşulun',
+          },
+        },
+      }}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
+      <QueryClientProvider client={queryClient}>
+        <ClerkQueryClientCacheInvalidator />
+        <TooltipProvider>
+          <RoutedErrorBoundary>
+            <Switch>
+              <Route path="/sign-in/*?" component={SignInPage} />
+              <Route path="/sign-up/*?" component={SignUpPage} />
+              <Route path="/seller-login"><SellerLogin /></Route>
+              <Route path="/seller-panel"><SellerPanel /></Route>
+              <Route path="/seller-panel/*"><SellerPanel /></Route>
+              <Route path="/seller-orders"><SellerOrdersPage /></Route>
+              <Route path="/seller-admin/orders"><SellerAdminOrdersPage /></Route>
+              <Route path="/seller-admin"><SellerAdminPage /></Route>
+              <Route path="/"><HomeRedirect /></Route>
+              <Route><Storefront /></Route>
+            </Switch>
+          </RoutedErrorBoundary>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
+  );
+}
+
 function App() {
-  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><RoutedErrorBoundary><Switch><Route path="/seller-login"><SellerLogin /></Route><Route path="/seller-panel"><SellerPanel /></Route><Route path="/seller-panel/*"><SellerPanel /></Route><Route path="/seller-orders"><SellerOrdersPage /></Route><Route path="/seller-admin/orders"><SellerAdminOrdersPage /></Route><Route path="/seller-admin"><SellerAdminPage /></Route><Route><Storefront /></Route></Switch></RoutedErrorBoundary></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
+  return <WouterRouter base={basePath}><ClerkProviderWithRoutes /></WouterRouter>;
 }
 
 export default App;

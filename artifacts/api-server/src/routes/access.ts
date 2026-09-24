@@ -1,8 +1,13 @@
+import { getAuth } from "@clerk/express";
 import type { Request, Response } from "express";
 
 export function requireUserEmail(req: Request, res: Response): string | null {
-  const email = req.user?.email?.trim().toLocaleLowerCase("en-US");
-  if (!req.isAuthenticated() || !email) {
+  const auth = getAuth(req);
+  const emailClaim = (auth.sessionClaims as Record<string, unknown> | undefined)?.email;
+  const email = typeof emailClaim === "string"
+    ? emailClaim.trim().toLocaleLowerCase("en-US")
+    : "";
+  if (!auth.userId || !req.dbUser || !email) {
     res.status(401).json({ error: "Daxil olmaq tələb olunur." });
     return null;
   }

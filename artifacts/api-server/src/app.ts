@@ -1,10 +1,15 @@
 import express, { type Express } from "express";
 import cors from "cors";
-import cookieParser from "cookie-parser";
+import { clerkMiddleware } from "@clerk/express";
+import { publishableKeyFromHost } from "@clerk/shared/keys";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { authMiddleware } from "./middlewares/authMiddleware";
+import {
+  CLERK_PROXY_PATH,
+  clerkProxyMiddleware,
+  getClerkProxyHost,
+} from "./middlewares/clerkProxyMiddleware";
 
 const app: Express = express();
 
@@ -27,11 +32,26 @@ app.use(
     },
   }),
 );
+app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+
 app.use(cors({ credentials: true, origin: true }));
-app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(authMiddleware);
+
+// Resolve the publishable key from the incoming request host so the same
+// server can serve multiple Clerk custom domains. Falls back to
+// CLERK_PUBLISHABLE_KEY when the host doesn't map to a custom domain.
+//
+// getClerkProxyHost is shared with clerkProxyMiddleware so that both
+// halves of the auth setup agree on which hostname is canonical.
+app.use(
+  clerkMiddleware((req) => ({
+    publishableKey: publishableKeyFromHost(
+      getClerkProxyHost(req) ?? "",
+      process.env.CLERK_PUBLISHABLE_KEY,
+    ),
+  })),
+);
 
 app.use("/api", router);
 

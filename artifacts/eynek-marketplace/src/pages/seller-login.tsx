@@ -1,21 +1,23 @@
 import { useEffect } from 'react';
 import { useLocation, Link, useSearch } from 'wouter';
 import { ArrowRight, Store, AlertCircle } from 'lucide-react';
-import { useAuth } from '@workspace/replit-auth-web';
+import { useAuth } from '@clerk/react';
 import { BrandLogo, BrandWord } from '@/components/brand-logo';
 
 export default function SellerLogin() {
-  const auth = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
   const [, setLocation] = useLocation();
   const search = useSearch();
-  const requestedReturnTo = new URLSearchParams(search).get('returnTo');
-  const returnTo = requestedReturnTo === '/seller-admin' ? '/seller-admin' : '/seller-panel';
+  const params = new URLSearchParams(search);
+  const requestedReturnTo = params.get('redirect_url') ?? params.get('returnTo');
+  const safeTargets = ['/seller-panel', '/seller-orders', '/seller-admin', '/seller-admin/orders'];
+  const returnTo = requestedReturnTo && safeTargets.includes(requestedReturnTo) ? requestedReturnTo : '/seller-panel';
 
   useEffect(() => {
-    if (auth.isAuthenticated) setLocation(returnTo);
-  }, [auth.isAuthenticated, returnTo, setLocation]);
+    if (isLoaded && isSignedIn) setLocation(returnTo);
+  }, [isLoaded, isSignedIn, returnTo, setLocation]);
 
-  if (auth.isLoading || auth.isAuthenticated) return null;
+  if (!isLoaded || isSignedIn) return null;
 
   return (
     <div className="seller-auth-page">
@@ -26,11 +28,11 @@ export default function SellerLogin() {
           <h1>Təhlükəsiz giriş</h1>
           <p>Mağazanı idarə etmək üçün satıcı hesabınızla daxil olun. Panel yalnız təsdiqlənmiş mağaza sahibləri üçün açıqdır.</p>
         </div>
-        <div className="auth-error" role="note">
+          <div className="auth-error" role="note">
           <AlertCircle size={16} />
-          <span>Demo şifrə ilə giriş söndürülüb. Giriş EYNƏK.com-un təsdiqlənmiş hesabı ilə yoxlanılır.</span>
+            <span>Satıcı panelinə davam etmək üçün EYNƏK hesabınızla daxil olun.</span>
         </div>
-        <button className="btn btn-full btn-blue" onClick={() => auth.login(returnTo)} data-testid="button-login-submit">
+        <button className="btn btn-full btn-blue" onClick={() => setLocation(`/sign-in?redirect_url=${encodeURIComponent(returnTo)}`)} data-testid="button-login-submit">
           <Store size={16} /> Hesabla daxil ol <ArrowRight size={16} />
         </button>
         <div className="seller-auth-footer">

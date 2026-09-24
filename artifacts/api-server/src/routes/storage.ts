@@ -15,6 +15,7 @@ import {
 import { getObjectAclPolicy } from "../lib/objectAcl";
 import { removeUnusedImage } from "../lib/productImages";
 import { requireUserEmail } from "./access";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 const storage = new ObjectStorageService();
@@ -31,6 +32,7 @@ async function approvedStore(req: Request, res: Response) {
 
 router.post(
   "/storage/uploads/request-url",
+  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const store = await approvedStore(req, res);
     if (!store) return;
@@ -47,7 +49,7 @@ router.post(
       await db.insert(productImageUploadsTable).values({
         objectPath,
         sellerId: store.id,
-        ownerId: req.user!.id,
+        ownerId: req.dbUser!.id,
         contentType: parsed.data.contentType,
         size: parsed.data.size,
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
@@ -68,6 +70,7 @@ router.post(
 
 router.post(
   "/storage/uploads/complete",
+  requireAuth,
   async (req: Request, res: Response): Promise<void> => {
     const store = await approvedStore(req, res);
     if (!store) return;
@@ -83,7 +86,7 @@ router.post(
         .where(and(
           eq(productImageUploadsTable.objectPath, parsed.data.objectPath),
           eq(productImageUploadsTable.sellerId, store.id),
-          eq(productImageUploadsTable.ownerId, req.user!.id),
+          eq(productImageUploadsTable.ownerId, req.dbUser!.id),
         )).limit(1);
       if (!ticket || ticket.expiresAt < new Date()) {
         res.status(403).json({ error: "Yükləmə icazəsi tapılmadı və ya vaxtı bitib." });
@@ -104,17 +107,17 @@ router.post(
       }
       // A caller must not be able to finalize an object owned by another account.
       const policy = await getObjectAclPolicy(file);
-      if (policy && policy.owner !== req.user!.id) {
+      if (policy && policy.owner !== req.dbUser!.id) {
         res.status(403).json({ error: "Bu şəkil başqa hesaba məxsusdur." });
         return;
       }
       const objectPath = await storage.setObjectEntityAclPolicy(
         ticket.objectPath,
-        { owner: req.user!.id, visibility: "public" },
+        { owner: req.dbUser!.id, visibility: "public" },
       );
       await db.update(productImageUploadsTable).set({ finalizedAt: new Date() })
         .where(eq(productImageUploadsTable.objectPath, objectPath));
-      req.log.info({ objectPath, owner: req.user!.id }, "Product image upload finalized");
+      req.log.info({ objectPath, owner: req.dbUser!.id }, "Product image upload finalized");
       res.json(CompleteUploadResponse.parse({ objectPath }));
     } catch (error) {
       req.log.error({ err: error }, "Failed to finalize product image upload");
@@ -123,7 +126,7 @@ router.post(
   },
 );
 
-router.post("/storage/uploads/discard", async (req: Request, res: Response): Promise<void> => {
+router.post("/storage/uploads/discard", requireAuth, async (req: Request, res: Response): Promise<void> => {
   const store = await approvedStore(req, res);
   if (!store) return;
   const parsed = CompleteUploadBody.safeParse(req.body);
@@ -135,7 +138,7 @@ router.post("/storage/uploads/discard", async (req: Request, res: Response): Pro
     .where(and(
       eq(productImageUploadsTable.objectPath, parsed.data.objectPath),
       eq(productImageUploadsTable.sellerId, store.id),
-      eq(productImageUploadsTable.ownerId, req.user!.id),
+      eq(productImageUploadsTable.ownerId, req.dbUser!.id),
     )).limit(1);
   if (!ticket) {
     res.status(403).json({ error: "Bu şəkil sizə məxsus deyil." });

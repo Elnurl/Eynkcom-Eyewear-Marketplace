@@ -38,6 +38,7 @@ import {
   loadSellerOrder,
   tokenMatches,
 } from "../lib/marketplaceOrders";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 type OrderTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -492,7 +493,7 @@ router.post("/orders/:orderId/decision", async (req, res): Promise<void> => {
   res.json(DecideGuestOrderRevisionResponse.parse(saved));
 });
 
-router.get("/seller/orders", async (req, res): Promise<void> => {
+router.get("/seller/orders", requireAuth, async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "private, no-store");
   const email = requireUserEmail(req, res);
   if (!email) return;
@@ -504,7 +505,7 @@ router.get("/seller/orders", async (req, res): Promise<void> => {
   res.json(ListSellerOrdersResponse.parse(await listSellerOrders(store.id)));
 });
 
-router.patch("/seller/orders/:id", async (req, res): Promise<void> => {
+router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> => {
   const email = requireUserEmail(req, res);
   if (!email) return;
   const store = await getSellerStoreForUser(email);
@@ -703,15 +704,15 @@ router.patch("/seller/orders/:id", async (req, res): Promise<void> => {
   res.json(UpdateSellerOrderResponse.parse(saved));
 });
 
-router.get("/admin/orders", async (req, res): Promise<void> => {
+router.get("/admin/orders", requireAuth, async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "private, no-store");
   if (!requireMarketplaceAdmin(req, res)) return;
   res.json(ListAdminOrdersResponse.parse(await listAdminOrders()));
 });
 
-router.patch("/admin/orders/:id/refund", async (req, res): Promise<void> => {
+router.patch("/admin/orders/:id/refund", requireAuth, async (req, res): Promise<void> => {
   if (!requireMarketplaceAdmin(req, res)) return;
-  const adminEmail = req.user?.email?.trim().toLocaleLowerCase("en-US");
+  const adminEmail = requireUserEmail(req, res);
   const params = RecordOrderRefundParams.safeParse(req.params);
   const body = RecordOrderRefundBody.safeParse(req.body);
   if (!adminEmail || !params.success || !body.success) {

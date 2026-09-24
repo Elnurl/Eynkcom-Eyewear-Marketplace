@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="72" viewBox="0 0 240 72" fill="none">
+  <rect width="240" height="72" rx="14" fill="#FAFAF8"/>
+  <g stroke="#171A3A" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 28h8m44 0h8M26 28c0-7 4-11 11-11h15c8 0 11 5 11 13v5c0 10-7 16-16 16H41c-9 0-15-6-15-16v-7Zm44 0c0-7 4-11 11-11h15c8 0 11 5 11 13v5c0 10-7 16-16 16h-6c-9 0-15-6-15-16v-7Zm-3 3h6"/>
+  </g>
+  <text x="119" y="47" fill="#171A3A" font-family="Manrope, Arial, sans-serif" font-size="25" font-weight="800" letter-spacing="-.8">EYNƏK</text>
+  <text x="202" y="47" fill="#3D5AFE" font-family="Manrope, Arial, sans-serif" font-size="25" font-weight="800" letter-spacing="-.8">.com</text>
+</svg>
