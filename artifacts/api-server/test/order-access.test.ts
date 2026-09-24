@@ -3,7 +3,7 @@ import { after, before, beforeEach, test } from "node:test";
 import express from "express";
 import ordersRouter from "../src/routes/orders";
 import adminRouter from "../src/routes/admin";
-import { orders, reset, seedOrder, token, wrongToken, products } from "./order-access-harness";
+import { events, orders, reset, seedOrder, seedSellerOrder, sellerOrders, token, wrongToken, products } from "./order-access-harness";
 
 const app = express();
 app.use(express.json());
@@ -137,4 +137,50 @@ test("admin user and order endpoints reject ordinary buyers even with forged adm
   assert.equal((await request("/admin/orders", { session: "admin" })).status, 200);
   assert.equal((await request("/admin/users", { session: "admin" })).status, 200);
   assert.equal((await request("/admin/orders/owned/refund", { method: "PATCH", session: "owner", body: {} })).status, 403);
+});
+
+test("seller order history is private to each active shop", async () => {
+  seedSellerOrder("first", "store-1");
+  seedSellerOrder("second", "store-2");
+  for (const options of [{}, { session: "untrusted" }, { headers: { "X-User-Email": "seller@example.com" } }]) {
+    assert.equal((await request("/seller/orders", options)).status, 401);
+  }
+  for (const session of ["owner", "pendingSeller"]) {
+    assert.equal((await request("/seller/orders", { session })).status, 403);
+  }
+  const first = await request("/seller/orders", { session: "seller" });
+  assert.equal(first.status, 200);
+  assert.equal(first.cache, "private, no-store");
+  assert.deepEqual(first.data.map((row: any) => row.id), ["seller-first"]);
+  const second = await request("/seller/orders", { session: "otherSeller" });
+  assert.equal(second.status, 200);
+  assert.deepEqual(second.data.map((row: any) => row.id), ["seller-second"]);
+});
+
+test("a seller cannot update another shop's order even with a valid status change", async () => {
+  const first = seedSellerOrder("first", "store-1");
+  const second = seedSellerOrder("second", "store-2");
+  const body = { status: "confirmed", deliveryFeeAzN: 0 };
+  for (const options of [{}, { session: "untrusted" }]) {
+    assert.equal((await request(`/seller/orders/${second.id}`, { method: "PATCH", body, ...options })).status, 401);
+  }
+  for (const session of ["owner", "pendingSeller"]) {
+    assert.equal((await request(`/seller/orders/${second.id}`, { method: "PATCH", body, session })).status, 403);
+  }
+  const denied = await request(`/seller/orders/${second.id}`, {
+    method: "PATCH", body, session: "seller",
+    headers: { "X-User-Email": "other-seller@example.com" },
+  });
+  assert.equal(denied.status, 404);
+  assert.equal(second.status, "pending_confirmation");
+  assert.equal(second.deliveryFeeQepik, null);
+  assert.equal(orders.second.status, "pending_confirmation");
+  assert.equal(events.length, 0);
+
+  const updated = await request(`/seller/orders/${first.id}`, { method: "PATCH", body, session: "seller" });
+  assert.equal(updated.status, 200);
+  assert.equal(updated.data.id, first.id);
+  assert.equal(first.status, "confirmed");
+  assert.equal(second.status, "pending_confirmation");
+  assert.equal(sellerOrders.length, 2);
 });

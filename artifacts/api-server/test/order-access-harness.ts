@@ -7,6 +7,9 @@ export const sessions: Record<string, { userId: string | null; sessionClaims?: R
   owner: { userId: "clerk-owner", sessionClaims: { userId: "owner", email: "owner@example.com" } },
   stranger: { userId: "clerk-stranger", sessionClaims: { userId: "stranger", email: "stranger@example.com" } },
   admin: { userId: "clerk-admin", sessionClaims: { userId: "admin", email: "admin@example.com" } },
+  seller: { userId: "clerk-seller", sessionClaims: { userId: "seller", email: "seller@example.com" } },
+  otherSeller: { userId: "clerk-other-seller", sessionClaims: { userId: "other-seller", email: "other-seller@example.com" } },
+  pendingSeller: { userId: "clerk-pending-seller", sessionClaims: { userId: "pending-seller", email: "pending-seller@example.com" } },
   untrusted: { userId: "clerk-untrusted", sessionClaims: { email: "owner@example.com" } },
 };
 export function getAuth(req: { get: (header: string) => string | undefined }) {
@@ -20,11 +23,18 @@ export const users = [
   { id: "owner", email: "owner@example.com", firstName: "Owner", lastName: "Buyer", createdAt: new Date() },
   { id: "stranger", email: "stranger@example.com", firstName: "Other", lastName: "Buyer", createdAt: new Date() },
   { id: "admin", email: "admin@example.com", firstName: "Admin", lastName: "User", createdAt: new Date() },
+  { id: "seller", email: "seller@example.com", firstName: "Seller", lastName: "User", createdAt: new Date() },
+  { id: "other-seller", email: "other-seller@example.com", firstName: "Other", lastName: "Seller", createdAt: new Date() },
+  { id: "pending-seller", email: "pending-seller@example.com", firstName: "Pending", lastName: "Seller", createdAt: new Date() },
 ];
 export const products = [
   { id: "product-1", sellerId: "store-1", name: "Frames", price: 40, stock: 10, status: "Aktiv", approvalStatus: "approved" },
 ];
-export const stores = [{ id: "store-1", name: "Optics", status: "active", ownerEmail: "seller@example.com" }];
+export const stores = [
+  { id: "store-1", name: "Optics", status: "active", ownerEmail: "seller@example.com" },
+  { id: "store-2", name: "Other Optics", status: "active", ownerEmail: "other-seller@example.com" },
+  { id: "store-pending", name: "Pending Optics", status: "pending", ownerEmail: "pending-seller@example.com" },
+];
 export const sellerOrders: any[] = [];
 export const events: any[] = [];
 export const items: any[] = [];
@@ -52,16 +62,34 @@ export function seedOrder(id: string, buyerUserId: string | null, status = "awai
   return orders[id];
 }
 
+export function seedSellerOrder(id: string, storeId: string) {
+  seedOrder(id, null, "pending_confirmation");
+  const sellerOrder = sellerOrders[sellerOrders.length - 1];
+  sellerOrder.sellerId = storeId;
+  sellerOrder.status = "pending_confirmation";
+  sellerOrder.deliveryFeeQepik = null;
+  sellerOrder.confirmedAt = null;
+  sellerOrder.updatedAt = new Date();
+  return sellerOrder;
+}
+
 const dialect = new PgDialect();
 function filter(rows: any[], condition: any) {
   if (!condition) return rows;
   const { sql, params } = dialect.sqlToQuery(condition);
-  return rows.filter((row) => params.every((value, index) => {
-    const field = sql.match(new RegExp(`"([a-z_]+)"\\s*=\\s*\\$${index + 1}`))?.[1];
-    if (!field) return true;
-    const key = field.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
-    return row[key] === value;
-  }));
+  return rows.filter((row) => {
+    for (const [, field, placeholders] of sql.matchAll(/"([a-z_]+)"\s+in\s*\(([^)]+)\)/gi)) {
+      const key = field.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+      const allowed = [...placeholders.matchAll(/\$(\d+)/g)].map((match) => params[Number(match[1]) - 1]);
+      if (!allowed.includes(row[key])) return false;
+    }
+    return params.every((value, index) => {
+      const field = sql.match(new RegExp(`"([a-z_]+)"\\s*=\\s*\\$${index + 1}`))?.[1];
+      if (!field) return true;
+      const key = field.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+      return row[key] === value;
+    });
+  });
 }
 const data: Record<string, () => any[]> = {
   users: () => users,
@@ -145,6 +173,28 @@ export async function loadBuyerOrder(id: string) {
   };
 }
 export async function listAdminOrders() { return []; }
-export async function listSellerOrders() { return []; }
-export async function loadSellerOrder() { return null; }
+function sellerOrderResponse(row: any) {
+  const order = orders[row.orderId];
+  const store = stores.find((store) => store.id === row.sellerId);
+  if (!order || !store) return null;
+  return {
+    id: row.id, sellerName: store.name, status: row.status, items: [],
+    productSubtotalAzN: row.productSubtotalQepik / 100,
+    deliveryFeeAzN: row.deliveryFeeQepik === null ? null : row.deliveryFeeQepik / 100,
+    sellerEarningsAzN: null, commissionAzN: null, trackingCode: null,
+    settlementStatus: "not_eligible", refundedAzN: 0, productRefundedAzN: 0,
+    orderNumber: order.orderNumber, customerName: order.customerName,
+    customerEmail: order.customerEmail, customerPhone: order.customerPhone,
+    deliveryArea: order.deliveryArea, deliveryAddress: order.deliveryAddress,
+    deliveryNote: order.deliveryNote, paymentMethod: order.paymentMethod,
+    paymentStatus: order.paymentStatus, updatedAt: row.updatedAt,
+  };
+}
+export async function listSellerOrders(storeId: string) {
+  return sellerOrders.filter((row) => row.sellerId === storeId).map(sellerOrderResponse);
+}
+export async function loadSellerOrder(id: string) {
+  const row = sellerOrders.find((row) => row.id === id);
+  return row ? sellerOrderResponse(row) : null;
+}
 export { tables };
