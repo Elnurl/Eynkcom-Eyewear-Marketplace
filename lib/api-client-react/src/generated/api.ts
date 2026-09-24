@@ -20,7 +20,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminAccess,
   AdminOrder,
+  AdminUser,
   BuyerOrder,
   BuyerOrderDecision,
   CheckoutOptions,
@@ -240,7 +242,7 @@ export const getCreateGuestOrderUrl = () => {
 }
 
 /**
- * @summary Place one guest order across multiple sellers
+ * @summary Place an order as a guest or associate it with the signed-in Clerk account
  */
 export const createGuestOrder = async (guestOrderInput: GuestOrderInput, options?: Parameters<typeof customFetch>[1]): Promise<BuyerOrder> => {
 
@@ -273,7 +275,7 @@ return customFetch<BuyerOrder>(getCreateGuestOrderUrl(),
 
 export const getCreateGuestOrderMutationKey = () => ['createGuestOrder'] as const;
 
-export const getCreateGuestOrderMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+export const getCreateGuestOrderMutationOptions = <TError = ErrorType<ErrorEnvelope | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGuestOrder>>, TError,CreateGuestOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createGuestOrder>>, TError,CreateGuestOrderMutationVariables, TContext> => {
 
@@ -302,13 +304,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateGuestOrderMutationResult = NonNullable<Awaited<ReturnType<typeof createGuestOrder>>>
     export type CreateGuestOrderMutationBody = BodyType<GuestOrderInput>
-    export type CreateGuestOrderMutationError = ErrorType<ErrorEnvelope>
+    export type CreateGuestOrderMutationError = ErrorType<ErrorEnvelope | void>
     export type CreateGuestOrderMutationVariables = {data: BodyType<GuestOrderInput>}
 
     /**
- * @summary Place one guest order across multiple sellers
+ * @summary Place an order as a guest or associate it with the signed-in Clerk account
  */
-export const useCreateGuestOrder = <TError = ErrorType<ErrorEnvelope>,
+export const useCreateGuestOrder = <TError = ErrorType<ErrorEnvelope | void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createGuestOrder>>, TError,CreateGuestOrderMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof createGuestOrder>>,
@@ -328,7 +330,7 @@ export const getGetGuestOrderUrl = (orderId: string,) => {
 }
 
 /**
- * @summary View an order using its buyer access token
+ * @summary View an order using its buyer access token or its signed-in owner account
  */
 export const getGuestOrder = async (orderId: string, options?: Parameters<typeof customFetch>[1]): Promise<BuyerOrder> => {
 
@@ -375,7 +377,7 @@ export type GetGuestOrderQueryError = ErrorType<ErrorEnvelope>
 
 
 /**
- * @summary View an order using its buyer access token
+ * @summary View an order using its buyer access token or its signed-in owner account
  */
 
 export function useGetGuestOrder<TData = Awaited<ReturnType<typeof getGuestOrder>>, TError = ErrorType<ErrorEnvelope>>(
@@ -384,6 +386,83 @@ export function useGetGuestOrder<TData = Awaited<ReturnType<typeof getGuestOrder
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetGuestOrderQueryOptions(orderId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAccountOrdersUrl = () => {
+
+
+
+
+  return `/api/account/orders`
+}
+
+/**
+ * @summary List orders placed by the authenticated buyer
+ */
+export const listAccountOrders = async ( options?: Parameters<typeof customFetch>[1]): Promise<BuyerOrder[]> => {
+
+  return customFetch<BuyerOrder[]>(getListAccountOrdersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAccountOrdersQueryKey = () => {
+    return [
+    `/api/account/orders`
+    ] as const;
+    }
+
+
+export const getListAccountOrdersQueryOptions = <TData = Awaited<ReturnType<typeof listAccountOrders>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAccountOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAccountOrdersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAccountOrders>>> = ({ signal }) => listAccountOrders({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAccountOrders>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAccountOrdersQueryResult = NonNullable<Awaited<ReturnType<typeof listAccountOrders>>>
+export type ListAccountOrdersQueryError = ErrorType<void>
+
+
+/**
+ * @summary List orders placed by the authenticated buyer
+ */
+
+export function useListAccountOrders<TData = Awaited<ReturnType<typeof listAccountOrders>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAccountOrders>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAccountOrdersQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -405,7 +484,7 @@ export const getDecideGuestOrderRevisionUrl = (orderId: string,) => {
 }
 
 /**
- * @summary Accept a seller-adjusted order or cancel it
+ * @summary Accept a seller-adjusted order or cancel it using its access token or owner account
  */
 export const decideGuestOrderRevision = async (orderId: string,
     buyerOrderDecision: BuyerOrderDecision, options?: Parameters<typeof customFetch>[1]): Promise<BuyerOrder> => {
@@ -472,7 +551,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DecideGuestOrderRevisionMutationVariables = {orderId: string;data: BodyType<BuyerOrderDecision>}
 
     /**
- * @summary Accept a seller-adjusted order or cancel it
+ * @summary Accept a seller-adjusted order or cancel it using its access token or owner account
  */
 export const useDecideGuestOrderRevision = <TError = ErrorType<ErrorEnvelope>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof decideGuestOrderRevision>>, TError,DecideGuestOrderRevisionMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -650,6 +729,160 @@ export const useUpdateSellerOrder = <TError = ErrorType<ErrorEnvelope | void>,
       > => {
       return useMutation(getUpdateSellerOrderMutationOptions(options));
     }
+
+export const getGetAdminAccessUrl = () => {
+
+
+
+
+  return `/api/admin/access`
+}
+
+/**
+ * @summary Verify that the current user is the configured marketplace administrator
+ */
+export const getAdminAccess = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminAccess> => {
+
+  return customFetch<AdminAccess>(getGetAdminAccessUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminAccessQueryKey = () => {
+    return [
+    `/api/admin/access`
+    ] as const;
+    }
+
+
+export const getGetAdminAccessQueryOptions = <TData = Awaited<ReturnType<typeof getAdminAccess>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminAccessQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminAccess>>> = ({ signal }) => getAdminAccess({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdminAccess>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminAccessQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminAccess>>>
+export type GetAdminAccessQueryError = ErrorType<void>
+
+
+/**
+ * @summary Verify that the current user is the configured marketplace administrator
+ */
+
+export function useGetAdminAccess<TData = Awaited<ReturnType<typeof getAdminAccess>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdminAccess>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminAccessQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListAdminUsersUrl = () => {
+
+
+
+
+  return `/api/admin/users`
+}
+
+/**
+ * @summary List safe account details for the configured marketplace administrator
+ */
+export const listAdminUsers = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminUser[]> => {
+
+  return customFetch<AdminUser[]>(getListAdminUsersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminUsersQueryKey = () => {
+    return [
+    `/api/admin/users`
+    ] as const;
+    }
+
+
+export const getListAdminUsersQueryOptions = <TData = Awaited<ReturnType<typeof listAdminUsers>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminUsersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminUsers>>> = ({ signal }) => listAdminUsers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminUsersQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminUsers>>>
+export type ListAdminUsersQueryError = ErrorType<void>
+
+
+/**
+ * @summary List safe account details for the configured marketplace administrator
+ */
+
+export function useListAdminUsers<TData = Awaited<ReturnType<typeof listAdminUsers>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminUsersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListAdminOrdersUrl = () => {
 

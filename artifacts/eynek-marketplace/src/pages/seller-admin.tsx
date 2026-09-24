@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { AlertCircle, Check, LogOut, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Check, ClipboardList, LogOut, ShieldCheck, Users } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  getGetAdminAccessQueryKey,
+  getListAdminUsersQueryKey,
   getListAdminProductsQueryKey,
   getListAdminSellerApplicationsQueryKey,
   getListProductsQueryKey,
   getListStoresQueryKey,
   useListAdminProducts,
   useListAdminSellerApplications,
+  useGetAdminAccess,
+  useListAdminUsers,
   useReviewSellerApplication,
   useReviewSellerProduct,
 } from '@workspace/api-client-react';
@@ -32,6 +36,8 @@ const productStatusLabel: Record<ProductStatus | 'pending', string> = {
   needs_changes: 'Dəyişiklik tələb olunur',
 };
 
+const accountTypeLabel = { admin: 'Marketplace admin', seller: 'Satıcı', buyer: 'Alıcı' } as const;
+
 function errorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'data' in error) {
     const data = (error as { data?: { error?: string } }).data;
@@ -46,11 +52,22 @@ export default function SellerAdminPage() {
   const { signOut } = useClerk();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const adminAccess = useGetAdminAccess({
+    query: {
+      queryKey: getGetAdminAccessQueryKey(),
+      enabled: isLoaded && Boolean(isSignedIn),
+      retry: false,
+    },
+  });
+  const isAdmin = adminAccess.data?.authorized === true;
   const applications = useListAdminSellerApplications(undefined, {
-    query: { queryKey: getListAdminSellerApplicationsQueryKey(), enabled: isLoaded && Boolean(isSignedIn), retry: false },
+    query: { queryKey: getListAdminSellerApplicationsQueryKey(), enabled: isAdmin, retry: false },
   });
   const products = useListAdminProducts(undefined, {
-    query: { queryKey: getListAdminProductsQueryKey(), enabled: isLoaded && Boolean(isSignedIn), retry: false },
+    query: { queryKey: getListAdminProductsQueryKey(), enabled: isAdmin, retry: false },
+  });
+  const users = useListAdminUsers({
+    query: { queryKey: getListAdminUsersQueryKey(), enabled: isAdmin, retry: false },
   });
   const reviewApplication = useReviewSellerApplication();
   const reviewProduct = useReviewSellerProduct();
@@ -59,10 +76,28 @@ export default function SellerAdminPage() {
   const [actionError, setActionError] = useState('');
 
   useEffect(() => {
-    if (isLoaded && !isSignedIn) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-admin')}`);
-  }, [isLoaded, isSignedIn, setLocation]);
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-admin')}`);
+      return;
+    }
+    const status = (adminAccess.error as { status?: number } | null)?.status;
+    if (status === 403) setLocation('/account');
+    if (status === 401) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-admin')}`);
+  }, [adminAccess.error, isLoaded, isSignedIn, setLocation]);
 
   if (!isLoaded || !isSignedIn) return null;
+  if (!isAdmin) {
+    if (adminAccess.isLoading) return null;
+    return (
+      <main className="account-page">
+        <div className="container">
+          <div className="google-index-note" role="alert" data-testid="status-admin-access-error">{errorMessage(adminAccess.error)}</div>
+          <Link href="/account" className="btn btn-secondary">Hesaba qayıt</Link>
+        </div>
+      </main>
+    );
+  }
 
   const saveApplicationStatus = async (id: string, status: ApplicationStatus) => {
     setActionError('');
@@ -92,7 +127,7 @@ export default function SellerAdminPage() {
     }
   };
 
-  const adminError = applications.error || products.error;
+  const adminError = applications.error || products.error || users.error;
 
   return (
     <div className="seller-panel-layout">
@@ -108,6 +143,8 @@ export default function SellerAdminPage() {
         <nav className="seller-nav">
           <a className="seller-nav-item active" href="#applications"><ShieldCheck size={18} /> Satıcı müraciətləri</a>
           <a className="seller-nav-item" href="#products"><Check size={18} /> Məhsul yoxlaması</a>
+          <a className="seller-nav-item" href="#users"><Users size={18} /> İstifadəçilər <span className="nav-count">{users.data?.length ?? 0}</span></a>
+          <Link className="seller-nav-item" href="/seller-admin/orders"><ClipboardList size={18} /> Sifarişlər</Link>
         </nav>
         <div className="seller-sidebar-footer">
           <Link href="/" className="seller-nav-item">Mağazaya qayıt</Link>
@@ -204,6 +241,26 @@ export default function SellerAdminPage() {
                 ))}
               </div>
             ) : <div className="empty-state-mini">Yoxlanacaq məhsul yoxdur.</div>}
+          </section>
+
+          <section id="users" className="seller-panel-section">
+            <h2>İstifadəçilər {users.data ? `(${users.data.length})` : ''}</h2>
+            {users.isLoading ? <div className="empty-state-mini">İstifadəçilər yüklənir...</div> : users.data?.length ? (
+              <div className="admin-review-list">
+                {users.data.map((account) => (
+                  <article className="admin-review-card" key={account.id} data-testid={`card-admin-user-${account.id}`}>
+                    <div className="admin-review-heading">
+                      <div>
+                        <h3>{[account.firstName, account.lastName].filter(Boolean).join(' ') || 'Ad göstərilməyib'}</h3>
+                        <span>{account.email || 'E-poçt göstərilməyib'}</span>
+                      </div>
+                      <span className={`status-badge ${account.accountType === 'admin' ? 'active' : 'draft'}`}>{accountTypeLabel[account.accountType]}</span>
+                    </div>
+                    <small className="field-help">Qeydiyyat tarixi: {new Intl.DateTimeFormat('az-AZ').format(new Date(account.createdAt))}</small>
+                  </article>
+                ))}
+              </div>
+            ) : <div className="empty-state-mini">İstifadəçi hesabı tapılmadı.</div>}
           </section>
         </div>
       </main>

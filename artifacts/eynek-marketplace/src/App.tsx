@@ -39,11 +39,14 @@ import CheckoutPage from '@/pages/checkout';
 import OrderPage from '@/pages/order';
 import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
+import { dateLabel, money as formatOrderMoney, orderStatusLabel } from '@/pages/order-ui';
 import {
   getGetSellerStoreQueryKey,
+  getListAccountOrdersQueryKey,
   getListMySellerApplicationsQueryKey,
   useCreateSellerApplication,
   useGetSellerStore,
+  useListAccountOrders,
   useListMySellerApplications,
   useListProducts,
   useListStores,
@@ -558,9 +561,100 @@ function CartPage({ items, stores, onRemove, onCheckout }: { items: Product[]; s
 
 function AccountPage() {
   const { isLoaded, isSignedIn, user } = useUser();
-  const { signOut } = useClerk();
+  const { openUserProfile, signOut } = useClerk();
+  const orders = useListAccountOrders({
+    query: {
+      queryKey: getListAccountOrdersQueryKey(),
+      enabled: isLoaded && Boolean(isSignedIn),
+      retry: false,
+    },
+  });
   const email = user?.primaryEmailAddress?.emailAddress;
-  return <><main className="account-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Müştəri hesabı</div><h1>Hesabın.</h1></div><p>Hesab yaratmaq istəyə bağlıdır. Qonaq kimi seçilmişlərə baxa və sifarişini tamamlaya bilərsən.</p></div><div className="account-panel"><UserRound size={20} /><h2><BrandWord /> hesabı</h2>{!isLoaded ? <p>Hesab məlumatları yüklənir…</p> : isSignedIn ? <><p>{user?.fullName || email} ilə daxil olmusunuz.</p><div className="form-actions"><Link href="/wishlist" className="btn btn-secondary" data-testid="link-account-wishlist">Seçilmişlərə bax <ArrowRight size={14} /></Link><button className="btn btn-secondary" type="button" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })}>Çıxış et</button></div></> : <><p>Daxil olmaq və ya hesab yaratmaqla hesab məlumatlarınıza keçid əldə edin. Bu, qonaq sifarişinə mane olmur.</p><div className="form-actions"><Link href="/sign-in" className="btn" data-testid="link-account-sign-in">Daxil ol <ArrowRight size={14} /></Link><Link href="/sign-up" className="btn btn-secondary" data-testid="link-account-sign-up">Hesab yarat</Link><Link href="/wishlist" className="btn btn-secondary" data-testid="link-account-wishlist">Seçilmişlərə bax</Link></div></>}</div></div></main><Footer /></>;
+  return (
+    <>
+      <main className="account-page">
+        <div className="container">
+          <div className="directory-header">
+            <div><div className="eyebrow">Müştəri hesabı</div><h1>Hesabın.</h1></div>
+            <p>Hesab yaratmaq istəyə bağlıdır. Qonaq kimi də sifariş verib izləyə bilərsən.</p>
+          </div>
+          <section className="account-panel">
+            <UserRound size={20} />
+            <h2><BrandWord /> hesabı</h2>
+            {!isLoaded ? (
+              <p role="status" data-testid="status-account-loading">Hesab məlumatları yüklənir…</p>
+            ) : isSignedIn ? (
+              <>
+                <p data-testid="text-account-identity">{user?.fullName || email || 'EYNƏK.com alıcısı'} ilə daxil olmusunuz.</p>
+                <div className="form-actions">
+                  <button className="btn" type="button" onClick={() => openUserProfile()} data-testid="button-account-profile">Profil məlumatlarını idarə et</button>
+                  <Link href="/wishlist" className="btn btn-secondary" data-testid="link-account-wishlist">Seçilmişlərə bax <ArrowRight size={14} /></Link>
+                  <button className="btn btn-secondary" type="button" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })} data-testid="button-account-sign-out">Çıxış et</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p>Hesab açmaq istəyə bağlıdır — hesabla daxil olduqda öz sifariş tarixçənə və profil məlumatlarına bir yerdən baxa bilərsən.</p>
+                <ul className="account-benefits">
+                  <li>Sifarişləri və çatdırılma yeniliklərini bir yerdə gör.</li>
+                  <li>Ad və e-poçt məlumatlarını Clerk profilindən idarə et.</li>
+                </ul>
+                <p className="account-guest-note">Hesab yaratmadan da qonaq kimi sifariş verə bilərsən; sifarişi təsdiq səhifəsindəki təhlükəsiz keçidlə izlə.</p>
+                <div className="form-actions">
+                  <Link href="/sign-in?redirect_url=%2Faccount" className="btn" data-testid="link-account-sign-in">Daxil ol <ArrowRight size={14} /></Link>
+                  <Link href="/sign-up" className="btn btn-secondary" data-testid="link-account-sign-up">Hesab yarat</Link>
+                  <Link href="/wishlist" className="btn btn-secondary" data-testid="link-account-wishlist">Seçilmişlərə bax</Link>
+                </div>
+              </>
+            )}
+          </section>
+
+          {isLoaded && isSignedIn && (
+            <section className="account-orders" aria-labelledby="account-orders-heading">
+              <div className="account-orders-heading">
+                <div><div className="eyebrow">Sifariş tarixçəsi</div><h2 id="account-orders-heading">Sifarişlərin</h2></div>
+                <span data-testid="text-account-order-count">{orders.data?.length ?? 0} sifariş</span>
+              </div>
+              {orders.isLoading ? (
+                <div className="empty-state-mini" role="status" data-testid="status-account-orders-loading">Sifarişlər yüklənir…</div>
+              ) : orders.isError ? (
+                <div className="google-index-note" role="alert" data-testid="status-account-orders-error">
+                  Sifariş tarixçəsini yükləmək alınmadı. Yenidən yoxlayın.
+                  <button className="text-link" type="button" onClick={() => void orders.refetch()} data-testid="button-account-orders-retry">Yenidən cəhd et</button>
+                </div>
+              ) : orders.data?.length ? (
+                <div className="account-order-list">
+                  {orders.data.map((order) => (
+                    <article className="account-order-card" key={order.id} data-testid={`card-account-order-${order.id}`}>
+                      <div className="account-order-main">
+                        <div>
+                          <strong>{order.orderNumber}</strong>
+                          <span>{orderStatusLabel(order.status)}</span>
+                        </div>
+                        <div>
+                          <strong>{order.totalAzN === null ? 'Məbləğ təsdiqlənir' : formatOrderMoney(order.totalAzN)}</strong>
+                          <span>{dateLabel(order.createdAt)}</span>
+                        </div>
+                      </div>
+                      <Link href={`/order/${order.id}`} className="text-link" data-testid={`link-account-order-${order.id}`}>
+                        Sifarişə bax <ArrowRight size={14} />
+                      </Link>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state-mini" data-testid="status-account-orders-empty">
+                  Bu hesabla verilmiş sifariş yoxdur. Qonaq sifarişləri hesab tarixçəsinə əlavə olunmur.
+                  <Link href="/collection" className="text-link" data-testid="link-account-empty-orders-shop">Eynəklərə bax <ArrowRight size={14} /></Link>
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+      </main>
+      <Footer />
+    </>
+  );
 }
 
 function MobileBottomNav({ onTryOn }: { onTryOn: () => void }) {

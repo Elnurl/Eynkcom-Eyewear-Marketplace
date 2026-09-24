@@ -7,8 +7,10 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  varchar,
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
+import { usersTable } from "./auth";
 
 export const marketplaceOrdersTable = pgTable(
   "marketplace_orders",
@@ -16,6 +18,9 @@ export const marketplaceOrdersTable = pgTable(
     id: text("id").primaryKey(),
     orderNumber: text("order_number").notNull(),
     accessTokenHash: text("access_token_hash").notNull(),
+    buyerUserId: varchar("buyer_user_id").references(() => usersTable.id, {
+      onDelete: "set null",
+    }),
     customerName: text("customer_name").notNull(),
     customerEmail: text("customer_email").notNull(),
     customerPhone: text("customer_phone").notNull(),
@@ -41,6 +46,7 @@ export const marketplaceOrdersTable = pgTable(
     uniqueIndex("marketplace_orders_access_token_hash_unique").on(table.accessTokenHash),
     index("marketplace_orders_status_idx").on(table.status),
     index("marketplace_orders_created_at_idx").on(table.createdAt),
+    index("marketplace_orders_buyer_user_idx").on(table.buyerUserId),
   ],
 );
 

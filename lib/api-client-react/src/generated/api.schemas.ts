@@ -639,6 +639,32 @@ export interface BuyerOrder {
   createdAt: string;
 }
 
+export const AdminAccessValue = {
+  authorized: true,
+} as const;
+export type AdminAccess = typeof AdminAccessValue;
+
+export type AdminUserAccountType = typeof AdminUserAccountType[keyof typeof AdminUserAccountType];
+
+
+export const AdminUserAccountType = {
+  admin: 'admin',
+  seller: 'seller',
+  buyer: 'buyer',
+} as const;
+
+export interface AdminUser {
+  id: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  createdAt: string;
+  accountType: AdminUserAccountType;
+}
+
 export type SellerOrderDeliveryArea = typeof SellerOrderDeliveryArea[keyof typeof SellerOrderDeliveryArea];
 
 

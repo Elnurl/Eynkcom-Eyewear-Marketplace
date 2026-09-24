@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { Router, type IRouter } from "express";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   CreateGuestOrderBody,
   CreateGuestOrderResponse,
@@ -10,6 +10,7 @@ import {
   GetCheckoutOptionsResponse,
   GetGuestOrderParams,
   GetGuestOrderResponse,
+  ListAccountOrdersResponse,
   ListAdminOrdersResponse,
   ListSellerOrdersResponse,
   RecordOrderRefundBody,
@@ -38,7 +39,7 @@ import {
   loadSellerOrder,
   tokenMatches,
 } from "../lib/marketplaceOrders";
-import { requireAuth } from "../middlewares/requireAuth";
+import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 type OrderTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -202,7 +203,7 @@ router.get("/checkout/options", (_req, res): void => {
   );
 });
 
-router.post("/orders", async (req, res): Promise<void> => {
+router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
   const body = CreateGuestOrderBody.safeParse(req.body);
   if (!body.success) {
     req.log.warn({ errors: body.error.issues }, "Invalid guest checkout input");
@@ -301,6 +302,7 @@ router.post("/orders", async (req, res): Promise<void> => {
       id: orderId,
       orderNumber,
       accessTokenHash,
+      buyerUserId: req.dbUser?.id ?? null,
       customerName: body.data.customerName.trim(),
       customerEmail: body.data.customerEmail.trim().toLocaleLowerCase("en-US"),
       customerPhone: body.data.customerPhone.trim(),
@@ -380,11 +382,11 @@ router.post("/orders", async (req, res): Promise<void> => {
   res.status(201).json(CreateGuestOrderResponse.parse(saved));
 });
 
-router.get("/orders/:orderId", async (req, res): Promise<void> => {
+router.get("/orders/:orderId", optionalAuth, async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "private, no-store");
   const params = GetGuestOrderParams.safeParse(req.params);
   const token = req.get("X-Order-Access-Token") ?? "";
-  if (!params.success || token.length < 32) {
+  if (!params.success) {
     res.status(404).json({ error: "Sifariş tapılmadı." });
     return;
   }
@@ -393,7 +395,9 @@ router.get("/orders/:orderId", async (req, res): Promise<void> => {
     .from(marketplaceOrdersTable)
     .where(eq(marketplaceOrdersTable.id, params.data.orderId))
     .limit(1);
-  if (!order || !tokenMatches(token, order.accessTokenHash)) {
+  const ownsOrder = Boolean(req.dbUser && order?.buyerUserId === req.dbUser.id);
+  const hasGuestAccess = Boolean(order && token.length >= 32 && tokenMatches(token, order.accessTokenHash));
+  if (!order || (!ownsOrder && !hasGuestAccess)) {
     res.status(404).json({ error: "Sifariş tapılmadı." });
     return;
   }
@@ -405,11 +409,30 @@ router.get("/orders/:orderId", async (req, res): Promise<void> => {
   res.json(GetGuestOrderResponse.parse(saved));
 });
 
-router.post("/orders/:orderId/decision", async (req, res): Promise<void> => {
+router.get("/account/orders", requireAuth, async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "private, no-store");
+  if (!req.dbUser) {
+    res.status(401).json({ error: "Daxil olmaq tələb olunur." });
+    return;
+  }
+  const rows = await db
+    .select({ id: marketplaceOrdersTable.id })
+    .from(marketplaceOrdersTable)
+    .where(eq(marketplaceOrdersTable.buyerUserId, req.dbUser.id))
+    .orderBy(desc(marketplaceOrdersTable.createdAt));
+  const orders = [];
+  for (const row of rows) {
+    const order = await loadBuyerOrder(row.id);
+    if (order) orders.push(order);
+  }
+  res.json(ListAccountOrdersResponse.parse(orders));
+});
+
+router.post("/orders/:orderId/decision", optionalAuth, async (req, res): Promise<void> => {
   const params = DecideGuestOrderRevisionParams.safeParse(req.params);
   const body = DecideGuestOrderRevisionBody.safeParse(req.body);
   const token = req.get("X-Order-Access-Token") ?? "";
-  if (!params.success || !body.success || token.length < 32) {
+  if (!params.success || !body.success) {
     res.status(400).json({ error: "Sifariş qərarı düzgün deyil." });
     return;
   }
@@ -421,7 +444,9 @@ router.post("/orders/:orderId/decision", async (req, res): Promise<void> => {
       .where(eq(marketplaceOrdersTable.id, params.data.orderId))
       .for("update")
       .limit(1);
-    if (!order || !tokenMatches(token, order.accessTokenHash)) {
+    const ownsOrder = Boolean(req.dbUser && order?.buyerUserId === req.dbUser.id);
+    const hasGuestAccess = Boolean(order && token.length >= 32 && tokenMatches(token, order.accessTokenHash));
+    if (!order || (!ownsOrder && !hasGuestAccess)) {
       return { kind: "missing" as const };
     }
     if (order.status !== "awaiting_buyer_approval") {

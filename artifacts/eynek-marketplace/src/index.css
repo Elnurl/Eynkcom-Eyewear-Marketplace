@@ -535,6 +535,26 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .account-panel, .cart-panel { border: 1px solid var(--line); border-radius: 10px; padding: 25px; background: var(--white); }
 .account-panel h2, .cart-panel h2 { margin: 0 0 8px; color: var(--navy); font-size: 23px; letter-spacing: -.05em; }
 .account-panel p, .cart-panel p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.account-benefits { display: grid; gap: 7px; margin: 12px 0; padding-left: 20px; color: var(--ink); font-size: 12px; line-height: 1.55; }
+.account-guest-note { padding-top: 10px; border-top: 1px solid var(--line); }
+.account-orders { margin-top: 32px; }
+.account-orders-heading { display: flex; align-items: end; justify-content: space-between; gap: 15px; margin-bottom: 14px; }
+.account-orders-heading h2 { margin: 5px 0 0; color: var(--navy); font-size: 25px; letter-spacing: -.05em; }
+.account-orders-heading > span { color: var(--muted); font-size: 12px; }
+.account-order-list { display: grid; gap: 10px; }
+.account-order-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 17px 19px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); }
+.account-order-main { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 18px; }
+.account-order-main > div { display: grid; gap: 5px; }
+.account-order-main > div:last-child { text-align: right; }
+.account-order-main strong { color: var(--navy); font-size: 13px; }
+.account-order-main span { color: var(--muted); font-size: 11px; }
+.account-order-card > .text-link { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.account-orders .empty-state-mini { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); color: var(--muted); font-size: 12px; }
+@media (max-width: 640px) {
+  .account-order-card { align-items: stretch; flex-direction: column; }
+  .account-order-main { align-items: flex-start; }
+  .account-order-main > div:last-child { text-align: left; }
+}
 .wishlist-grid { margin-top: 30px; }
 .cart-items { display: grid; gap: 12px; margin-top: 21px; }
 .cart-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 12px; }

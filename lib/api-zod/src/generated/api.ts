@@ -28,7 +28,7 @@ export const GetCheckoutOptionsResponse = zod.object({
 
 
 /**
- * @summary Place one guest order across multiple sellers
+ * @summary Place an order as a guest or associate it with the signed-in Clerk account
  */
 export const createGuestOrderBodyCustomerNameMin = 2;
 export const createGuestOrderBodyCustomerNameMax = 160;
@@ -110,7 +110,7 @@ export const CreateGuestOrderResponse = zod.object({
 
 
 /**
- * @summary View an order using its buyer access token
+ * @summary View an order using its buyer access token or its signed-in owner account
  */
 export const GetGuestOrderParams = zod.object({
   "orderId": zod.coerce.string()
@@ -121,7 +121,7 @@ export const getGuestOrderHeaderXOrderAccessTokenMin = 32;
 
 
 export const GetGuestOrderHeader = zod.object({
-  "X-Order-Access-Token": zod.string().min(getGuestOrderHeaderXOrderAccessTokenMin)
+  "X-Order-Access-Token": zod.string().min(getGuestOrderHeaderXOrderAccessTokenMin).optional()
 })
 
 export const GetGuestOrderResponse = zod.object({
@@ -164,7 +164,50 @@ export const GetGuestOrderResponse = zod.object({
 
 
 /**
- * @summary Accept a seller-adjusted order or cancel it
+ * @summary List orders placed by the authenticated buyer
+ */
+export const ListAccountOrdersResponseItem = zod.object({
+  "id": zod.string(),
+  "orderNumber": zod.string(),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "customerName": zod.string(),
+  "customerEmail": zod.string(),
+  "customerPhone": zod.string(),
+  "deliveryArea": zod.enum(['Bakı', 'Abşeron']),
+  "deliveryAddress": zod.string(),
+  "deliveryNote": zod.string().nullish(),
+  "productSubtotalAzN": zod.number(),
+  "deliveryTotalAzN": zod.number().nullable(),
+  "totalAzN": zod.number().nullable(),
+  "sellerOrders": zod.array(zod.object({
+  "id": zod.string(),
+  "sellerName": zod.string(),
+  "status": zod.enum(['pending_confirmation', 'confirmed', 'declined', 'paused', 'preparing', 'out_for_delivery', 'delivered', 'cancelled']),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "productName": zod.string(),
+  "quantity": zod.number().int(),
+  "unitPriceAzN": zod.number(),
+  "lineTotalAzN": zod.number()
+})),
+  "productSubtotalAzN": zod.number(),
+  "deliveryFeeAzN": zod.number().nullable(),
+  "trackingCode": zod.string().nullable()
+})),
+  "timeline": zod.array(zod.object({
+  "status": zod.string(),
+  "label": zod.string(),
+  "createdAt": zod.coerce.date()
+})),
+  "createdAt": zod.coerce.date()
+})
+export const ListAccountOrdersResponse = zod.array(ListAccountOrdersResponseItem)
+
+
+/**
+ * @summary Accept a seller-adjusted order or cancel it using its access token or owner account
  */
 export const DecideGuestOrderRevisionParams = zod.object({
   "orderId": zod.coerce.string()
@@ -175,7 +218,7 @@ export const decideGuestOrderRevisionHeaderXOrderAccessTokenMin = 32;
 
 
 export const DecideGuestOrderRevisionHeader = zod.object({
-  "X-Order-Access-Token": zod.string().min(decideGuestOrderRevisionHeaderXOrderAccessTokenMin)
+  "X-Order-Access-Token": zod.string().min(decideGuestOrderRevisionHeaderXOrderAccessTokenMin).optional()
 })
 
 export const DecideGuestOrderRevisionBody = zod.object({
@@ -325,6 +368,28 @@ export const UpdateSellerOrderResponse = zod.object({
   "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "updatedAt": zod.coerce.date()
 }))
+
+
+/**
+ * @summary Verify that the current user is the configured marketplace administrator
+ */
+export const GetAdminAccessResponse = zod.object({
+  "authorized": zod.literal(true)
+})
+
+
+/**
+ * @summary List safe account details for the configured marketplace administrator
+ */
+export const ListAdminUsersResponseItem = zod.object({
+  "id": zod.string(),
+  "email": zod.string().nullable(),
+  "firstName": zod.string().nullable(),
+  "lastName": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "accountType": zod.enum(['admin', 'seller', 'buyer'])
+})
+export const ListAdminUsersResponse = zod.array(ListAdminUsersResponseItem)
 
 
 /**

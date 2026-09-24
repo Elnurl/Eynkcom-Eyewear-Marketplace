@@ -3,7 +3,9 @@ import { AlertCircle, CircleDollarSign, ClipboardList, LogOut, RefreshCw, Shield
 import { Link, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  getGetAdminAccessQueryKey,
   getListAdminOrdersQueryKey,
+  useGetAdminAccess,
   useListAdminOrders,
   useRecordOrderRefund,
 } from '@workspace/api-client-react';
@@ -26,15 +28,30 @@ export default function SellerAdminOrdersPage() {
   const { signOut } = useClerk();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const orders = useListAdminOrders({ query: { enabled: isLoaded && Boolean(isSignedIn), queryKey: getListAdminOrdersQueryKey(), retry: false } });
+  const adminAccess = useGetAdminAccess({
+    query: {
+      queryKey: getGetAdminAccessQueryKey(),
+      enabled: isLoaded && Boolean(isSignedIn),
+      retry: false,
+    },
+  });
+  const isAdmin = adminAccess.data?.authorized === true;
+  const orders = useListAdminOrders({ query: { enabled: isAdmin, queryKey: getListAdminOrdersQueryKey(), retry: false } });
   const recordRefund = useRecordOrderRefund();
   const [drafts, setDrafts] = useState<Record<string, RefundDraft>>({});
   const [error, setError] = useState('');
   const [savedId, setSavedId] = useState('');
 
   useEffect(() => {
-    if (isLoaded && !isSignedIn) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-admin/orders')}`);
-  }, [isLoaded, isSignedIn, setLocation]);
+    if (!isLoaded) return;
+    if (!isSignedIn) {
+      setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-admin/orders')}`);
+      return;
+    }
+    const status = (adminAccess.error as { status?: number } | null)?.status;
+    if (status === 403) setLocation('/account');
+    if (status === 401) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-admin/orders')}`);
+  }, [adminAccess.error, isLoaded, isSignedIn, setLocation]);
 
   const list = orders.data ?? [];
   const totalGross = useMemo(() => list.reduce((sum, order) => sum + (order.totalAzN ?? 0), 0), [list]);
@@ -81,12 +98,17 @@ export default function SellerAdminOrdersPage() {
   };
 
   if (!isLoaded || !isSignedIn) return null;
+  if (!isAdmin) {
+    if (adminAccess.isLoading) return null;
+    const response = adminAccess.error as { data?: { error?: string } } | null;
+    return <main className="account-page"><div className="container"><div className="google-index-note" role="alert" data-testid="status-admin-orders-access-error">{response?.data?.error ?? 'Admin icazəsini yoxlamaq alınmadı.'}</div><Link href="/account" className="btn btn-secondary">Hesaba qayıt</Link></div></main>;
+  }
 
   return <div className="seller-panel-layout">
     <aside className="seller-sidebar">
       <div className="seller-sidebar-header"><Link href="/" className="brand" data-testid="link-admin-orders-brand"><BrandLogo /></Link><span className="seller-badge">Marketplace Admin</span></div>
       <div className="seller-store-info"><div className="store-avatar"><ShieldCheck size={20} /></div><div><strong>İdarəetmə</strong><small>{user?.primaryEmailAddress?.emailAddress}</small></div></div>
-      <nav className="seller-nav"><Link href="/seller-admin" className="seller-nav-item"><ShieldCheck size={18} /> Yoxlama</Link><Link href="/seller-admin/orders" className="seller-nav-item active"><ClipboardList size={18} /> Sifarişlər</Link></nav>
+      <nav className="seller-nav"><Link href="/seller-admin" className="seller-nav-item"><ShieldCheck size={18} /> Yoxlama</Link><Link href="/seller-admin/orders" className="seller-nav-item active"><ClipboardList size={18} /> Sifarişlər</Link><Link href="/seller-admin#users" className="seller-nav-item">İstifadəçilər</Link></nav>
       <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Mağazaya qayıt</Link><button className="seller-nav-item text-danger" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })} data-testid="button-admin-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
     </aside>
     <main className="seller-main"><div className="seller-content">

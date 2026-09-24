@@ -82,3 +82,15 @@ export async function requireAuth(
     next(error);
   }
 }
+
+export async function optionalAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  if (!getAuth(req).userId) {
+    next();
+    return;
+  }
+  await requireAuth(req, res, next);
+}
