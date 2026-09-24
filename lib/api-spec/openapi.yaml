@@ -13,7 +13,11 @@ tags:
   - name: products
     description: Public catalog products
   - name: seller-products
-    description: Demo seller product management
+    description: Approved seller product management and catalog moderation
+  - name: seller-applications
+    description: Seller applications and marketplace review
+  - name: stores
+    description: Public seller stores and seller store management
   - name: Auth
     description: Browser authentication endpoints.
   - name: Storage
@@ -46,13 +50,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/SellerProduct"
+                  $ref: "#/components/schemas/PublicProduct"
   /seller/products:
     get:
       operationId: listSellerProducts
       tags: [seller-products]
       summary: List seller products
-      description: Returns all products for the current demo seller.
+      description: Returns all products for the authenticated approved seller.
       responses:
         "200":
           description: Seller products
@@ -135,6 +139,215 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /stores:
+    get:
+      operationId: listStores
+      tags: [stores]
+      summary: List public approved stores
+      responses:
+        "200":
+          description: Public stores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SellerStore"
+  /seller/store:
+    get:
+      operationId: getSellerStore
+      tags: [stores]
+      summary: Get the authenticated seller's approved store
+      responses:
+        "200":
+          description: Seller store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerStore"
+        "401":
+          description: Authentication required
+        "403":
+          description: Seller approval required
+    patch:
+      operationId: updateSellerStore
+      tags: [stores]
+      summary: Update the authenticated seller's store profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerStoreUpdate"
+      responses:
+        "200":
+          description: Store updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerStore"
+        "400":
+          description: Invalid store update
+        "401":
+          description: Authentication required
+        "403":
+          description: Seller approval required
+  /seller/applications:
+    post:
+      operationId: createSellerApplication
+      tags: [seller-applications]
+      summary: Submit a seller application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerApplicationInput"
+      responses:
+        "201":
+          description: Application received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerApplication"
+        "400":
+          description: Invalid application
+  /seller/applications/mine:
+    get:
+      operationId: listMySellerApplications
+      tags: [seller-applications]
+      summary: List applications matching the authenticated user's email
+      responses:
+        "200":
+          description: The current user's applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SellerApplication"
+        "401":
+          description: Authentication required
+  /admin/seller-applications:
+    get:
+      operationId: listAdminSellerApplications
+      tags: [seller-applications]
+      summary: List seller applications for review
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/SellerApplicationStatus"
+      responses:
+        "200":
+          description: Applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SellerApplication"
+        "401":
+          description: Authentication required
+        "403":
+          description: Marketplace administrator access required
+        "503":
+          description: Marketplace administrator is not configured
+  /admin/seller-applications/{id}:
+    patch:
+      operationId: reviewSellerApplication
+      tags: [seller-applications]
+      summary: Review a seller application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerApplicationReview"
+      responses:
+        "200":
+          description: Application reviewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerApplication"
+        "400":
+          description: Invalid review
+        "401":
+          description: Authentication required
+        "403":
+          description: Marketplace administrator access required
+        "404":
+          description: Application not found
+        "503":
+          description: Marketplace administrator is not configured
+  /admin/products:
+    get:
+      operationId: listAdminProducts
+      tags: [seller-products]
+      summary: List products for marketplace moderation
+      parameters:
+        - name: approvalStatus
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/ProductApprovalStatus"
+      responses:
+        "200":
+          description: Products for review
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SellerProduct"
+        "401":
+          description: Authentication required
+        "403":
+          description: Marketplace administrator access required
+        "503":
+          description: Marketplace administrator is not configured
+  /admin/products/{id}/approval:
+    patch:
+      operationId: reviewSellerProduct
+      tags: [seller-products]
+      summary: Approve or reject a seller product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductApprovalUpdate"
+      responses:
+        "200":
+          description: Product moderation updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerProduct"
+        "400":
+          description: Invalid moderation update
+        "401":
+          description: Authentication required
+        "403":
+          description: Marketplace administrator access required
+        "404":
+          description: Product not found
+        "503":
+          description: Marketplace administrator is not configured
   /auth/user:
     get:
       tags: [Auth]
@@ -344,7 +557,14 @@ components:
         - stock
         - color
         - material
+        - brand
+        - gender
+        - shape
+        - size
+        - description
         - status
+        - approvalStatus
+        - moderationNote
         - frontImage
         - sideImage
         - createdAt
@@ -369,9 +589,25 @@ components:
           type: string
         material:
           type: string
+        brand:
+          type: string
+        gender:
+          type: string
+          enum: [Qadın, Kişi, Uniseks]
+        shape:
+          type: string
+          enum: [Aviator, Cat-Eye, Rectangle, Round, Square, Wayfarer]
+        size:
+          type: string
+        description:
+          type: string
         status:
           type: string
           enum: [Aktiv, Qaralama]
+        approvalStatus:
+          $ref: "#/components/schemas/ProductApprovalStatus"
+        moderationNote:
+          type: ["string", "null"]
         frontImage:
           type: string
         sideImage:
@@ -391,6 +627,11 @@ components:
         - stock
         - color
         - material
+        - brand
+        - gender
+        - shape
+        - size
+        - description
         - status
         - frontImage
         - sideImage
@@ -416,6 +657,21 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        brand:
+          type: string
+          maxLength: 100
+        gender:
+          type: string
+          enum: [Qadın, Kişi, Uniseks]
+        shape:
+          type: string
+          enum: [Aviator, Cat-Eye, Rectangle, Round, Square, Wayfarer]
+        size:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 1000
         status:
           type: string
           enum: [Aktiv, Qaralama]
@@ -450,6 +706,21 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        brand:
+          type: string
+          maxLength: 100
+        gender:
+          type: string
+          enum: [Qadın, Kişi, Uniseks]
+        shape:
+          type: string
+          enum: [Aviator, Cat-Eye, Rectangle, Round, Square, Wayfarer]
+        size:
+          type: string
+          maxLength: 80
+        description:
+          type: string
+          maxLength: 1000
         status:
           type: string
           enum: [Aktiv, Qaralama]
@@ -459,6 +730,209 @@ components:
         sideImage:
           type: string
           minLength: 1
+    ProductApprovalStatus:
+      type: string
+      enum: [pending, approved, rejected, needs_changes]
+    ProductApprovalUpdate:
+      type: object
+      required: [approvalStatus]
+      properties:
+        approvalStatus:
+          type: string
+          enum: [approved, rejected, needs_changes]
+        moderationNote:
+          type: ["string", "null"]
+          maxLength: 1000
+    PublicProduct:
+      type: object
+      required: [id, sellerId, name, category, price, stock, color, material, brand, gender, shape, size, description, frontImage, sideImage, vendor, vendorSlug, location, isAvailable]
+      properties:
+        id:
+          type: string
+        sellerId:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          enum: [Optik çərçivə, Gün eynəyi]
+        price:
+          type: integer
+        stock:
+          type: integer
+          minimum: 0
+        color:
+          type: string
+        material:
+          type: string
+        brand:
+          type: string
+        gender:
+          type: string
+          enum: [Qadın, Kişi, Uniseks]
+        shape:
+          type: string
+          enum: [Aviator, Cat-Eye, Rectangle, Round, Square, Wayfarer]
+        size:
+          type: string
+        description:
+          type: string
+        frontImage:
+          type: string
+        sideImage:
+          type: string
+        vendor:
+          type: string
+        vendorSlug:
+          type: string
+        location:
+          type: string
+        isAvailable:
+          type: boolean
+    SellerStore:
+      type: object
+      required: [id, name, slug, location, description, instagram, website, status, productCount, initials, since, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        instagram:
+          type: string
+        website:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        productCount:
+          type: integer
+          minimum: 0
+        initials:
+          type: string
+        since:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SellerStoreUpdate:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        location:
+          type: string
+          minLength: 1
+          maxLength: 300
+        description:
+          type: string
+          maxLength: 1000
+        instagram:
+          type: string
+          maxLength: 200
+        website:
+          type: string
+          maxLength: 300
+    SellerApplicationStatus:
+      type: string
+      enum: [pending, approved, rejected, needs_changes]
+    SellerApplication:
+      type: object
+      required: [id, storeName, ownerName, phone, email, business, tax, address, instagram, website, categories, status, reviewNotes, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        storeName:
+          type: string
+        ownerName:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        business:
+          type: string
+        tax:
+          type: string
+        address:
+          type: string
+        instagram:
+          type: string
+        website:
+          type: string
+        categories:
+          type: string
+        status:
+          $ref: "#/components/schemas/SellerApplicationStatus"
+        reviewNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SellerApplicationInput:
+      type: object
+      required: [storeName, ownerName, phone, email, business, address, categories]
+      properties:
+        storeName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        ownerName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 60
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        business:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        tax:
+          type: string
+          maxLength: 100
+        address:
+          type: string
+          minLength: 1
+          maxLength: 300
+        instagram:
+          type: string
+          maxLength: 200
+        website:
+          type: string
+          maxLength: 300
+        categories:
+          type: string
+          minLength: 1
+          maxLength: 300
+    SellerApplicationReview:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/SellerApplicationStatus"
+        reviewNotes:
+          type: ["string", "null"]
+          maxLength: 1000
     Error:
       type: object
       required: [error]

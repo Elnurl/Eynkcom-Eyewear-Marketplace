@@ -372,7 +372,7 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .seller-main-header p { color: var(--muted); font-size: 13px; margin: 0; }
 .seller-main-header.with-actions { display: flex; align-items: flex-end; justify-content: space-between; }
 
-.seller-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.seller-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 20px; }
 .seller-stat-card { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 15px; }
 .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; }
 .bg-blue-soft { background: rgba(61,90,254,0.1); color: var(--blue); }
@@ -413,8 +413,22 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .status-badge.active::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #28A745; }
 .status-badge.draft { color: var(--muted); display: inline-flex; align-items: center; gap: 5px; }
 .status-badge.draft::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.status-badge.pending { color: #8A5A19; display: inline-flex; align-items: center; gap: 5px; }
+.status-badge.pending::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #C58B32; }
 .table-actions { display: flex; gap: 5px; justify-content: flex-end; }
 .text-right { text-align: right; }
+
+.admin-review-list { display: grid; gap: 14px; }
+.admin-review-card { display: grid; gap: 14px; padding: 20px; background: var(--white); border: 1px solid var(--line); border-radius: 12px; }
+.admin-review-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.admin-review-heading h3 { color: var(--navy); margin: 0 0 5px; font-size: 16px; }
+.admin-review-heading span, .admin-review-card p { color: var(--muted); font-size: 12px; line-height: 1.6; }
+.admin-review-card p { margin: 0; }
+.admin-review-details { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 11px; }
+.admin-review-details strong { color: var(--navy); }
+.admin-review-card textarea { width: 100%; min-height: 72px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; color: var(--ink); font: inherit; font-size: 12px; }
+.admin-review-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-review-actions .btn { min-height: 34px; padding: 8px 12px; font-size: 11px; }
 
 .status-dot { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; }
 .status-dot::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }

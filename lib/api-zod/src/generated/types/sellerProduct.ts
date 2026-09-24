@@ -5,7 +5,10 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { ProductApprovalStatus } from './productApprovalStatus';
 import type { SellerProductCategory } from './sellerProductCategory';
+import type { SellerProductGender } from './sellerProductGender';
+import type { SellerProductShape } from './sellerProductShape';
 import type { SellerProductStatus } from './sellerProductStatus';
 
 export interface SellerProduct {
@@ -19,7 +22,15 @@ export interface SellerProduct {
   stock: number;
   color: string;
   material: string;
+  brand: string;
+  gender: SellerProductGender;
+  shape: SellerProductShape;
+  size: string;
+  description: string;
   status: SellerProductStatus;
+  approvalStatus: ProductApprovalStatus;
+  /** @nullable */
+  moderationNote: string | null;
   frontImage: string;
   sideImage: string;
   createdAt: Date;

@@ -7,7 +7,7 @@ import {
   Image as ImageIcon, ArrowLeft, Store, Settings, 
   Package, LayoutDashboard, X, Check, AlertCircle
 } from 'lucide-react';
-import { useDemoSeller, type SellerProduct, type SellerProductInput } from '@/hooks/use-demo-seller';
+import { useSellerWorkspace, type SellerProduct, type SellerProductInput } from '@/hooks/use-seller-workspace';
 import { BrandLogo } from '@/components/brand-logo';
 
 function sellerImageUrl(image: string) {
@@ -20,17 +20,25 @@ function sellerImageUrl(image: string) {
 
 export default function SellerPanel() {
   const {
-    session,
+    user,
+    isAuthenticated,
+    isAuthLoading,
     logout,
+    store,
+    storeError,
     products,
     addProduct,
     updateProduct,
     deleteProduct,
+    updateStore,
+    isLoading,
     isSaving,
     errorMessage,
-  } = useDemoSeller();
+  } = useSellerWorkspace();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<'overview' | 'products'>('products');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'store'>('products');
+  const [storeForm, setStoreForm] = useState({ name: '', location: '', description: '', instagram: '', website: '' });
+  const [storeSaveMessage, setStoreSaveMessage] = useState('');
   
   // Product Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -40,10 +48,37 @@ export default function SellerPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   
   useEffect(() => {
-    if (!session.authenticated) setLocation('/seller-login');
-  }, [session.authenticated, setLocation]);
+    if (!isAuthLoading && !isAuthenticated) setLocation('/seller-login?returnTo=/seller-panel');
+  }, [isAuthLoading, isAuthenticated, setLocation]);
 
-  if (!session.authenticated) return null;
+  useEffect(() => {
+    if (store) {
+      setStoreForm({
+        name: store.name,
+        location: store.location,
+        description: store.description,
+        instagram: store.instagram,
+        website: store.website,
+      });
+    }
+  }, [store]);
+
+  if (isAuthLoading || !isAuthenticated || isLoading) return null;
+  if (!store) {
+    return (
+      <div className="seller-auth-page">
+        <div className="seller-auth-container">
+          <div className="seller-auth-header">
+            <Link href="/" className="brand"><BrandLogo /></Link>
+            <div className="eyebrow" style={{ marginTop: 30 }}>Satıcı Paneli</div>
+            <h1>Mağaza təsdiqi tələb olunur</h1>
+            <p>{storeError || 'Bu hesaba bağlı aktiv satıcı mağazası tapılmadı.'}</p>
+          </div>
+          <Link href="/seller" className="btn btn-full btn-blue">Satıcı müraciətinə bax</Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogout = () => {
     logout();
@@ -72,9 +107,26 @@ export default function SellerPanel() {
     );
   }, [products, searchQuery]);
 
-  const activeCount = products.filter(p => p.status === 'Aktiv').length;
+  const activeCount = products.filter(p => p.status === 'Aktiv' && p.approvalStatus === 'approved').length;
   const draftCount = products.filter(p => p.status === 'Qaralama').length;
+  const reviewCount = products.filter(p => p.approvalStatus === 'pending').length;
   const outOfStockCount = products.filter(p => p.stock === 0).length;
+  const saveStoreProfile = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStoreSaveMessage('');
+    try {
+      await updateStore({
+        name: storeForm.name.trim(),
+        location: storeForm.location.trim(),
+        description: storeForm.description.trim(),
+        instagram: storeForm.instagram.trim(),
+        website: storeForm.website.trim(),
+      });
+      setStoreSaveMessage('Mağaza məlumatları yadda saxlanıldı.');
+    } catch {
+      setStoreSaveMessage(errorMessage || 'Mağaza məlumatları saxlanmadı.');
+    }
+  };
 
   return (
     <div className="seller-panel-layout">
@@ -90,8 +142,8 @@ export default function SellerPanel() {
         <div className="seller-store-info">
           <div className="store-avatar"><Store size={20} /></div>
           <div>
-            <strong>{session.storeName}</strong>
-            <small>{session.email}</small>
+            <strong>{store.name}</strong>
+            <small>{user?.email}</small>
           </div>
         </div>
 
@@ -110,6 +162,13 @@ export default function SellerPanel() {
           >
             <Package size={18} /> Məhsullar
             <span className="nav-count">{products.length}</span>
+          </button>
+          <button
+            className={`seller-nav-item ${activeTab === 'store' ? 'active' : ''}`}
+            onClick={() => setActiveTab('store')}
+            data-testid="nav-store"
+          >
+            <Settings size={18} /> Mağaza məlumatları
           </button>
         </nav>
 
@@ -152,6 +211,13 @@ export default function SellerPanel() {
                 <div className="stat-info">
                   <h3>Qaralama</h3>
                   <strong>{draftCount}</strong>
+                </div>
+              </div>
+              <div className="seller-stat-card">
+                <div className="stat-icon bg-gray-soft"><AlertCircle size={20} /></div>
+                <div className="stat-info">
+                  <h3>Yoxlamada</h3>
+                  <strong>{reviewCount}</strong>
                 </div>
               </div>
               <div className="seller-stat-card">
@@ -247,9 +313,10 @@ export default function SellerPanel() {
                           </span>
                         </td>
                         <td>
-                          <span className={`status-badge ${product.status === 'Aktiv' ? 'active' : 'draft'}`}>
-                            {product.status}
+                          <span className={`status-badge ${product.approvalStatus === 'approved' ? 'active' : product.approvalStatus === 'rejected' ? 'draft' : 'pending'}`}>
+                            {product.approvalStatus === 'approved' ? 'Təsdiqləndi' : product.approvalStatus === 'pending' ? 'Yoxlamada' : product.approvalStatus === 'needs_changes' ? 'Dəyişiklik tələb olunur' : 'Rədd edildi'}
                           </span>
+                          {product.moderationNote && <small className="field-help">{product.moderationNote}</small>}
                         </td>
                         <td>
                           <div className="table-actions">
@@ -282,6 +349,23 @@ export default function SellerPanel() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+        {activeTab === 'store' && (
+          <div className="seller-content fade-in">
+            <header className="seller-main-header">
+              <h1>Mağaza məlumatları</h1>
+              <p>İctimai mağaza səhifəsində görünən məlumatları idarə edin.</p>
+            </header>
+            <form className="seller-form" onSubmit={saveStoreProfile} noValidate>
+              <div className="field"><label htmlFor="store-profile-name">Mağaza adı</label><input id="store-profile-name" required value={storeForm.name} onChange={(event) => setStoreForm((form) => ({ ...form, name: event.target.value }))} /></div>
+              <div className="field"><label htmlFor="store-profile-location">Ünvan</label><input id="store-profile-location" required value={storeForm.location} onChange={(event) => setStoreForm((form) => ({ ...form, location: event.target.value }))} /></div>
+              <div className="field full"><label htmlFor="store-profile-description">Haqqında</label><textarea id="store-profile-description" value={storeForm.description} onChange={(event) => setStoreForm((form) => ({ ...form, description: event.target.value }))} /></div>
+              <div className="field"><label htmlFor="store-profile-instagram">Instagram</label><input id="store-profile-instagram" value={storeForm.instagram} onChange={(event) => setStoreForm((form) => ({ ...form, instagram: event.target.value }))} /></div>
+              <div className="field"><label htmlFor="store-profile-website">Veb-sayt</label><input id="store-profile-website" value={storeForm.website} onChange={(event) => setStoreForm((form) => ({ ...form, website: event.target.value }))} /></div>
+              {storeSaveMessage && <div className="field-help" role="status">{storeSaveMessage}</div>}
+              <div className="form-actions"><button className="btn btn-blue" disabled={isSaving} type="submit">{isSaving ? 'Yadda saxlanılır...' : 'Məlumatları saxla'}</button></div>
+            </form>
           </div>
         )}
       </main>
@@ -326,6 +410,11 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
     stock: product?.stock || 0,
     color: product?.color || '',
     material: product?.material || 'Asetat',
+    brand: product?.brand || '',
+    gender: product?.gender || 'Uniseks',
+    shape: product?.shape || 'Square',
+    size: product?.size || 'M (50–20)',
+    description: product?.description || '',
     status: product?.status || 'Qaralama',
     frontImage: product?.frontImage || '',
     sideImage: product?.sideImage || '',
@@ -435,7 +524,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
     if (!formData.sideImage) setSideImageError('Yan görünüş şəkli tələb olunur.');
     if (formData.frontImage.startsWith('data:') || formData.sideImage.startsWith('data:')) {
       setSubmitError(
-        'Seçilmiş yerli şəkillər database-ə yazılmır. Təhlükəsiz App Storage aktiv edilənədək demo nümunəsini istifadə edin.',
+        'Base64 formatlı şəkillər qəbul edilmir. Şəkilləri təhlükəsiz yükləmə bölməsindən App Storage-a göndərin.',
       );
       return;
     }
@@ -476,7 +565,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
               <div className="google-index-note">
                 <AlertCircle size={12} />
                 <span>Real şəkil yükləməsi üçün təhlükəsiz giriş tələb olunur.</span>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={beginUploadLogin}>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => beginUploadLogin()}>
                   Giriş et
                 </button>
               </div>
@@ -603,7 +692,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
                 id="product-price" 
                 type="number" 
                 min="0" 
-                step="0.01" 
+                step="1"
                 value={formData.price || ''} 
                 onChange={(e) => handleChange('price', Number(e.target.value))} 
                 required 
@@ -651,6 +740,35 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
                 <option value="Titanium">Titanium</option>
                 <option value="Bio-nylon">Bio-nylon</option>
               </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-brand">Brend</label>
+              <input id="product-brand" type="text" value={formData.brand} onChange={(e) => handleChange('brand', e.target.value)} placeholder="Brend adı" data-testid="input-product-brand" />
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-gender">Cins</label>
+              <select id="product-gender" value={formData.gender} onChange={(e) => handleChange('gender', e.target.value)} data-testid="select-product-gender">
+                <option value="Qadın">Qadın</option><option value="Kişi">Kişi</option><option value="Uniseks">Uniseks</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-shape">Forma</label>
+              <select id="product-shape" value={formData.shape} onChange={(e) => handleChange('shape', e.target.value)} data-testid="select-product-shape">
+                <option value="Aviator">Aviator</option><option value="Cat-Eye">Cat-Eye</option><option value="Rectangle">Rectangle</option><option value="Round">Round</option><option value="Square">Square</option><option value="Wayfarer">Wayfarer</option>
+              </select>
+            </div>
+
+            <div className="field">
+              <label htmlFor="product-size">Ölçü</label>
+              <input id="product-size" type="text" value={formData.size} onChange={(e) => handleChange('size', e.target.value)} placeholder="M (52–18)" data-testid="input-product-size" />
+            </div>
+
+            <div className="field full">
+              <label htmlFor="product-description">Təsvir</label>
+              <textarea id="product-description" value={formData.description} onChange={(e) => handleChange('description', e.target.value)} maxLength={1000} data-testid="input-product-description" />
             </div>
           </div>
 

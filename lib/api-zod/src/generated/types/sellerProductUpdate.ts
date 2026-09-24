@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { SellerProductUpdateCategory } from './sellerProductUpdateCategory';
+import type { SellerProductUpdateGender } from './sellerProductUpdateGender';
+import type { SellerProductUpdateShape } from './sellerProductUpdateShape';
 import type { SellerProductUpdateStatus } from './sellerProductUpdateStatus';
 
 export interface SellerProductUpdate {
@@ -29,6 +31,14 @@ export interface SellerProductUpdate {
      * @maxLength 100
      */
   material?: string;
+  /** @maxLength 100 */
+  brand?: string;
+  gender?: SellerProductUpdateGender;
+  shape?: SellerProductUpdateShape;
+  /** @maxLength 80 */
+  size?: string;
+  /** @maxLength 1000 */
+  description?: string;
   status?: SellerProductUpdateStatus;
   /** @minLength 1 */
   frontImage?: string;

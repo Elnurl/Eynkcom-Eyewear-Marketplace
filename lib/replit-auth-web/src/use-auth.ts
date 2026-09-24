@@ -36,8 +36,17 @@ export function useAuth() {
 
   const getBasePath = () =>
     (import.meta as AuthImportMeta).env.BASE_URL.replace(/\/+$/, "") || "/";
-  const login = useCallback(() => {
-    window.location.href = `/api/login?returnTo=${encodeURIComponent(`${getBasePath()}/seller-panel`)}`;
+  const login = useCallback((returnPath = "seller-panel") => {
+    const basePath = getBasePath().replace(/\/+$/, "");
+    const allowedPaths = new Set([
+      `${basePath}/seller-panel`,
+      `${basePath}/seller-admin`,
+    ]);
+    const requestedPath = `${basePath}/${returnPath.replace(/^\/+/, "")}`;
+    const returnTo = allowedPaths.has(requestedPath)
+      ? requestedPath
+      : `${basePath}/seller-panel`;
+    window.location.href = `/api/login?returnTo=${encodeURIComponent(returnTo)}`;
   }, []);
   const logout = useCallback(() => {
     window.location.href = `/api/logout?returnTo=${encodeURIComponent(getBasePath())}`;

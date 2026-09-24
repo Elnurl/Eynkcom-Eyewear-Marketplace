@@ -17,12 +17,43 @@ export const SellerProductCategory = {
   Gün_eynəyi: 'Gün eynəyi',
 } as const;
 
+export type SellerProductGender = typeof SellerProductGender[keyof typeof SellerProductGender];
+
+
+export const SellerProductGender = {
+  Qadın: 'Qadın',
+  Kişi: 'Kişi',
+  Uniseks: 'Uniseks',
+} as const;
+
+export type SellerProductShape = typeof SellerProductShape[keyof typeof SellerProductShape];
+
+
+export const SellerProductShape = {
+  Aviator: 'Aviator',
+  'Cat-Eye': 'Cat-Eye',
+  Rectangle: 'Rectangle',
+  Round: 'Round',
+  Square: 'Square',
+  Wayfarer: 'Wayfarer',
+} as const;
+
 export type SellerProductStatus = typeof SellerProductStatus[keyof typeof SellerProductStatus];
 
 
 export const SellerProductStatus = {
   Aktiv: 'Aktiv',
   Qaralama: 'Qaralama',
+} as const;
+
+export type ProductApprovalStatus = typeof ProductApprovalStatus[keyof typeof ProductApprovalStatus];
+
+
+export const ProductApprovalStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  needs_changes: 'needs_changes',
 } as const;
 
 export interface SellerProduct {
@@ -36,7 +67,15 @@ export interface SellerProduct {
   stock: number;
   color: string;
   material: string;
+  brand: string;
+  gender: SellerProductGender;
+  shape: SellerProductShape;
+  size: string;
+  description: string;
   status: SellerProductStatus;
+  approvalStatus: ProductApprovalStatus;
+  /** @nullable */
+  moderationNote: string | null;
   frontImage: string;
   sideImage: string;
   createdAt: string;
@@ -49,6 +88,27 @@ export type SellerProductInputCategory = typeof SellerProductInputCategory[keyof
 export const SellerProductInputCategory = {
   Optik_çərçivə: 'Optik çərçivə',
   Gün_eynəyi: 'Gün eynəyi',
+} as const;
+
+export type SellerProductInputGender = typeof SellerProductInputGender[keyof typeof SellerProductInputGender];
+
+
+export const SellerProductInputGender = {
+  Qadın: 'Qadın',
+  Kişi: 'Kişi',
+  Uniseks: 'Uniseks',
+} as const;
+
+export type SellerProductInputShape = typeof SellerProductInputShape[keyof typeof SellerProductInputShape];
+
+
+export const SellerProductInputShape = {
+  Aviator: 'Aviator',
+  'Cat-Eye': 'Cat-Eye',
+  Rectangle: 'Rectangle',
+  Round: 'Round',
+  Square: 'Square',
+  Wayfarer: 'Wayfarer',
 } as const;
 
 export type SellerProductInputStatus = typeof SellerProductInputStatus[keyof typeof SellerProductInputStatus];
@@ -80,6 +140,14 @@ export interface SellerProductInput {
      * @maxLength 100
      */
   material: string;
+  /** @maxLength 100 */
+  brand: string;
+  gender: SellerProductInputGender;
+  shape: SellerProductInputShape;
+  /** @maxLength 80 */
+  size: string;
+  /** @maxLength 1000 */
+  description: string;
   status: SellerProductInputStatus;
   /** @minLength 1 */
   frontImage: string;
@@ -93,6 +161,27 @@ export type SellerProductUpdateCategory = typeof SellerProductUpdateCategory[key
 export const SellerProductUpdateCategory = {
   Optik_çərçivə: 'Optik çərçivə',
   Gün_eynəyi: 'Gün eynəyi',
+} as const;
+
+export type SellerProductUpdateGender = typeof SellerProductUpdateGender[keyof typeof SellerProductUpdateGender];
+
+
+export const SellerProductUpdateGender = {
+  Qadın: 'Qadın',
+  Kişi: 'Kişi',
+  Uniseks: 'Uniseks',
+} as const;
+
+export type SellerProductUpdateShape = typeof SellerProductUpdateShape[keyof typeof SellerProductUpdateShape];
+
+
+export const SellerProductUpdateShape = {
+  Aviator: 'Aviator',
+  'Cat-Eye': 'Cat-Eye',
+  Rectangle: 'Rectangle',
+  Round: 'Round',
+  Square: 'Square',
+  Wayfarer: 'Wayfarer',
 } as const;
 
 export type SellerProductUpdateStatus = typeof SellerProductUpdateStatus[keyof typeof SellerProductUpdateStatus];
@@ -124,11 +213,212 @@ export interface SellerProductUpdate {
      * @maxLength 100
      */
   material?: string;
+  /** @maxLength 100 */
+  brand?: string;
+  gender?: SellerProductUpdateGender;
+  shape?: SellerProductUpdateShape;
+  /** @maxLength 80 */
+  size?: string;
+  /** @maxLength 1000 */
+  description?: string;
   status?: SellerProductUpdateStatus;
   /** @minLength 1 */
   frontImage?: string;
   /** @minLength 1 */
   sideImage?: string;
+}
+
+export type ProductApprovalUpdateApprovalStatus = typeof ProductApprovalUpdateApprovalStatus[keyof typeof ProductApprovalUpdateApprovalStatus];
+
+
+export const ProductApprovalUpdateApprovalStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+  needs_changes: 'needs_changes',
+} as const;
+
+export interface ProductApprovalUpdate {
+  approvalStatus: ProductApprovalUpdateApprovalStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  moderationNote?: string | null;
+}
+
+export type PublicProductCategory = typeof PublicProductCategory[keyof typeof PublicProductCategory];
+
+
+export const PublicProductCategory = {
+  Optik_çərçivə: 'Optik çərçivə',
+  Gün_eynəyi: 'Gün eynəyi',
+} as const;
+
+export type PublicProductGender = typeof PublicProductGender[keyof typeof PublicProductGender];
+
+
+export const PublicProductGender = {
+  Qadın: 'Qadın',
+  Kişi: 'Kişi',
+  Uniseks: 'Uniseks',
+} as const;
+
+export type PublicProductShape = typeof PublicProductShape[keyof typeof PublicProductShape];
+
+
+export const PublicProductShape = {
+  Aviator: 'Aviator',
+  'Cat-Eye': 'Cat-Eye',
+  Rectangle: 'Rectangle',
+  Round: 'Round',
+  Square: 'Square',
+  Wayfarer: 'Wayfarer',
+} as const;
+
+export interface PublicProduct {
+  id: string;
+  sellerId: string;
+  name: string;
+  category: PublicProductCategory;
+  price: number;
+  /** @minimum 0 */
+  stock: number;
+  color: string;
+  material: string;
+  brand: string;
+  gender: PublicProductGender;
+  shape: PublicProductShape;
+  size: string;
+  description: string;
+  frontImage: string;
+  sideImage: string;
+  vendor: string;
+  vendorSlug: string;
+  location: string;
+  isAvailable: boolean;
+}
+
+export type SellerStoreStatus = typeof SellerStoreStatus[keyof typeof SellerStoreStatus];
+
+
+export const SellerStoreStatus = {
+  active: 'active',
+  inactive: 'inactive',
+} as const;
+
+export interface SellerStore {
+  id: string;
+  name: string;
+  slug: string;
+  location: string;
+  description: string;
+  instagram: string;
+  website: string;
+  status: SellerStoreStatus;
+  /** @minimum 0 */
+  productCount: number;
+  initials: string;
+  since: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SellerStoreUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  name?: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  location?: string;
+  /** @maxLength 1000 */
+  description?: string;
+  /** @maxLength 200 */
+  instagram?: string;
+  /** @maxLength 300 */
+  website?: string;
+}
+
+export type SellerApplicationStatus = typeof SellerApplicationStatus[keyof typeof SellerApplicationStatus];
+
+
+export const SellerApplicationStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  needs_changes: 'needs_changes',
+} as const;
+
+export interface SellerApplication {
+  id: string;
+  storeName: string;
+  ownerName: string;
+  phone: string;
+  email: string;
+  business: string;
+  tax: string;
+  address: string;
+  instagram: string;
+  website: string;
+  categories: string;
+  status: SellerApplicationStatus;
+  /** @nullable */
+  reviewNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SellerApplicationInput {
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  storeName: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  ownerName: string;
+  /**
+     * @minLength 1
+     * @maxLength 60
+     */
+  phone: string;
+  /** @maxLength 254 */
+  email: string;
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  business: string;
+  /** @maxLength 100 */
+  tax?: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  address: string;
+  /** @maxLength 200 */
+  instagram?: string;
+  /** @maxLength 300 */
+  website?: string;
+  /**
+     * @minLength 1
+     * @maxLength 300
+     */
+  categories: string;
+}
+
+export interface SellerApplicationReview {
+  status: SellerApplicationStatus;
+  /**
+     * @maxLength 1000
+     * @nullable
+     */
+  reviewNotes?: string | null;
 }
 
 export interface Error {
@@ -190,6 +480,14 @@ export interface UploadCompleteResponse {
 }
 
 export type AuthorizationSessionHeaderParameter = string;
+
+export type ListAdminSellerApplicationsParams = {
+status?: SellerApplicationStatus;
+};
+
+export type ListAdminProductsParams = {
+approvalStatus?: ProductApprovalStatus;
+};
 
 export type BeginBrowserLoginParams = {
 returnTo?: string;

@@ -21,8 +21,6 @@ export const HealthCheckResponse = zod.object({
  * Returns active seller products for the public catalog.
  * @summary List active products
  */
-export const listProductsResponsePriceMin = 0;
-
 export const listProductsResponseStockMin = 0;
 
 
@@ -32,21 +30,27 @@ export const ListProductsResponseItem = zod.object({
   "sellerId": zod.string(),
   "name": zod.string(),
   "category": zod.enum(['Optik çərçivə', 'Gün eynəyi']),
-  "price": zod.number().int().min(listProductsResponsePriceMin),
+  "price": zod.number().int(),
   "stock": zod.number().int().min(listProductsResponseStockMin),
   "color": zod.string(),
   "material": zod.string(),
-  "status": zod.enum(['Aktiv', 'Qaralama']),
+  "brand": zod.string(),
+  "gender": zod.enum(['Qadın', 'Kişi', 'Uniseks']),
+  "shape": zod.enum(['Aviator', 'Cat-Eye', 'Rectangle', 'Round', 'Square', 'Wayfarer']),
+  "size": zod.string(),
+  "description": zod.string(),
   "frontImage": zod.string(),
   "sideImage": zod.string(),
-  "createdAt": zod.coerce.date(),
-  "updatedAt": zod.coerce.date()
+  "vendor": zod.string(),
+  "vendorSlug": zod.string(),
+  "location": zod.string(),
+  "isAvailable": zod.boolean()
 })
 export const ListProductsResponse = zod.array(ListProductsResponseItem)
 
 
 /**
- * Returns all products for the current demo seller.
+ * Returns all products for the authenticated approved seller.
  * @summary List seller products
  */
 export const listSellerProductsResponsePriceMin = 0;
@@ -64,7 +68,14 @@ export const ListSellerProductsResponseItem = zod.object({
   "stock": zod.number().int().min(listSellerProductsResponseStockMin),
   "color": zod.string(),
   "material": zod.string(),
+  "brand": zod.string(),
+  "gender": zod.enum(['Qadın', 'Kişi', 'Uniseks']),
+  "shape": zod.enum(['Aviator', 'Cat-Eye', 'Rectangle', 'Round', 'Square', 'Wayfarer']),
+  "size": zod.string(),
+  "description": zod.string(),
   "status": zod.enum(['Aktiv', 'Qaralama']),
+  "approvalStatus": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "moderationNote": zod.string().nullable(),
   "frontImage": zod.string(),
   "sideImage": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -86,6 +97,12 @@ export const createSellerProductBodyColorMax = 100;
 
 export const createSellerProductBodyMaterialMax = 100;
 
+export const createSellerProductBodyBrandMax = 100;
+
+export const createSellerProductBodySizeMax = 80;
+
+export const createSellerProductBodyDescriptionMax = 1000;
+
 
 
 
@@ -97,6 +114,11 @@ export const CreateSellerProductBody = zod.object({
   "stock": zod.number().int().min(createSellerProductBodyStockMin),
   "color": zod.string().min(1).max(createSellerProductBodyColorMax),
   "material": zod.string().min(1).max(createSellerProductBodyMaterialMax),
+  "brand": zod.string().max(createSellerProductBodyBrandMax),
+  "gender": zod.enum(['Qadın', 'Kişi', 'Uniseks']),
+  "shape": zod.enum(['Aviator', 'Cat-Eye', 'Rectangle', 'Round', 'Square', 'Wayfarer']),
+  "size": zod.string().max(createSellerProductBodySizeMax),
+  "description": zod.string().max(createSellerProductBodyDescriptionMax),
   "status": zod.enum(['Aktiv', 'Qaralama']),
   "frontImage": zod.string().min(1),
   "sideImage": zod.string().min(1)
@@ -117,7 +139,14 @@ export const CreateSellerProductResponse = zod.object({
   "stock": zod.number().int().min(createSellerProductResponseStockMin),
   "color": zod.string(),
   "material": zod.string(),
+  "brand": zod.string(),
+  "gender": zod.enum(['Qadın', 'Kişi', 'Uniseks']),
+  "shape": zod.enum(['Aviator', 'Cat-Eye', 'Rectangle', 'Round', 'Square', 'Wayfarer']),
+  "size": zod.string(),
+  "description": zod.string(),
   "status": zod.enum(['Aktiv', 'Qaralama']),
+  "approvalStatus": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "moderationNote": zod.string().nullable(),
   "frontImage": zod.string(),
   "sideImage": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -145,6 +174,12 @@ export const updateSellerProductBodyColorMax = 100;
 
 export const updateSellerProductBodyMaterialMax = 100;
 
+export const updateSellerProductBodyBrandMax = 100;
+
+export const updateSellerProductBodySizeMax = 80;
+
+export const updateSellerProductBodyDescriptionMax = 1000;
+
 
 
 
@@ -156,6 +191,11 @@ export const UpdateSellerProductBody = zod.object({
   "stock": zod.number().int().min(updateSellerProductBodyStockMin).optional(),
   "color": zod.string().min(1).max(updateSellerProductBodyColorMax).optional(),
   "material": zod.string().min(1).max(updateSellerProductBodyMaterialMax).optional(),
+  "brand": zod.string().max(updateSellerProductBodyBrandMax).optional(),
+  "gender": zod.enum(['Qadın', 'Kişi', 'Uniseks']).optional(),
+  "shape": zod.enum(['Aviator', 'Cat-Eye', 'Rectangle', 'Round', 'Square', 'Wayfarer']).optional(),
+  "size": zod.string().max(updateSellerProductBodySizeMax).optional(),
+  "description": zod.string().max(updateSellerProductBodyDescriptionMax).optional(),
   "status": zod.enum(['Aktiv', 'Qaralama']).optional(),
   "frontImage": zod.string().min(1).optional(),
   "sideImage": zod.string().min(1).optional()
@@ -176,7 +216,14 @@ export const UpdateSellerProductResponse = zod.object({
   "stock": zod.number().int().min(updateSellerProductResponseStockMin),
   "color": zod.string(),
   "material": zod.string(),
+  "brand": zod.string(),
+  "gender": zod.enum(['Qadın', 'Kişi', 'Uniseks']),
+  "shape": zod.enum(['Aviator', 'Cat-Eye', 'Rectangle', 'Round', 'Square', 'Wayfarer']),
+  "size": zod.string(),
+  "description": zod.string(),
   "status": zod.enum(['Aktiv', 'Qaralama']),
+  "approvalStatus": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "moderationNote": zod.string().nullable(),
   "frontImage": zod.string(),
   "sideImage": zod.string(),
   "createdAt": zod.coerce.date(),
@@ -195,6 +242,325 @@ export const DeleteSellerProductParams = zod.object({
 })
 
 export const DeleteSellerProductResponse = zod.void()
+
+
+/**
+ * @summary List public approved stores
+ */
+export const listStoresResponseProductCountMin = 0;
+
+
+
+export const ListStoresResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "location": zod.string(),
+  "description": zod.string(),
+  "instagram": zod.string(),
+  "website": zod.string(),
+  "status": zod.enum(['active', 'inactive']),
+  "productCount": zod.number().int().min(listStoresResponseProductCountMin),
+  "initials": zod.string(),
+  "since": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListStoresResponse = zod.array(ListStoresResponseItem)
+
+
+/**
+ * @summary Get the authenticated seller's approved store
+ */
+export const getSellerStoreResponseProductCountMin = 0;
+
+
+
+export const GetSellerStoreResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "location": zod.string(),
+  "description": zod.string(),
+  "instagram": zod.string(),
+  "website": zod.string(),
+  "status": zod.enum(['active', 'inactive']),
+  "productCount": zod.number().int().min(getSellerStoreResponseProductCountMin),
+  "initials": zod.string(),
+  "since": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Update the authenticated seller's store profile
+ */
+export const updateSellerStoreBodyNameMax = 160;
+
+export const updateSellerStoreBodyLocationMax = 300;
+
+export const updateSellerStoreBodyDescriptionMax = 1000;
+
+export const updateSellerStoreBodyInstagramMax = 200;
+
+export const updateSellerStoreBodyWebsiteMax = 300;
+
+
+
+export const UpdateSellerStoreBody = zod.object({
+  "name": zod.string().min(1).max(updateSellerStoreBodyNameMax).optional(),
+  "location": zod.string().min(1).max(updateSellerStoreBodyLocationMax).optional(),
+  "description": zod.string().max(updateSellerStoreBodyDescriptionMax).optional(),
+  "instagram": zod.string().max(updateSellerStoreBodyInstagramMax).optional(),
+  "website": zod.string().max(updateSellerStoreBodyWebsiteMax).optional()
+})
+
+export const updateSellerStoreResponseProductCountMin = 0;
+
+
+
+export const UpdateSellerStoreResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "location": zod.string(),
+  "description": zod.string(),
+  "instagram": zod.string(),
+  "website": zod.string(),
+  "status": zod.enum(['active', 'inactive']),
+  "productCount": zod.number().int().min(updateSellerStoreResponseProductCountMin),
+  "initials": zod.string(),
+  "since": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Submit a seller application
+ */
+export const createSellerApplicationBodyStoreNameMax = 160;
+
+export const createSellerApplicationBodyOwnerNameMax = 160;
+
+export const createSellerApplicationBodyPhoneMax = 60;
+
+export const createSellerApplicationBodyEmailMax = 254;
+
+export const createSellerApplicationBodyBusinessMax = 2000;
+
+export const createSellerApplicationBodyTaxMax = 100;
+
+export const createSellerApplicationBodyAddressMax = 300;
+
+export const createSellerApplicationBodyInstagramMax = 200;
+
+export const createSellerApplicationBodyWebsiteMax = 300;
+
+export const createSellerApplicationBodyCategoriesMax = 300;
+
+
+
+export const CreateSellerApplicationBody = zod.object({
+  "storeName": zod.string().min(1).max(createSellerApplicationBodyStoreNameMax),
+  "ownerName": zod.string().min(1).max(createSellerApplicationBodyOwnerNameMax),
+  "phone": zod.string().min(1).max(createSellerApplicationBodyPhoneMax),
+  "email": zod.string().email().max(createSellerApplicationBodyEmailMax),
+  "business": zod.string().min(1).max(createSellerApplicationBodyBusinessMax),
+  "tax": zod.string().max(createSellerApplicationBodyTaxMax).optional(),
+  "address": zod.string().min(1).max(createSellerApplicationBodyAddressMax),
+  "instagram": zod.string().max(createSellerApplicationBodyInstagramMax).optional(),
+  "website": zod.string().max(createSellerApplicationBodyWebsiteMax).optional(),
+  "categories": zod.string().min(1).max(createSellerApplicationBodyCategoriesMax)
+})
+
+export const CreateSellerApplicationResponse = zod.object({
+  "id": zod.string(),
+  "storeName": zod.string(),
+  "ownerName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "business": zod.string(),
+  "tax": zod.string(),
+  "address": zod.string(),
+  "instagram": zod.string(),
+  "website": zod.string(),
+  "categories": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "reviewNotes": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List applications matching the authenticated user's email
+ */
+export const ListMySellerApplicationsResponseItem = zod.object({
+  "id": zod.string(),
+  "storeName": zod.string(),
+  "ownerName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "business": zod.string(),
+  "tax": zod.string(),
+  "address": zod.string(),
+  "instagram": zod.string(),
+  "website": zod.string(),
+  "categories": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "reviewNotes": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListMySellerApplicationsResponse = zod.array(ListMySellerApplicationsResponseItem)
+
+
+/**
+ * @summary List seller applications for review
+ */
+export const ListAdminSellerApplicationsQueryParams = zod.object({
+  "status": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']).optional()
+})
+
+export const ListAdminSellerApplicationsResponseItem = zod.object({
+  "id": zod.string(),
+  "storeName": zod.string(),
+  "ownerName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "business": zod.string(),
+  "tax": zod.string(),
+  "address": zod.string(),
+  "instagram": zod.string(),
+  "website": zod.string(),
+  "categories": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "reviewNotes": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListAdminSellerApplicationsResponse = zod.array(ListAdminSellerApplicationsResponseItem)
+
+
+/**
+ * @summary Review a seller application
+ */
+export const ReviewSellerApplicationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const reviewSellerApplicationBodyReviewNotesMax = 1000;
+
+
+
+export const ReviewSellerApplicationBody = zod.object({
+  "status": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "reviewNotes": zod.string().max(reviewSellerApplicationBodyReviewNotesMax).nullish()
+})
+
+export const ReviewSellerApplicationResponse = zod.object({
+  "id": zod.string(),
+  "storeName": zod.string(),
+  "ownerName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "business": zod.string(),
+  "tax": zod.string(),
+  "address": zod.string(),
+  "instagram": zod.string(),
+  "website": zod.string(),
+  "categories": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "reviewNotes": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary List products for marketplace moderation
+ */
+export const ListAdminProductsQueryParams = zod.object({
+  "approvalStatus": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']).optional()
+})
+
+export const listAdminProductsResponsePriceMin = 0;
+
+export const listAdminProductsResponseStockMin = 0;
+
+
+
+export const ListAdminProductsResponseItem = zod.object({
+  "id": zod.string(),
+  "sellerId": zod.string(),
+  "name": zod.string(),
+  "category": zod.enum(['Optik çərçivə', 'Gün eynəyi']),
+  "price": zod.number().int().min(listAdminProductsResponsePriceMin),
+  "stock": zod.number().int().min(listAdminProductsResponseStockMin),
+  "color": zod.string(),
+  "material": zod.string(),
+  "brand": zod.string(),
+  "gender": zod.enum(['Qadın', 'Kişi', 'Uniseks']),
+  "shape": zod.enum(['Aviator', 'Cat-Eye', 'Rectangle', 'Round', 'Square', 'Wayfarer']),
+  "size": zod.string(),
+  "description": zod.string(),
+  "status": zod.enum(['Aktiv', 'Qaralama']),
+  "approvalStatus": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "moderationNote": zod.string().nullable(),
+  "frontImage": zod.string(),
+  "sideImage": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
+export const ListAdminProductsResponse = zod.array(ListAdminProductsResponseItem)
+
+
+/**
+ * @summary Approve or reject a seller product
+ */
+export const ReviewSellerProductParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const reviewSellerProductBodyModerationNoteMax = 1000;
+
+
+
+export const ReviewSellerProductBody = zod.object({
+  "approvalStatus": zod.enum(['approved', 'rejected', 'needs_changes']),
+  "moderationNote": zod.string().max(reviewSellerProductBodyModerationNoteMax).nullish()
+})
+
+export const reviewSellerProductResponsePriceMin = 0;
+
+export const reviewSellerProductResponseStockMin = 0;
+
+
+
+export const ReviewSellerProductResponse = zod.object({
+  "id": zod.string(),
+  "sellerId": zod.string(),
+  "name": zod.string(),
+  "category": zod.enum(['Optik çərçivə', 'Gün eynəyi']),
+  "price": zod.number().int().min(reviewSellerProductResponsePriceMin),
+  "stock": zod.number().int().min(reviewSellerProductResponseStockMin),
+  "color": zod.string(),
+  "material": zod.string(),
+  "brand": zod.string(),
+  "gender": zod.enum(['Qadın', 'Kişi', 'Uniseks']),
+  "shape": zod.enum(['Aviator', 'Cat-Eye', 'Rectangle', 'Round', 'Square', 'Wayfarer']),
+  "size": zod.string(),
+  "description": zod.string(),
+  "status": zod.enum(['Aktiv', 'Qaralama']),
+  "approvalStatus": zod.enum(['pending', 'approved', 'rejected', 'needs_changes']),
+  "moderationNote": zod.string().nullable(),
+  "frontImage": zod.string(),
+  "sideImage": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date()
+})
 
 
 /**
