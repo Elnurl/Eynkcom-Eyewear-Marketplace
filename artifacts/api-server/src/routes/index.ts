@@ -5,6 +5,7 @@ import authRouter from "./auth";
 import storageRouter from "./storage";
 import storesRouter from "./stores";
 import sellerApplicationsRouter from "./seller-applications";
+import ordersRouter from "./orders";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(storageRouter);
 router.use(productsRouter);
 router.use(storesRouter);
 router.use(sellerApplicationsRouter);
+router.use(ordersRouter);
 
 export default router;

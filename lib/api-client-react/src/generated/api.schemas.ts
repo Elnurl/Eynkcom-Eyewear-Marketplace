@@ -421,6 +421,306 @@ export interface SellerApplicationReview {
   reviewNotes?: string | null;
 }
 
+export type CheckoutOptionsCardPaymentStatus = typeof CheckoutOptionsCardPaymentStatus[keyof typeof CheckoutOptionsCardPaymentStatus];
+
+
+export const CheckoutOptionsCardPaymentStatus = {
+  not_configured: 'not_configured',
+  available: 'available',
+} as const;
+
+export type CheckoutOptionsDeliveryAreasItem = typeof CheckoutOptionsDeliveryAreasItem[keyof typeof CheckoutOptionsDeliveryAreasItem];
+
+
+export const CheckoutOptionsDeliveryAreasItem = {
+  Bakı: 'Bakı',
+  Abşeron: 'Abşeron',
+} as const;
+
+export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
+
+
+export const PaymentMethod = {
+  pay_on_delivery: 'pay_on_delivery',
+  card: 'card',
+} as const;
+
+export interface CheckoutOptions {
+  paymentMethods: PaymentMethod[];
+  cardPaymentStatus: CheckoutOptionsCardPaymentStatus;
+  deliveryAreas: CheckoutOptionsDeliveryAreasItem[];
+}
+
+export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
+
+
+export const PaymentStatus = {
+  due_on_delivery: 'due_on_delivery',
+  authorized: 'authorized',
+  captured: 'captured',
+  paid_on_delivery: 'paid_on_delivery',
+  failed: 'failed',
+  partially_refunded: 'partially_refunded',
+  refunded: 'refunded',
+} as const;
+
+export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
+
+
+export const OrderStatus = {
+  received: 'received',
+  pending_confirmation: 'pending_confirmation',
+  awaiting_buyer_approval: 'awaiting_buyer_approval',
+  confirmed: 'confirmed',
+  preparing: 'preparing',
+  out_for_delivery: 'out_for_delivery',
+  partially_delivered: 'partially_delivered',
+  delivered: 'delivered',
+  cancelled: 'cancelled',
+} as const;
+
+export type SellerOrderStatus = typeof SellerOrderStatus[keyof typeof SellerOrderStatus];
+
+
+export const SellerOrderStatus = {
+  pending_confirmation: 'pending_confirmation',
+  confirmed: 'confirmed',
+  declined: 'declined',
+  paused: 'paused',
+  preparing: 'preparing',
+  out_for_delivery: 'out_for_delivery',
+  delivered: 'delivered',
+  cancelled: 'cancelled',
+} as const;
+
+export interface GuestOrderLineInput {
+  /** @minLength 1 */
+  productId: string;
+  /**
+     * @minimum 1
+     * @maximum 20
+     */
+  quantity: number;
+}
+
+export type GuestOrderInputDeliveryArea = typeof GuestOrderInputDeliveryArea[keyof typeof GuestOrderInputDeliveryArea];
+
+
+export const GuestOrderInputDeliveryArea = {
+  Bakı: 'Bakı',
+  Abşeron: 'Abşeron',
+} as const;
+
+export interface GuestOrderInput {
+  /**
+     * @minLength 2
+     * @maxLength 160
+     */
+  customerName: string;
+  /** @maxLength 254 */
+  customerEmail: string;
+  /**
+     * @minLength 7
+     * @maxLength 40
+     */
+  customerPhone: string;
+  deliveryArea: GuestOrderInputDeliveryArea;
+  /**
+     * @minLength 5
+     * @maxLength 500
+     */
+  deliveryAddress: string;
+  /** @maxLength 500 */
+  deliveryNote?: string;
+  paymentMethod: PaymentMethod;
+  /**
+     * @minLength 64
+     * @maxLength 128
+     * @pattern ^[a-f0-9]+$
+     */
+  guestAccessToken: string;
+  /**
+     * @minItems 1
+     * @maxItems 50
+     */
+  items: GuestOrderLineInput[];
+}
+
+export interface BuyerOrderDecision {
+  approve: boolean;
+}
+
+export interface OrderLine {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPriceAzN: number;
+  lineTotalAzN: number;
+}
+
+export type SellerOrderSummarySettlementStatus = typeof SellerOrderSummarySettlementStatus[keyof typeof SellerOrderSummarySettlementStatus];
+
+
+export const SellerOrderSummarySettlementStatus = {
+  not_eligible: 'not_eligible',
+  payable: 'payable',
+  settled: 'settled',
+  adjusted: 'adjusted',
+  reversed: 'reversed',
+} as const;
+
+export interface SellerOrderSummary {
+  id: string;
+  sellerName: string;
+  status: SellerOrderStatus;
+  items: OrderLine[];
+  productSubtotalAzN: number;
+  /** @nullable */
+  deliveryFeeAzN: number | null;
+  /** @nullable */
+  sellerEarningsAzN: number | null;
+  /** @nullable */
+  commissionAzN: number | null;
+  /** @nullable */
+  trackingCode: string | null;
+  settlementStatus: SellerOrderSummarySettlementStatus;
+  /** @minimum 0 */
+  refundedAzN: number;
+  /** @minimum 0 */
+  productRefundedAzN: number;
+}
+
+export interface OrderTimelineEvent {
+  status: string;
+  label: string;
+  createdAt: string;
+}
+
+export interface BuyerSellerOrderSummary {
+  id: string;
+  sellerName: string;
+  status: SellerOrderStatus;
+  items: OrderLine[];
+  productSubtotalAzN: number;
+  /** @nullable */
+  deliveryFeeAzN: number | null;
+  /** @nullable */
+  trackingCode: string | null;
+}
+
+export type BuyerOrderDeliveryArea = typeof BuyerOrderDeliveryArea[keyof typeof BuyerOrderDeliveryArea];
+
+
+export const BuyerOrderDeliveryArea = {
+  Bakı: 'Bakı',
+  Abşeron: 'Abşeron',
+} as const;
+
+export interface BuyerOrder {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  deliveryArea: BuyerOrderDeliveryArea;
+  deliveryAddress: string;
+  /** @nullable */
+  deliveryNote?: string | null;
+  productSubtotalAzN: number;
+  /** @nullable */
+  deliveryTotalAzN: number | null;
+  /** @nullable */
+  totalAzN: number | null;
+  sellerOrders: BuyerSellerOrderSummary[];
+  timeline: OrderTimelineEvent[];
+  createdAt: string;
+}
+
+export type SellerOrderDeliveryArea = typeof SellerOrderDeliveryArea[keyof typeof SellerOrderDeliveryArea];
+
+
+export const SellerOrderDeliveryArea = {
+  Bakı: 'Bakı',
+  Abşeron: 'Abşeron',
+} as const;
+
+export type SellerOrder = SellerOrderSummary & ({
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  deliveryArea: SellerOrderDeliveryArea;
+  deliveryAddress: string;
+  /** @nullable */
+  deliveryNote: string | null;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  updatedAt: string;
+});
+
+export type SellerOrderUpdateStatus = typeof SellerOrderUpdateStatus[keyof typeof SellerOrderUpdateStatus];
+
+
+export const SellerOrderUpdateStatus = {
+  confirmed: 'confirmed',
+  declined: 'declined',
+  preparing: 'preparing',
+  out_for_delivery: 'out_for_delivery',
+  delivered: 'delivered',
+} as const;
+
+export interface SellerOrderUpdate {
+  status: SellerOrderUpdateStatus;
+  /**
+     * @minimum 0
+     * @maximum 1000
+     */
+  deliveryFeeAzN?: number;
+  /** @maxLength 120 */
+  trackingCode?: string;
+  collectedAtDelivery?: boolean;
+  /** @maxLength 500 */
+  note?: string;
+}
+
+export interface AdminOrder {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  productSubtotalAzN: number;
+  /** @nullable */
+  deliveryTotalAzN: number | null;
+  /** @nullable */
+  totalAzN: number | null;
+  refundedAzN: number;
+  sellerOrders: SellerOrderSummary[];
+  createdAt: string;
+}
+
+export interface OrderRefundInput {
+  /** @minLength 1 */
+  sellerOrderId: string;
+  /** @exclusiveMinimum 0 */
+  refundAmountAzN: number;
+  /** @minimum 0 */
+  productRefundAzN: number;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  reference: string;
+  /** @maxLength 500 */
+  reason?: string;
+}
+
 export interface Error {
   error: string;
 }

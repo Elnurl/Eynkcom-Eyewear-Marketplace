@@ -22,6 +22,8 @@ tags:
     description: Browser authentication endpoints.
   - name: Storage
     description: Object storage upload and serving endpoints.
+  - name: orders
+    description: Guest checkout, buyer order tracking, and seller fulfillment
 paths:
   /healthz:
     get:
@@ -36,6 +38,242 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /checkout/options:
+    get:
+      operationId: getCheckoutOptions
+      tags: [orders]
+      summary: List currently available checkout methods
+      responses:
+        "200":
+          description: Checkout configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutOptions"
+  /orders:
+    post:
+      operationId: createGuestOrder
+      tags: [orders]
+      summary: Place one guest order across multiple sellers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuestOrderInput"
+      responses:
+        "200":
+          description: Existing order returned for an idempotent checkout retry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerOrder"
+        "201":
+          description: Order received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerOrder"
+        "400":
+          description: Invalid checkout details or unavailable products
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Stock changed before checkout completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "503":
+          description: Selected payment method is not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /orders/{orderId}:
+    get:
+      operationId: getGuestOrder
+      tags: [orders]
+      summary: View an order using its buyer access token
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Order-Access-Token
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+      responses:
+        "200":
+          description: Order and Azerbaijani status timeline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerOrder"
+        "404":
+          description: Order not found or access token invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /orders/{orderId}/decision:
+    post:
+      operationId: decideGuestOrderRevision
+      tags: [orders]
+      summary: Accept a seller-adjusted order or cancel it
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Order-Access-Token
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyerOrderDecision"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerOrder"
+        "400":
+          description: Decision is not available in the current order state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Order not found or access token invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /seller/orders:
+    get:
+      operationId: listSellerOrders
+      tags: [orders]
+      summary: List orders for the authenticated seller's shop
+      responses:
+        "200":
+          description: Seller-scoped order groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SellerOrder"
+        "401":
+          description: Authentication required
+        "403":
+          description: Approved seller access required
+  /seller/orders/{id}:
+    patch:
+      operationId: updateSellerOrder
+      tags: [orders]
+      summary: Confirm or update delivery for the authenticated seller's order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerOrderUpdate"
+      responses:
+        "200":
+          description: Updated seller order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerOrder"
+        "400":
+          description: Invalid order update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Authentication required
+        "403":
+          description: Approved seller access required
+        "404":
+          description: Seller order not found
+  /admin/orders:
+    get:
+      operationId: listAdminOrders
+      tags: [orders]
+      summary: List marketplace orders for the configured administrator
+      responses:
+        "200":
+          description: Orders with settlement and refund totals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminOrder"
+        "401":
+          description: Authentication required
+        "403":
+          description: Marketplace administrator access required
+        "503":
+          description: Marketplace administrator is not configured
+  /admin/orders/{id}/refund:
+    patch:
+      operationId: recordOrderRefund
+      tags: [orders]
+      summary: Record a refund after it has been verified by the administrator
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderRefundInput"
+      responses:
+        "200":
+          description: Refund and seller commission recalculated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrder"
+        "400":
+          description: Refund is invalid for this order or exceeds the refundable amount
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Authentication required
+        "403":
+          description: Marketplace administrator access required
+        "404":
+          description: Order not found
   /products:
     get:
       operationId: listProducts
@@ -933,6 +1171,314 @@ components:
         reviewNotes:
           type: ["string", "null"]
           maxLength: 1000
+    CheckoutOptions:
+      type: object
+      required: [paymentMethods, cardPaymentStatus, deliveryAreas]
+      properties:
+        paymentMethods:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentMethod"
+        cardPaymentStatus:
+          type: string
+          enum: [not_configured, available]
+        deliveryAreas:
+          type: array
+          items:
+            type: string
+            enum: [Bakı, Abşeron]
+    PaymentMethod:
+      type: string
+      enum: [pay_on_delivery, card]
+    PaymentStatus:
+      type: string
+      enum: [due_on_delivery, authorized, captured, paid_on_delivery, failed, partially_refunded, refunded]
+    OrderStatus:
+      type: string
+      enum: [received, pending_confirmation, awaiting_buyer_approval, confirmed, preparing, out_for_delivery, partially_delivered, delivered, cancelled]
+    SellerOrderStatus:
+      type: string
+      enum: [pending_confirmation, confirmed, declined, paused, preparing, out_for_delivery, delivered, cancelled]
+    GuestOrderLineInput:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: string
+          minLength: 1
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 20
+    GuestOrderInput:
+      type: object
+      required: [customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, paymentMethod, guestAccessToken, items]
+      properties:
+        customerName:
+          type: string
+          minLength: 2
+          maxLength: 160
+        customerEmail:
+          type: string
+          format: email
+          maxLength: 254
+        customerPhone:
+          type: string
+          minLength: 7
+          maxLength: 40
+        deliveryArea:
+          type: string
+          enum: [Bakı, Abşeron]
+        deliveryAddress:
+          type: string
+          minLength: 5
+          maxLength: 500
+        deliveryNote:
+          type: string
+          maxLength: 500
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethod"
+        guestAccessToken:
+          type: string
+          minLength: 64
+          maxLength: 128
+          pattern: "^[a-f0-9]+$"
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/GuestOrderLineInput"
+    BuyerOrderDecision:
+      type: object
+      required: [approve]
+      properties:
+        approve:
+          type: boolean
+    OrderLine:
+      type: object
+      required: [productId, productName, quantity, unitPriceAzN, lineTotalAzN]
+      properties:
+        productId:
+          type: string
+        productName:
+          type: string
+        quantity:
+          type: integer
+        unitPriceAzN:
+          type: number
+        lineTotalAzN:
+          type: number
+    SellerOrderSummary:
+      type: object
+      required: [id, sellerName, status, items, productSubtotalAzN, deliveryFeeAzN, sellerEarningsAzN, commissionAzN, trackingCode, settlementStatus, refundedAzN, productRefundedAzN]
+      properties:
+        id:
+          type: string
+        sellerName:
+          type: string
+        status:
+          $ref: "#/components/schemas/SellerOrderStatus"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLine"
+        productSubtotalAzN:
+          type: number
+        deliveryFeeAzN:
+          type: ["number", "null"]
+        sellerEarningsAzN:
+          type: ["number", "null"]
+        commissionAzN:
+          type: ["number", "null"]
+        trackingCode:
+          type: ["string", "null"]
+        settlementStatus:
+          type: string
+          enum: [not_eligible, payable, settled, adjusted, reversed]
+        refundedAzN:
+          type: number
+          minimum: 0
+        productRefundedAzN:
+          type: number
+          minimum: 0
+    OrderTimelineEvent:
+      type: object
+      required: [status, label, createdAt]
+      properties:
+        status:
+          type: string
+        label:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    BuyerSellerOrderSummary:
+      type: object
+      required: [id, sellerName, status, items, productSubtotalAzN, deliveryFeeAzN, trackingCode]
+      properties:
+        id:
+          type: string
+        sellerName:
+          type: string
+        status:
+          $ref: "#/components/schemas/SellerOrderStatus"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderLine"
+        productSubtotalAzN:
+          type: number
+        deliveryFeeAzN:
+          type: ["number", "null"]
+        trackingCode:
+          type: ["string", "null"]
+    BuyerOrder:
+      type: object
+      required: [id, orderNumber, status, paymentMethod, paymentStatus, customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, productSubtotalAzN, deliveryTotalAzN, totalAzN, sellerOrders, timeline, createdAt]
+      properties:
+        id:
+          type: string
+        orderNumber:
+          type: string
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethod"
+        paymentStatus:
+          $ref: "#/components/schemas/PaymentStatus"
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        deliveryArea:
+          type: string
+          enum: [Bakı, Abşeron]
+        deliveryAddress:
+          type: string
+        deliveryNote:
+          type: ["string", "null"]
+        productSubtotalAzN:
+          type: number
+        deliveryTotalAzN:
+          type: ["number", "null"]
+        totalAzN:
+          type: ["number", "null"]
+        sellerOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/BuyerSellerOrderSummary"
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderTimelineEvent"
+        createdAt:
+          type: string
+          format: date-time
+    SellerOrder:
+      allOf:
+        - $ref: "#/components/schemas/SellerOrderSummary"
+        - type: object
+          required: [orderNumber, customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, deliveryNote, paymentMethod, paymentStatus, updatedAt]
+          properties:
+            orderNumber:
+              type: string
+            customerName:
+              type: string
+            customerEmail:
+              type: string
+            customerPhone:
+              type: string
+            deliveryArea:
+              type: string
+              enum: [Bakı, Abşeron]
+            deliveryAddress:
+              type: string
+            deliveryNote:
+              type: ["string", "null"]
+            paymentMethod:
+              $ref: "#/components/schemas/PaymentMethod"
+            paymentStatus:
+              $ref: "#/components/schemas/PaymentStatus"
+            updatedAt:
+              type: string
+              format: date-time
+    SellerOrderUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [confirmed, declined, preparing, out_for_delivery, delivered]
+        deliveryFeeAzN:
+          type: number
+          minimum: 0
+          maximum: 1000
+        trackingCode:
+          type: string
+          maxLength: 120
+        collectedAtDelivery:
+          type: boolean
+        note:
+          type: string
+          maxLength: 500
+    AdminOrder:
+      type: object
+      required: [id, orderNumber, status, paymentMethod, paymentStatus, customerName, customerEmail, customerPhone, productSubtotalAzN, deliveryTotalAzN, totalAzN, refundedAzN, sellerOrders, createdAt]
+      properties:
+        id:
+          type: string
+        orderNumber:
+          type: string
+        status:
+          $ref: "#/components/schemas/OrderStatus"
+        paymentMethod:
+          $ref: "#/components/schemas/PaymentMethod"
+        paymentStatus:
+          $ref: "#/components/schemas/PaymentStatus"
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        productSubtotalAzN:
+          type: number
+        deliveryTotalAzN:
+          type: ["number", "null"]
+        totalAzN:
+          type: ["number", "null"]
+        refundedAzN:
+          type: number
+        sellerOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/SellerOrderSummary"
+        createdAt:
+          type: string
+          format: date-time
+    OrderRefundInput:
+      type: object
+      required: [sellerOrderId, refundAmountAzN, productRefundAzN, reference]
+      properties:
+        sellerOrderId:
+          type: string
+          minLength: 1
+        refundAmountAzN:
+          type: number
+          exclusiveMinimum: 0
+        productRefundAzN:
+          type: number
+          minimum: 0
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 160
+        reason:
+          type: string
+          maxLength: 500
     Error:
       type: object
       required: [error]

@@ -718,11 +718,14 @@ body { background: #f8faff; }
 .quantity-stepper { display: flex; align-items: center; gap: 15px; border-radius: 999px; padding: 4px; background: #f0f2f6; font-size: 12px; font-weight: 800; }
 .quantity-stepper button { width: 26px; height: 26px; border: 0; border-radius: 50%; background: transparent; font-size: 17px; line-height: 1; }
 .quantity-stepper button:hover { background: white; }
-.detail-purchase { display: grid; grid-template-columns: 46px 1fr; gap: 9px; }
+.detail-purchase { display: grid; grid-template-columns: 46px repeat(2, minmax(0, 1fr)); gap: 9px; }
 .detail-favorite { display: grid; place-items: center; border: 1px solid #e2e6ed; border-radius: 999px; background: white; }
 .detail-favorite.liked { color: #bc6d67; }
 .detail-add { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 999px; background: #111214; color: white; font-size: 12px; font-weight: 800; }
 .detail-add:hover { background: #32343a; }
+.detail-buy-now { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #dbe3f0; border-radius: 999px; background: #f4f7fb; color: #24416e; font-size: 12px; font-weight: 800; }
+.detail-buy-now:hover:not(:disabled) { background: #e9eef6; }
+.detail-buy-now:disabled { opacity: .5; }
 .detail-disclaimer { margin: 10px 0 0; color: #848a94; font-size: 10px; text-align: center; }
 .detail-related { padding-top: 50px; }
 .detail-related .section-head { margin-bottom: 20px; }

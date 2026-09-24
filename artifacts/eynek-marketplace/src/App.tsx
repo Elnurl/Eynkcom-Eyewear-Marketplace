@@ -32,6 +32,10 @@ import NotFound from '@/pages/not-found';
 import SellerLogin from '@/pages/seller-login';
 import SellerPanel from '@/pages/seller-panel';
 import SellerAdminPage from '@/pages/seller-admin';
+import CheckoutPage from '@/pages/checkout';
+import OrderPage from '@/pages/order';
+import SellerOrdersPage from '@/pages/seller-orders';
+import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
 import {
   getListMySellerApplicationsQueryKey,
   useCreateSellerApplication,
@@ -342,7 +346,7 @@ function VendorPage({ products, stores, likedIds, onFavorite, onQuickView, onTry
   return <><main className="vendor-page"><div className="container"><div className="vendor-hero"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}><BrandWord /> satıcısı</div><h1>{vendor.name}</h1><p>{vendor.description}</p></div><Link href="/stores" className="btn btn-secondary" data-testid="link-vendor-back">Bütün mağazalar</Link></div><div className="vendor-details"><span><MapPin size={14} /> {vendor.location}</span><span>{vendor.since}</span><span><ShoppingBag size={14} /> {vendor.count} model</span></div><section className="section" style={{ padding: '45px 0 0' }}><div className="section-head"><div><div className="eyebrow">Mağaza seçimi</div><h2 className="section-title">Bu vitrində</h2></div></div>{items.length ? <div className="product-grid">{items.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />)}</div> : <div className="empty-state"><Package size={22} /><h3>Hazırda təsdiqlənmiş məhsul yoxdur.</h3></div>}</section></div></main><Footer /></>;
 }
 
-function ProductDetail({ products, stores, onAdd, onTryOn, onQuickView, onFavorite, likedIds }: { products: Product[]; stores: Vendor[]; onAdd: (product: Product, message?: string, quantity?: number) => void; onTryOn: (product: Product) => void; onQuickView: (product: Product) => void; onFavorite: (id: number | string) => void; likedIds: Set<number | string> }) {
+function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView, onFavorite, likedIds }: { products: Product[]; stores: Vendor[]; onAdd: (product: Product, message?: string, quantity?: number) => void; onBuyNow: (product: Product, quantity: number) => void; onTryOn: (product: Product) => void; onQuickView: (product: Product) => void; onFavorite: (id: number | string) => void; likedIds: Set<number | string> }) {
   const { id = '1' } = useParams<{ id: string }>();
   const product = products.find((item) => String(item.id) === id);
   const [quantity, setQuantity] = useState(1);
@@ -398,8 +402,8 @@ function ProductDetail({ products, stores, onAdd, onTryOn, onQuickView, onFavori
               <div className="detail-option"><div className="detail-option-label">{product.brand ? 'BREND · RƏNG' : 'RƏNG'}</div><div className="detail-color-row"><span className="detail-color-swatch" style={{ background: swatchColor }} aria-hidden="true" /><span>{product.brand ? `${product.brand} · ` : ''}{product.color}</span></div></div>
             </div>
             <div className="detail-quantity"><div><div className="detail-option-label">SAY</div><small>{product.isAvailable ? `${product.stock} ədəd stokda` : 'Hazırda stokda yoxdur'}</small></div><div className="quantity-stepper"><button disabled={!product.isAvailable || quantity <= 1} onClick={() => setQuantity((count) => Math.max(1, count - 1))} aria-label="Sayı azalt">−</button><span aria-live="polite">{quantity}</span><button disabled={!product.isAvailable || quantity >= Math.min(10, product.stock)} onClick={() => setQuantity((count) => Math.min(10, product.stock, count + 1))} aria-label="Sayı artır">+</button></div></div>
-            <div className="detail-purchase"><button className={`detail-favorite ${likedIds.has(product.id) ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label="Seçilmişlərə əlavə et" data-testid="button-detail-favorite"><Heart size={19} fill={likedIds.has(product.id) ? 'currentColor' : 'none'} /></button><button className="detail-add" disabled={!product.isAvailable} onClick={() => onAdd(product, `${quantity} ədəd ${product.name} səbətə əlavə edildi`, quantity)} data-testid="button-add-cart-detail"><ShoppingBag size={17} /> {product.isAvailable ? `Səbətə əlavə et · ${money(product.price * quantity)}` : 'Stokda yoxdur'}</button></div>
-            <p className="detail-disclaimer">Stok və mövcudluq satıcının yenilənmiş inventarına əsaslanır. Sifariş və ödəniş mərhələsi hazırlanır.</p>
+            <div className="detail-purchase"><button className={`detail-favorite ${likedIds.has(product.id) ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label="Seçilmişlərə əlavə et" data-testid="button-detail-favorite"><Heart size={19} fill={likedIds.has(product.id) ? 'currentColor' : 'none'} /></button><button className="detail-add" disabled={!product.isAvailable} onClick={() => onAdd(product, `${quantity} ədəd ${product.name} səbətə əlavə edildi`, quantity)} data-testid="button-add-cart-detail"><ShoppingBag size={17} /> {product.isAvailable ? `Səbətə əlavə et · ${money(product.price * quantity)}` : 'Stokda yoxdur'}</button><button className="detail-buy-now" disabled={!product.isAvailable} onClick={() => onBuyNow(product, quantity)} data-testid="button-buy-now-detail">İndi sifariş et <ArrowRight size={16} /></button></div>
+            <p className="detail-disclaimer">Mağaza sifarişi təsdiqlədikdən sonra çatdırılma haqqı dəqiqləşdirilir; ödəniş qapıda edilir.</p>
           </div>
         </div>
         <section className="detail-related"><div className="section-head"><h2>Digər modellər</h2><Link href="/collection" className="home-count">Hamısına bax <ArrowRight size={14} /></Link></div><div className="product-grid">{related.map((item) => <ProductCard key={item.id} product={item} liked={likedIds.has(item.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />)}</div></section>
@@ -563,7 +567,7 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 }
 
 function Storefront() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const productsQuery = useListProducts();
   const storesQuery = useListStores();
   const allProducts = useMemo(
@@ -615,9 +619,42 @@ function Storefront() {
   const closeMobileMenu = useCallback(() => setMobileMenu(false), []);
   useEffect(() => { closeMobileMenu(); }, [location, closeMobileMenu]);
   const cartCount = cartItems.length;
+  const checkoutItems = useMemo(() => {
+    const grouped = new Map<string, {
+      productId: string;
+      productName: string;
+      sellerName: string;
+      quantity: number;
+      unitPriceAzN: number;
+      lineTotalAzN: number;
+    }>();
+    for (const product of cartItems) {
+      const id = String(product.id);
+      const current = grouped.get(id);
+      if (current) {
+        current.quantity += 1;
+        current.lineTotalAzN += product.price;
+      } else {
+        grouped.set(id, {
+          productId: id,
+          productName: product.name,
+          sellerName: product.vendor,
+          quantity: 1,
+          unitPriceAzN: product.price,
+          lineTotalAzN: product.price,
+        });
+      }
+    }
+    return [...grouped.values()];
+  }, [cartItems]);
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id)) { next.delete(id); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
   const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (!product.isAvailable) { showToast('Bu məhsul hazırda stokda yoxdur'); return; } setCartItems((current) => [...current, ...Array.from({ length: Math.min(product.stock, 10, Math.max(1, quantity)) }, () => product)]); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
+  const buyNow = (product: Product, quantity = 1) => {
+    if (!product.isAvailable) { showToast('Bu məhsul hazırda stokda yoxdur'); return; }
+    setCartItems((current) => [...current, ...Array.from({ length: Math.min(product.stock, 10, Math.max(1, quantity)) }, () => product)]);
+    setLocation('/checkout');
+  };
   const removeFromCart = (id: number | string) => setCartItems((current) => { const index = current.findIndex((item) => item.id === id); return index === -1 ? current : current.filter((_, itemIndex) => itemIndex !== index); });
   const common: CommonProps = {
     products: allProducts,
@@ -628,11 +665,38 @@ function Storefront() {
     onTryOn: (product) => setTryOnProduct(product),
   };
   const catalogError = productsQuery.error || storesQuery.error;
-  return <div className="app-shell"><Header cartCount={cartCount} products={allProducts} stores={stores} menuOpen={mobileMenu} onMenu={() => setMobileMenu((open) => !open)} />{mobileMenu && <MobileDrawer onClose={closeMobileMenu} />}{catalogError && <div className="container" role="status" style={{ paddingTop: 12, color: 'var(--muted)' }}>Kataloq yüklənmədi. Səhifəni yeniləyib yenidən cəhd edin.</div>}<Switch><Route path="/collection"><Collection {...common} /></Route><Route path="/stores"><StoresPage stores={stores} /></Route><Route path="/brands"><BrandsPage {...common} /></Route><Route path="/seller"><SellerPage /></Route><Route path="/wishlist"><WishlistPage {...common} /></Route><Route path="/cart"><CartPage items={cartItems} stores={stores} onRemove={removeFromCart} onCheckout={() => showToast('Ödəniş mərhələsi hazırlanır')} /></Route><Route path="/account"><AccountPage /></Route><Route path="/vendor/:slug"><VendorPage {...common} /></Route><Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onTryOn={(product) => setTryOnProduct(product)} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route><Route path="/"><Home {...common} /></Route><Route component={NotFound} /></Switch><MobileBottomNav onTryOn={() => { const first = allProducts[0]; if (first) setTryOnProduct(first); }} />{quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={(product) => setTryOnProduct(product)} />}{tryOnProduct && <VirtualTryOn products={allProducts} product={tryOnProduct} onClose={() => setTryOnProduct(null)} onSelect={setTryOnProduct} onAdd={addToCart} onSave={toggleFavorite} />}{toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}</div>;
+  if (location === '/checkout') {
+    return <CheckoutPage items={checkoutItems} onClearCart={() => setCartItems([])} />;
+  }
+  if (location.startsWith('/order/')) return <OrderPage />;
+  return (
+    <div className="app-shell">
+      <Header cartCount={cartCount} products={allProducts} stores={stores} menuOpen={mobileMenu} onMenu={() => setMobileMenu((open) => !open)} />
+      {mobileMenu && <MobileDrawer onClose={closeMobileMenu} />}
+      {catalogError && <div className="container" role="status" style={{ paddingTop: 12, color: 'var(--muted)' }}>Kataloq yüklənmədi. Səhifəni yeniləyib yenidən cəhd edin.</div>}
+      <Switch>
+        <Route path="/collection"><Collection {...common} /></Route>
+        <Route path="/stores"><StoresPage stores={stores} /></Route>
+        <Route path="/brands"><BrandsPage {...common} /></Route>
+        <Route path="/seller"><SellerPage /></Route>
+        <Route path="/wishlist"><WishlistPage {...common} /></Route>
+        <Route path="/cart"><CartPage items={cartItems} stores={stores} onRemove={removeFromCart} onCheckout={() => setLocation('/checkout')} /></Route>
+        <Route path="/account"><AccountPage /></Route>
+        <Route path="/vendor/:slug"><VendorPage {...common} /></Route>
+        <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={(product) => setTryOnProduct(product)} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
+        <Route path="/"><Home {...common} /></Route>
+        <Route component={NotFound} />
+      </Switch>
+      <MobileBottomNav onTryOn={() => { const first = allProducts[0]; if (first) setTryOnProduct(first); }} />
+      {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={(product) => setTryOnProduct(product)} />}
+      {tryOnProduct && <VirtualTryOn products={allProducts} product={tryOnProduct} onClose={() => setTryOnProduct(null)} onSelect={setTryOnProduct} onAdd={addToCart} onSave={toggleFavorite} />}
+      {toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}
+    </div>
+  );
 }
 
 function App() {
-  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><RoutedErrorBoundary><Switch><Route path="/seller-login"><SellerLogin /></Route><Route path="/seller-panel"><SellerPanel /></Route><Route path="/seller-panel/*"><SellerPanel /></Route><Route path="/seller-admin"><SellerAdminPage /></Route><Route><Storefront /></Route></Switch></RoutedErrorBoundary></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><RoutedErrorBoundary><Switch><Route path="/seller-login"><SellerLogin /></Route><Route path="/seller-panel"><SellerPanel /></Route><Route path="/seller-panel/*"><SellerPanel /></Route><Route path="/seller-orders"><SellerOrdersPage /></Route><Route path="/seller-admin/orders"><SellerAdminOrdersPage /></Route><Route path="/seller-admin"><SellerAdminPage /></Route><Route><Storefront /></Route></Switch></RoutedErrorBoundary></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
 }
 
 export default App;
