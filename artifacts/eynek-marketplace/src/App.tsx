@@ -205,7 +205,6 @@ function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: 
             <CategoryMenu />
             <Link href="/brands" className={location.startsWith('/brands') ? 'active' : ''} data-testid="link-brands">Brendlər</Link>
             <Link href="/stores" className={location.startsWith('/stores') ? 'active' : ''} data-testid="link-stores">Mağazalar</Link>
-            <Link href="/seller" className={location === '/seller' ? 'active' : ''} data-testid="link-seller-cta"><BrandWord />-də sat</Link>
           </nav>
           {/* On phones the search collapses to an icon inside this group; desktop CSS lays the group out in one row. */}
           <div className="nav-actions">
@@ -353,12 +352,12 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
                 <Store size={22} />
                 <h3>Hələ təsdiqlənmiş mağaza yoxdur.</h3>
                 <p>Satıcı müraciətləri təsdiqləndikdən sonra mağazalar burada görünəcək.</p>
-                <Link href="/seller" className="btn btn-secondary">Partnyor ol <ArrowRight size={14} /></Link>
+                <Link href="/seller" className="btn btn-secondary"><BrandWord />-də sat <ArrowRight size={14} /></Link>
               </div>
             )}
           </div>
         </section>
-        <section className="section" style={{ paddingTop: 0 }}><div className="container seller-banner"><h2>Mağazanızı <span className="banner-brand-word"><BrandWord />-ə</span> gətirin.</h2><Link href="/seller" className="btn" data-testid="link-home-seller">Partnyor ol <ArrowRight size={14} /></Link></div></section>
+        <section className="section" style={{ paddingTop: 0 }}><div className="container seller-banner"><h2>Mağazanızı <span className="banner-brand-word"><BrandWord />-ə</span> gətirin.</h2><Link href="/seller" className="btn" data-testid="link-home-seller"><BrandWord />-də sat <ArrowRight size={14} /></Link></div></section>
       </main>
       <Footer />
     </>
@@ -767,7 +766,6 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
           <nav className="mobile-drawer-links" aria-label="Şəxsi keçidlər">
             <Link href="/wishlist" onClick={onClose}>Seçilmişlər <ChevronRight size={18} /></Link>
             <Link href="/cart" onClick={onClose}>Səbətim <ChevronRight size={18} /></Link>
-            <Link href="/seller" onClick={onClose} data-testid="link-mobile-seller"><span><BrandWord />-də sat</span><ChevronRight size={18} /></Link>
           </nav>
         </div>
       </aside>

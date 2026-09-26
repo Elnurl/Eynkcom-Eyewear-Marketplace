@@ -159,6 +159,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .seller-banner { display: flex; align-items: center; justify-content: space-between; gap: 25px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 28px 0; }
 .seller-banner h2 { margin: 0; color: var(--navy); font-size: 25px; letter-spacing: -.045em; }
 .banner-brand-word { margin-inline: .17em .2em; white-space: nowrap; }
+.seller-banner .btn .brand-word img { filter: brightness(0) invert(1); }
 
 .collection-page, .directory-page, .account-page, .cart-page, .seller-page { padding: 53px 0 88px; }
 .collection-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding-bottom: 32px; }
