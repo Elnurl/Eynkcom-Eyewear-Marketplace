@@ -27,6 +27,7 @@ export const marketplaceOrdersTable = pgTable(
     deliveryArea: text("delivery_area").notNull(),
     deliveryAddress: text("delivery_address").notNull(),
     deliveryNote: text("delivery_note").notNull().default(""),
+    fulfillmentMethod: text("fulfillment_method").notNull().default("courier"),
     paymentMethod: text("payment_method").notNull(),
     paymentStatus: text("payment_status").notNull(),
     status: text("status").notNull(),
@@ -212,8 +213,41 @@ export type InsertMarketplaceSettlementLedger = z.infer<
 >;
 export type MarketplaceSettlement = typeof marketplaceSettlementLedgerTable.$inferSelect;
 
+export const marketplaceReturnRequestsTable = pgTable(
+  "marketplace_return_requests",
+  {
+    id: text("id").primaryKey(),
+    orderId: text("order_id")
+      .notNull()
+      .references(() => marketplaceOrdersTable.id, { onDelete: "cascade" }),
+    sellerOrderId: text("seller_order_id")
+      .notNull()
+      .references(() => marketplaceSellerOrdersTable.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("submitted"),
+    reason: text("reason").notNull(),
+    note: text("note").notNull().default(""),
+    adminNote: text("admin_note").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex("marketplace_return_requests_seller_order_unique").on(table.sellerOrderId),
+    index("marketplace_return_requests_order_idx").on(table.orderId),
+    index("marketplace_return_requests_status_idx").on(table.status),
+  ],
+);
+
 export const insertMarketplaceOrderRefundSchema = createInsertSchema(
   marketplaceOrderRefundsTable,
 ).omit({ createdAt: true });
 export type InsertMarketplaceOrderRefund = z.infer<typeof insertMarketplaceOrderRefundSchema>;
 export type MarketplaceOrderRefund = typeof marketplaceOrderRefundsTable.$inferSelect;
+
+export const insertMarketplaceReturnRequestSchema = createInsertSchema(
+  marketplaceReturnRequestsTable,
+).omit({ createdAt: true, updatedAt: true });
+export type InsertMarketplaceReturnRequest = z.infer<typeof insertMarketplaceReturnRequestSchema>;
+export type MarketplaceReturnRequest = typeof marketplaceReturnRequestsTable.$inferSelect;

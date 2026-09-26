@@ -445,10 +445,19 @@ export const PaymentMethod = {
   card: 'card',
 } as const;
 
+export type FulfillmentMethod = typeof FulfillmentMethod[keyof typeof FulfillmentMethod];
+
+
+export const FulfillmentMethod = {
+  courier: 'courier',
+  store_pickup: 'store_pickup',
+} as const;
+
 export interface CheckoutOptions {
   paymentMethods: PaymentMethod[];
   cardPaymentStatus: CheckoutOptionsCardPaymentStatus;
   deliveryAreas: CheckoutOptionsDeliveryAreasItem[];
+  fulfillmentMethods: FulfillmentMethod[];
 }
 
 export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
@@ -524,12 +533,13 @@ export interface GuestOrderInput {
      * @maxLength 40
      */
   customerPhone: string;
-  deliveryArea: GuestOrderInputDeliveryArea;
+  fulfillmentMethod?: FulfillmentMethod;
+  deliveryArea?: GuestOrderInputDeliveryArea;
   /**
      * @minLength 5
      * @maxLength 500
      */
-  deliveryAddress: string;
+  deliveryAddress?: string;
   /** @maxLength 500 */
   deliveryNote?: string;
   paymentMethod: PaymentMethod;
@@ -569,6 +579,29 @@ export const SellerOrderSummarySettlementStatus = {
   reversed: 'reversed',
 } as const;
 
+export type ReturnRequestStatus = typeof ReturnRequestStatus[keyof typeof ReturnRequestStatus];
+
+
+export const ReturnRequestStatus = {
+  submitted: 'submitted',
+  coordinating: 'coordinating',
+  accepted: 'accepted',
+  declined: 'declined',
+} as const;
+
+export interface OrderReturnRequest {
+  id: string;
+  sellerOrderId: string;
+  status: ReturnRequestStatus;
+  reason: string;
+  /** @nullable */
+  note?: string | null;
+  /** @nullable */
+  adminNote?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface SellerOrderSummary {
   id: string;
   sellerName: string;
@@ -584,10 +617,15 @@ export interface SellerOrderSummary {
   /** @nullable */
   trackingCode: string | null;
   settlementStatus: SellerOrderSummarySettlementStatus;
+  /** @nullable */
+  settlementReference?: string | null;
+  /** @nullable */
+  settledAt?: string | null;
   /** @minimum 0 */
   refundedAzN: number;
   /** @minimum 0 */
   productRefundedAzN: number;
+  returnRequest?: OrderReturnRequest;
 }
 
 export interface OrderTimelineEvent {
@@ -606,6 +644,7 @@ export interface BuyerSellerOrderSummary {
   deliveryFeeAzN: number | null;
   /** @nullable */
   trackingCode: string | null;
+  returnRequest?: OrderReturnRequest;
 }
 
 export type BuyerOrderDeliveryArea = typeof BuyerOrderDeliveryArea[keyof typeof BuyerOrderDeliveryArea];
@@ -620,6 +659,7 @@ export interface BuyerOrder {
   id: string;
   orderNumber: string;
   status: OrderStatus;
+  fulfillmentMethod: FulfillmentMethod;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   customerName: string;
@@ -678,6 +718,7 @@ export type SellerOrder = SellerOrderSummary & ({
   deliveryAddress: string;
   /** @nullable */
   deliveryNote: string | null;
+  fulfillmentMethod: FulfillmentMethod;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   updatedAt: string;
@@ -712,6 +753,7 @@ export interface AdminOrder {
   id: string;
   orderNumber: string;
   status: OrderStatus;
+  fulfillmentMethod: FulfillmentMethod;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   customerName: string;
@@ -741,6 +783,43 @@ export interface OrderRefundInput {
   reference: string;
   /** @maxLength 500 */
   reason?: string;
+}
+
+export interface OrderSettlementInput {
+  /** @minLength 1 */
+  sellerOrderId: string;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  reference: string;
+}
+
+export interface OrderReturnInput {
+  /** @minLength 1 */
+  sellerOrderId: string;
+  /**
+     * @minLength 8
+     * @maxLength 400
+     */
+  reason: string;
+  /** @maxLength 500 */
+  note?: string;
+}
+
+export type OrderReturnUpdateStatus = typeof OrderReturnUpdateStatus[keyof typeof OrderReturnUpdateStatus];
+
+
+export const OrderReturnUpdateStatus = {
+  coordinating: 'coordinating',
+  accepted: 'accepted',
+  declined: 'declined',
+} as const;
+
+export interface OrderReturnUpdate {
+  status: OrderReturnUpdateStatus;
+  /** @maxLength 500 */
+  adminNote?: string;
 }
 
 export interface Error {

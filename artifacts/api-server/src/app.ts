@@ -60,6 +60,7 @@ app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 const fifteenMinutes = 15 * 60 * 1000;
 app.post("/api/orders", rateLimit({ name: "checkout", limit: 20, windowMs: fifteenMinutes }));
 app.post("/api/orders/:orderId/decision", rateLimit({ name: "order-decision", limit: 30, windowMs: fifteenMinutes }));
+app.post("/api/orders/:orderId/returns", rateLimit({ name: "order-return", limit: 10, windowMs: fifteenMinutes }));
 app.post("/api/seller/applications", rateLimit({ name: "seller-application", limit: 5, windowMs: 60 * 60 * 1000 }));
 
 app.use("/api", router);

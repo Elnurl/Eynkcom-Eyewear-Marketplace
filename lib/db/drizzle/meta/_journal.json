@@ -8,6 +8,20 @@
       "when": 1790406924053,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790439776552,
+      "tag": "0001_careful_genesis",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790441952403,
+      "tag": "0002_cute_vertigo",
+      "breakpoints": true
     }
   ]
 }

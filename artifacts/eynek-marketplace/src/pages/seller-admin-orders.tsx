@@ -8,14 +8,17 @@ import {
   useGetAdminAccess,
   useListAdminOrders,
   useRecordOrderRefund,
+  useRecordOrderSettlement,
+  useUpdateOrderReturnRequest,
 } from '@workspace/api-client-react';
-import type { AdminOrder, OrderRefundInput } from '@workspace/api-client-react';
+import type { AdminOrder, OrderRefundInput, OrderReturnUpdate, OrderSettlementInput } from '@workspace/api-client-react';
 import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 import { BrandLogo } from '@/components/brand-logo';
-import { LoadingCard, QueryError, StatePill, dateLabel, money, orderStatusLabel, paymentStatusLabel, sellerStatusLabel } from './order-ui';
+import { LoadingCard, QueryError, StatePill, dateLabel, fulfillmentLabel, money, orderStatusLabel, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
 import './order-pages.css';
 
 type RefundDraft = { sellerOrderId: string; amount: string; productAmount: string; reference: string; reason: string };
+type SettleDraft = { sellerOrderId: string; reference: string };
 
 function errorText(error: unknown) {
   const response = error as { data?: { error?: string } };
@@ -36,7 +39,10 @@ export default function SellerAdminOrdersPage() {
   const isAdmin = adminAccess.data?.authorized === true;
   const orders = useListAdminOrders({ query: { enabled: isAdmin, queryKey: getListAdminOrdersQueryKey(), retry: false } });
   const recordRefund = useRecordOrderRefund();
+  const recordSettlement = useRecordOrderSettlement();
+  const updateReturn = useUpdateOrderReturnRequest();
   const [drafts, setDrafts] = useState<Record<string, RefundDraft>>({});
+  const [settleDrafts, setSettleDrafts] = useState<Record<string, SettleDraft>>({});
   const [error, setError] = useState('');
   const [savedId, setSavedId] = useState('');
 
@@ -54,6 +60,10 @@ export default function SellerAdminOrdersPage() {
   const list = orders.data ?? [];
   const totalGross = useMemo(() => list.reduce((sum, order) => sum + (order.totalAzN ?? 0), 0), [list]);
   const totalRefunded = useMemo(() => list.reduce((sum, order) => sum + order.refundedAzN, 0), [list]);
+  const payableCount = useMemo(
+    () => list.reduce((sum, order) => sum + order.sellerOrders.filter((seller) => ['payable', 'adjusted'].includes(seller.settlementStatus)).length, 0),
+    [list],
+  );
   const draftFor = (order: AdminOrder): RefundDraft => drafts[order.id] ?? {
     sellerOrderId: order.sellerOrders.find((seller) => seller.status === 'delivered')?.id ?? '',
     amount: '',
@@ -62,6 +72,11 @@ export default function SellerAdminOrdersPage() {
     reason: '',
   };
   const setDraft = (id: string, patch: Partial<RefundDraft>) => setDrafts((current) => ({ ...current, [id]: { ...draftFor(list.find((item) => item.id === id) as AdminOrder), ...current[id], ...patch } }));
+  const settleDraftFor = (order: AdminOrder): SettleDraft => settleDrafts[order.id] ?? {
+    sellerOrderId: order.sellerOrders.find((seller) => ['payable', 'adjusted'].includes(seller.settlementStatus))?.id ?? '',
+    reference: '',
+  };
+  const setSettleDraft = (id: string, patch: Partial<SettleDraft>) => setSettleDrafts((current) => ({ ...current, [id]: { ...settleDraftFor(list.find((item) => item.id === id) as AdminOrder), ...current[id], ...patch } }));
 
   const refund = async (order: AdminOrder) => {
     const draft = draftFor(order);
@@ -95,6 +110,41 @@ export default function SellerAdminOrdersPage() {
     }
   };
 
+  const coordinateReturn = async (order: AdminOrder, returnId: string, status: OrderReturnUpdate['status']) => {
+    setError('');
+    setSavedId('');
+    try {
+      await updateReturn.mutateAsync({ id: order.id, returnId, data: { status } });
+      await queryClient.invalidateQueries({ queryKey: getListAdminOrdersQueryKey() });
+      setSavedId(`${order.id}-${returnId}`);
+    } catch (returnError) {
+      setError(errorText(returnError));
+    }
+  };
+
+  const settle = async (order: AdminOrder) => {
+    const draft = settleDraftFor(order);
+    const seller = order.sellerOrders.find((item) => item.id === draft.sellerOrderId);
+    setError('');
+    setSavedId('');
+    const input: OrderSettlementInput = {
+      sellerOrderId: draft.sellerOrderId,
+      reference: draft.reference.trim(),
+    };
+    if (!seller || !input.reference || !['payable', 'adjusted'].includes(seller.settlementStatus)) {
+      setError('Ödənişə hazır mağaza və istinad kodu tələb olunur.');
+      return;
+    }
+    try {
+      await recordSettlement.mutateAsync({ id: order.id, data: input });
+      await queryClient.invalidateQueries({ queryKey: getListAdminOrdersQueryKey() });
+      setSettleDrafts((current) => ({ ...current, [order.id]: { ...draft, reference: '' } }));
+      setSavedId(`${order.id}-settle`);
+    } catch (settleError) {
+      setError(errorText(settleError));
+    }
+  };
+
   if (!isLoaded || !isSignedIn) return null;
   if (!isAdmin) {
     if (adminAccess.isLoading) return null;
@@ -110,18 +160,35 @@ export default function SellerAdminOrdersPage() {
       <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Mağazaya qayıt</Link><button className="seller-nav-item text-danger" onClick={() => void signOutAndGo('/')} data-testid="button-admin-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
     </aside>
     <main className="seller-main"><div className="seller-content">
-      <div className="management-toolbar"><div><div className="eyebrow">Maliyyə nəzarəti</div><h1>Sifarişlər və geri ödənişlər.</h1></div><p>Bütün marketplace sifarişlərinin ödəniş statusunu, mağaza bölgüsünü və geri ödəniş qeydlərini idarə edin.</p></div>
-      <div className="stat-strip"><div className="stat-tile"><small>Sifarişlər</small><strong>{list.length}</strong></div><div className="stat-tile"><small>Brüt məbləğ</small><strong>{money(totalGross)}</strong></div><div className="stat-tile"><small>Geri qaytarılıb</small><strong>{money(totalRefunded)}</strong></div></div>
+      <div className="management-toolbar"><div><div className="eyebrow">Maliyyə nəzarəti</div><h1>Sifarişlər, qaytarma və hesablaşma.</h1></div><p>Ödəniş, qaytarma və mağaza hesablaşmasını burada qeyd edin. Hesablaşma düyməsi pul köçürmür.</p></div>
+      <div className="stat-strip"><div className="stat-tile"><small>Sifarişlər</small><strong>{list.length}</strong></div><div className="stat-tile"><small>Brüt məbləğ</small><strong>{money(totalGross)}</strong></div><div className="stat-tile"><small>Geri qaytarılıb</small><strong>{money(totalRefunded)}</strong></div><div className="stat-tile"><small>Açıq hesablaşma</small><strong>{payableCount}</strong></div></div>
       {error && <div className="commerce-error" role="alert" data-testid="status-admin-order-error"><AlertCircle size={16} />{error}</div>}
       {orders.isLoading ? <LoadingCard lines={6} /> : orders.isError ? <QueryError message="Admin sifarişləri yüklənmədi." onRetry={() => void orders.refetch()} /> : list.length ? <div className="admin-order-list" style={{ marginTop: 16 }}>{list.map((order) => {
         const draft = draftFor(order);
+        const settleDraft = settleDraftFor(order);
+        const openSettlements = order.sellerOrders.filter((seller) => ['payable', 'adjusted'].includes(seller.settlementStatus));
         const refundSeller = order.sellerOrders.find((item) => item.id === draft.sellerOrderId);
         const remaining = refundSeller ? Math.max((refundSeller.productSubtotalAzN + (refundSeller.deliveryFeeAzN ?? 0)) - refundSeller.refundedAzN, 0) : 0;
         const productRemaining = refundSeller ? Math.max(refundSeller.productSubtotalAzN - refundSeller.productRefundedAzN, 0) : 0;
         return <article className="commerce-card admin-order-card" key={order.id} data-testid={`card-admin-order-${order.id}`}>
-          <div className="admin-order-heading"><div><h2>{order.orderNumber}</h2><p>{order.customerName} · {order.customerEmail} · {dateLabel(order.createdAt)}</p></div><StatePill status={order.status} label={orderStatusLabel(order.status)} /></div>
-          <div className="admin-order-values"><div><small>Müştəri</small><strong>{order.customerPhone}</strong></div><div><small>Ödəniş</small><strong>{paymentStatusLabel(order.paymentStatus)}</strong></div><div><small>Yekun</small><strong>{money(order.totalAzN)}</strong></div><div><small>Geri qaytarılıb</small><strong>{money(order.refundedAzN)}</strong></div></div>
-          <div className="order-items">{order.sellerOrders.map((seller) => <div className="order-item-row" key={seller.id}><span><strong>{seller.sellerName}</strong> · {seller.items.length} məhsul · {sellerStatusLabel(seller.status)}</span><span>{money(seller.productSubtotalAzN)}</span></div>)}</div>
+          <div className="admin-order-heading"><div><h2>{order.orderNumber}</h2><p>{order.customerName} · {order.customerEmail} · {dateLabel(order.createdAt)}</p></div><StatePill status={order.status} label={orderStatusLabel(order.status, order.fulfillmentMethod)} /></div>
+          <div className="admin-order-values"><div><small>Müştəri</small><strong>{order.customerPhone}</strong></div><div><small>Üsul</small><strong>{fulfillmentLabel(order.fulfillmentMethod)}</strong></div><div><small>Ödəniş</small><strong>{paymentStatusLabel(order.paymentStatus, order.fulfillmentMethod)}</strong></div><div><small>Yekun</small><strong>{money(order.totalAzN)}</strong></div><div><small>Geri qaytarılıb</small><strong>{money(order.refundedAzN)}</strong></div></div>
+          <div className="order-items">{order.sellerOrders.map((seller) => <div className="order-item-row" key={seller.id}><span><strong>{seller.sellerName}</strong> · {seller.items.length} məhsul · {sellerStatusLabel(seller.status)} · {settlementStatusLabel(seller.settlementStatus)}{seller.settlementReference ? ` · ${seller.settlementReference}` : ''}</span><span>{money(seller.productSubtotalAzN)}</span></div>)}</div>
+          {order.sellerOrders.filter((seller) => seller.returnRequest).map((seller) => {
+            const request = seller.returnRequest!;
+            const nextStatuses = request.status === 'submitted'
+              ? (['coordinating', 'accepted', 'declined'] as const)
+              : request.status === 'coordinating'
+                ? (['accepted', 'declined'] as const)
+                : [];
+            return <div className="return-box" key={request.id} data-testid={`card-admin-return-${request.id}`}>
+              <strong>{seller.sellerName} · {returnStatusLabel(request.status)}</strong>
+              <p>{request.reason}</p>
+              {nextStatuses.length ? <div className="return-actions">{nextStatuses.map((status) => <button className="btn btn-secondary" type="button" key={status} disabled={updateReturn.isPending} onClick={() => void coordinateReturn(order, request.id, status)} data-testid={`button-admin-return-${request.id}-${status}`}>{status === 'coordinating' ? 'Mağaza ilə razılaşdır' : status === 'accepted' ? 'Qəbul et' : 'Rədd et'}</button>)}</div> : <small>Bu mərhələ yekundur. Pul qaytarmaq üçün aşağıdakı geri ödəniş qeydini ayrıca edin.</small>}
+            </div>;
+          })}
+          {openSettlements.length ? <div className="refund-box settlement-box"><div className="commerce-field"><label htmlFor={`settle-seller-${order.id}`}>Hesablaşma mağazası</label><select id={`settle-seller-${order.id}`} value={settleDraft.sellerOrderId} onChange={(event) => setSettleDraft(order.id, { sellerOrderId: event.target.value })} data-testid={`select-settle-seller-${order.id}`}>{openSettlements.map((seller) => <option value={seller.id} key={seller.id}>{seller.sellerName} · {settlementStatusLabel(seller.settlementStatus)} · {money(seller.sellerEarningsAzN)}</option>)}</select></div><div className="commerce-field"><label htmlFor={`settle-reference-${order.id}`}>İstinad</label><input id={`settle-reference-${order.id}`} maxLength={160} value={settleDraft.reference} onChange={(event) => setSettleDraft(order.id, { reference: event.target.value })} placeholder="CASH-2026-09-26" data-testid={`input-settle-reference-${order.id}`} /></div><button className="btn btn-secondary" type="button" onClick={() => void settle(order)} disabled={recordSettlement.isPending || !settleDraft.sellerOrderId} data-testid={`button-record-settlement-${order.id}`}>{savedId === `${order.id}-settle` ? <RefreshCw size={15} /> : <CircleDollarSign size={15} />} {savedId === `${order.id}-settle` ? 'Bağlandı' : 'Hesablaşmanı bağla'}</button></div> : null}
+          {openSettlements.length ? <p className="refund-note">Hesablaşma qeydi komissiyanı və ya mağaza qazancını kənarda bağladıqdan sonra yazılır. Bu düymə pul köçürmür.</p> : null}
           <div className="refund-box"><div className="commerce-field"><label htmlFor={`refund-seller-${order.id}`}>Mağaza</label><select id={`refund-seller-${order.id}`} value={draft.sellerOrderId} onChange={(event) => setDraft(order.id, { sellerOrderId: event.target.value, amount: '', productAmount: '' })} data-testid={`select-refund-seller-${order.id}`}><option value="">Çatdırılmış mağazanı seçin</option>{order.sellerOrders.filter((seller) => seller.status === 'delivered').map((seller) => <option value={seller.id} key={seller.id}>{seller.sellerName} · qalan {money(Math.max(seller.productSubtotalAzN + (seller.deliveryFeeAzN ?? 0) - seller.refundedAzN, 0))}</option>)}</select></div><div className="commerce-field"><label htmlFor={`refund-amount-${order.id}`}>Ümumi məbləğ · qalan {money(remaining)}</label><input id={`refund-amount-${order.id}`} type="number" min="0.01" max={remaining} step="0.01" value={draft.amount} onChange={(event) => setDraft(order.id, { amount: event.target.value })} data-testid={`input-refund-amount-${order.id}`} /></div><div className="commerce-field"><label htmlFor={`refund-product-amount-${order.id}`}>Məhsula aid hissə · qalan {money(productRemaining)}</label><input id={`refund-product-amount-${order.id}`} type="number" min="0" max={productRemaining} step="0.01" value={draft.productAmount} onChange={(event) => setDraft(order.id, { productAmount: event.target.value })} data-testid={`input-refund-product-amount-${order.id}`} /></div><div className="commerce-field"><label htmlFor={`refund-reference-${order.id}`}>İstinad</label><input id={`refund-reference-${order.id}`} maxLength={160} value={draft.reference} onChange={(event) => setDraft(order.id, { reference: event.target.value })} placeholder="REF-2025-01" data-testid={`input-refund-reference-${order.id}`} /></div><div className="commerce-field"><label htmlFor={`refund-reason-${order.id}`}>Səbəb</label><input id={`refund-reason-${order.id}`} maxLength={500} value={draft.reason} onChange={(event) => setDraft(order.id, { reason: event.target.value })} placeholder="Qısa izah" data-testid={`input-refund-reason-${order.id}`} /></div><button className="btn btn-blue" type="button" onClick={() => void refund(order)} disabled={recordRefund.isPending || remaining <= 0 || !refundSeller || !['paid_on_delivery', 'captured', 'partially_refunded'].includes(order.paymentStatus)} data-testid={`button-record-refund-${order.id}`}>{savedId === order.id ? <RefreshCw size={15} /> : <CircleDollarSign size={15} />} {savedId === order.id ? 'Qeydə alındı' : 'Geri ödənişi qeyd et'}</button></div>
           <p className="refund-note">Geri ödənişi yalnız təsdiqlənmiş maliyyə əməliyyatından sonra qeyd edin. Bu düymə kart ödənişi yaratmır və yalnız backend-də verilən qeydi saxlayır.</p>
         </article>;

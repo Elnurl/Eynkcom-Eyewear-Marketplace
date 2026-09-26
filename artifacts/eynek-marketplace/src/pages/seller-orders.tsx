@@ -11,22 +11,18 @@ import {
 import type { SellerOrder, SellerOrderUpdate } from '@workspace/api-client-react';
 import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 import { BrandLogo } from '@/components/brand-logo';
-import { LoadingCard, QueryError, StatePill, dateLabel, money, paymentStatusLabel, sellerStatusLabel } from './order-ui';
+import { LoadingCard, QueryError, StatePill, dateLabel, fulfillmentLabel, money, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
 import './order-pages.css';
 
 type Draft = { status: SellerOrderUpdateStatus; deliveryFeeAzN: string; trackingCode: string; collectedAtDelivery: boolean };
-const settlementLabels: Record<string, string> = {
-  not_eligible: 'Hesablanmayıb',
-  payable: 'Ödənişə hazırdır',
-  settled: 'Ödənilib',
-  adjusted: 'Geri ödənişə uyğunlaşdırılıb',
-  reversed: 'Ləğv edilib',
-};
 
 function statusesFor(order: SellerOrder): SellerOrderUpdateStatus[] {
+  const pickup = order.fulfillmentMethod === 'store_pickup';
   if (order.status === 'pending_confirmation') return [SellerOrderUpdateStatus.confirmed, SellerOrderUpdateStatus.declined];
   if (order.status === 'confirmed') return [SellerOrderUpdateStatus.preparing];
-  if (order.status === 'preparing') return [SellerOrderUpdateStatus.preparing, SellerOrderUpdateStatus.out_for_delivery];
+  if (order.status === 'preparing') return pickup
+    ? [SellerOrderUpdateStatus.preparing, SellerOrderUpdateStatus.out_for_delivery, SellerOrderUpdateStatus.delivered]
+    : [SellerOrderUpdateStatus.preparing, SellerOrderUpdateStatus.out_for_delivery];
   if (order.status === 'out_for_delivery') return [SellerOrderUpdateStatus.out_for_delivery, SellerOrderUpdateStatus.delivered];
   if (order.status === 'delivered') return [SellerOrderUpdateStatus.delivered];
   return [];
@@ -68,13 +64,18 @@ export default function SellerOrdersPage() {
     const draft = draftFor(order);
     setError('');
     setSavedId('');
-    if (draft.status === SellerOrderUpdateStatus.confirmed && !draft.deliveryFeeAzN.trim()) {
+    const pickup = order.fulfillmentMethod === 'store_pickup';
+    if (draft.status === SellerOrderUpdateStatus.confirmed && !pickup && !draft.deliveryFeeAzN.trim()) {
       setError('Təsdiqləmək üçün çatdırılma haqqını yazın. Pulsuzdursa 0 yazın.');
       return;
     }
     const data: SellerOrderUpdate = {
       status: draft.status,
-      ...(draft.deliveryFeeAzN.trim() ? { deliveryFeeAzN: Number(draft.deliveryFeeAzN) } : {}),
+      ...(pickup && draft.status === SellerOrderUpdateStatus.confirmed
+        ? { deliveryFeeAzN: 0 }
+        : draft.deliveryFeeAzN.trim()
+          ? { deliveryFeeAzN: Number(draft.deliveryFeeAzN) }
+          : {}),
       ...(draft.trackingCode.trim() ? { trackingCode: draft.trackingCode.trim() } : {}),
       collectedAtDelivery: draft.collectedAtDelivery,
     };
@@ -99,7 +100,7 @@ export default function SellerOrdersPage() {
       </aside>
       <main className="seller-main">
         <div className="seller-content">
-          <div className="management-toolbar"><div><div className="eyebrow">Mağaza əməliyyatları</div><h1>Sifarişlər.</h1></div><p>Mağazanıza aid sifarişləri təsdiqləyin, çatdırılma haqqını və izləmə kodunu yeniləyin.</p></div>
+          <div className="management-toolbar"><div><div className="eyebrow">Mağaza əməliyyatları</div><h1>Sifarişlər.</h1></div><p>Mağazanıza aid sifarişləri təsdiqləyin. Kuryer üçün haqq yazın; mağazadan götürmə avtomatik pulsuzdur.</p></div>
           <div className="stat-strip"><div className="stat-tile"><small>Açıq sifarişlər</small><strong>{openOrders}</strong></div><div className="stat-tile"><small>Ümumi sifariş</small><strong>{sellerOrders.length}</strong></div><div className="stat-tile"><small>Qazanc</small><strong>{money(totalEarnings)}</strong></div></div>
           {error && <div className="commerce-error" role="alert" data-testid="status-seller-order-error"><AlertCircle size={16} />{error}</div>}
           {orders.isLoading ? <LoadingCard lines={5} /> : orders.isError ? <QueryError message="Sifarişlər yüklənmədi." onRetry={() => void orders.refetch()} /> : sellerOrders.length ? (
@@ -107,11 +108,13 @@ export default function SellerOrdersPage() {
               {sellerOrders.map((order) => {
                 const draft = draftFor(order);
                 return <article className="commerce-card seller-order-card" key={order.id} data-testid={`card-seller-order-${order.id}`}>
-                  <div className="seller-order-top"><div><strong>{order.orderNumber}</strong><small>{order.customerName} · {dateLabel(order.updatedAt)}</small></div><StatePill status={order.status} label={sellerStatusLabel(order.status)} /></div>
-                  <div style={{ display: 'grid', gap: 5, padding: '15px 0 3px', color: '#707b87', fontSize: 11 }}><span><strong style={{ color: '#2b3540' }}>Çatdırılma:</strong> {order.deliveryArea}, {order.deliveryAddress}</span><span><strong style={{ color: '#2b3540' }}>Ödəniş:</strong> {paymentStatusLabel(order.paymentStatus)}</span></div>
+                  <div className="seller-order-top"><div><strong>{order.orderNumber}</strong><small>{order.customerName} · {dateLabel(order.updatedAt)}</small></div><StatePill status={order.status} label={sellerStatusLabel(order.status, order.fulfillmentMethod)} /></div>
+                  <div style={{ display: 'grid', gap: 5, padding: '15px 0 3px', color: '#707b87', fontSize: 11 }}><span><strong style={{ color: '#2b3540' }}>Üsul:</strong> {fulfillmentLabel(order.fulfillmentMethod)}</span><span><strong style={{ color: '#2b3540' }}>{order.fulfillmentMethod === 'store_pickup' ? 'Götürmə:' : 'Çatdırılma:'}</strong> {order.deliveryArea}, {order.deliveryAddress}</span><span><strong style={{ color: '#2b3540' }}>Ödəniş:</strong> {paymentStatusLabel(order.paymentStatus, order.fulfillmentMethod)}</span></div>
                   <div className="order-items">{order.items.map((item) => <div className="order-item-row" key={item.productId}><span><strong>{item.productName}</strong> · {item.quantity} ədəd</span><span>{money(item.lineTotalAzN)}</span></div>)}</div>
-                  <div className="order-meta-grid"><div><small>Məhsullar</small><strong>{money(order.productSubtotalAzN)}</strong></div><div><small>Çatdırılma</small><strong>{money(order.deliveryFeeAzN)}</strong></div><div><small>Komissiya</small><strong>{money(order.commissionAzN)}</strong></div><div><small>Qazanc</small><strong>{money(order.sellerEarningsAzN)}</strong></div><div><small>Hesablaşma</small><strong>{settlementLabels[order.settlementStatus] ?? 'Hesablanmayıb'}</strong></div></div>
-                  <div className="order-actions"><div className="commerce-field"><label htmlFor={`status-${order.id}`}>Status</label><select id={`status-${order.id}`} data-testid={`select-seller-order-status-${order.id}`} value={draft.status} disabled={!statusesFor(order).length} onChange={(event) => setDraft(order.id, { status: event.target.value as SellerOrderUpdateStatus })}>{statusesFor(order).map((status) => <option value={status} key={status}>{sellerStatusLabel(status)}</option>)}</select></div><div className="commerce-field"><label htmlFor={`fee-${order.id}`}>Çatdırılma haqqı</label><input id={`fee-${order.id}`} type="number" min="0" max="1000" step="0.01" value={draft.deliveryFeeAzN} disabled={order.status !== 'pending_confirmation'} onChange={(event) => setDraft(order.id, { deliveryFeeAzN: event.target.value })} data-testid={`input-seller-delivery-fee-${order.id}`} /></div><div className="commerce-field"><label htmlFor={`tracking-${order.id}`}>İzləmə kodu</label><input id={`tracking-${order.id}`} maxLength={120} value={draft.trackingCode} disabled={!['preparing', 'out_for_delivery', 'delivered'].includes(order.status)} placeholder="Məsələn: AZ-2841" onChange={(event) => setDraft(order.id, { trackingCode: event.target.value })} data-testid={`input-seller-tracking-${order.id}`} /></div>{order.paymentMethod === 'pay_on_delivery' && draft.status === 'delivered' && <label className="collection-check"><input type="checkbox" checked={draft.collectedAtDelivery} disabled={order.settlementStatus !== 'not_eligible'} onChange={(event) => setDraft(order.id, { collectedAtDelivery: event.target.checked })} data-testid={`checkbox-collected-at-delivery-${order.id}`} /><span>Nağd ödənişi almışam</span></label>}<button className="btn btn-blue" type="button" onClick={() => void save(order)} disabled={updateOrder.isPending || !statusesFor(order).length} data-testid={`button-save-seller-order-${order.id}`}>{savedId === order.id ? <Check size={15} /> : <RefreshCw size={15} />} {savedId === order.id ? 'Yadda saxlanıldı' : 'Yadda saxla'}</button></div>
+                  {order.returnRequest && <div className="return-box" data-testid={`status-seller-return-${order.id}`}><strong>Qaytarma sorğusu · {returnStatusLabel(order.returnRequest.status)}</strong><p>{order.returnRequest.reason}</p><small>Alıcı sorğunu EYNƏK-ə göndərib. Mağaza satıcı olaraq qalır; geri ödənişi platforma ayrıca qeyd edir.</small></div>}
+                  <div className="order-meta-grid"><div><small>Məhsullar</small><strong>{money(order.productSubtotalAzN)}</strong></div><div><small>Çatdırılma</small><strong>{money(order.deliveryFeeAzN)}</strong></div><div><small>Komissiya</small><strong>{money(order.commissionAzN)}</strong></div><div><small>Qazanc</small><strong>{money(order.sellerEarningsAzN)}</strong></div><div><small>Hesablaşma</small><strong>{settlementStatusLabel(order.settlementStatus)}</strong></div></div>
+                  {order.settlementReference ? <small>Hesablaşma istinadı: {order.settlementReference}</small> : null}
+                  <div className="order-actions"><div className="commerce-field"><label htmlFor={`status-${order.id}`}>Status</label><select id={`status-${order.id}`} data-testid={`select-seller-order-status-${order.id}`} value={draft.status} disabled={!statusesFor(order).length} onChange={(event) => setDraft(order.id, { status: event.target.value as SellerOrderUpdateStatus })}>{statusesFor(order).map((status) => <option value={status} key={status}>{sellerStatusLabel(status, order.fulfillmentMethod)}</option>)}</select></div>{order.fulfillmentMethod === 'store_pickup' ? <div className="commerce-field"><label>Çatdırılma haqqı</label><input value="0.00" disabled data-testid={`input-seller-delivery-fee-${order.id}`} /><small style={{ color: '#7c8590' }}>Mağazadan götürmə pulsuzdur</small></div> : <div className="commerce-field"><label htmlFor={`fee-${order.id}`}>Çatdırılma haqqı</label><input id={`fee-${order.id}`} type="number" min="0" max="1000" step="0.01" value={draft.deliveryFeeAzN} disabled={order.status !== 'pending_confirmation'} onChange={(event) => setDraft(order.id, { deliveryFeeAzN: event.target.value })} data-testid={`input-seller-delivery-fee-${order.id}`} /></div>}{order.fulfillmentMethod !== 'store_pickup' && <div className="commerce-field"><label htmlFor={`tracking-${order.id}`}>İzləmə kodu</label><input id={`tracking-${order.id}`} maxLength={120} value={draft.trackingCode} disabled={!['preparing', 'out_for_delivery', 'delivered'].includes(order.status)} placeholder="Məsələn: AZ-2841" onChange={(event) => setDraft(order.id, { trackingCode: event.target.value })} data-testid={`input-seller-tracking-${order.id}`} /></div>}{order.paymentMethod === 'pay_on_delivery' && draft.status === 'delivered' && <label className="collection-check"><input type="checkbox" checked={draft.collectedAtDelivery} disabled={order.settlementStatus !== 'not_eligible'} onChange={(event) => setDraft(order.id, { collectedAtDelivery: event.target.checked })} data-testid={`checkbox-collected-at-delivery-${order.id}`} /><span>Nağd ödənişi almışam</span></label>}<button className="btn btn-blue" type="button" onClick={() => void save(order)} disabled={updateOrder.isPending || !statusesFor(order).length} data-testid={`button-save-seller-order-${order.id}`}>{savedId === order.id ? <Check size={15} /> : <RefreshCw size={15} />} {savedId === order.id ? 'Yadda saxlanıldı' : 'Yadda saxla'}</button></div>
                   {draft.trackingCode && <span className="tracking-badge"><Clipboard size={13} /> {draft.trackingCode}</span>}
                 </article>;
               })}

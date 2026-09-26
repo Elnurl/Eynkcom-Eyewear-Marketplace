@@ -12,7 +12,21 @@ import {
 import { actionEmail, sendEmail } from "./email";
 
 const baseURL = process.env.BETTER_AUTH_URL?.trim() || undefined;
-const trustedOrigins = [baseURL, ...(process.env.AUTH_TRUSTED_ORIGINS ?? "").split(",")]
+
+function developmentOrigins() {
+  if (process.env.NODE_ENV === "production") return [];
+  const hosts = ["localhost", "127.0.0.1"];
+  const ports = new Set<number>([5173, 5174, 5000]);
+  const configured = Number(process.env.PORT);
+  if (Number.isFinite(configured) && configured > 0) ports.add(configured);
+  return hosts.flatMap((host) => [...ports].map((port) => `http://${host}:${port}`));
+}
+
+const trustedOrigins = [
+  baseURL,
+  ...developmentOrigins(),
+  ...(process.env.AUTH_TRUSTED_ORIGINS ?? "").split(","),
+]
   .map((origin) => origin?.trim())
   .filter((origin): origin is string => Boolean(origin));
 

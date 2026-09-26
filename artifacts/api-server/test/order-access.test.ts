@@ -3,7 +3,7 @@ import { after, before, beforeEach, test } from "node:test";
 import express from "express";
 import ordersRouter from "../src/routes/orders";
 import adminRouter from "../src/routes/admin";
-import { events, orders, reset, seedOrder, seedSellerOrder, sellerOrders, token, wrongToken, products } from "./order-access-harness";
+import { events, orders, reset, returnRequests, seedOrder, seedPayableOrder, seedSellerOrder, sellerOrders, settlements, token, wrongToken, products } from "./order-access-harness";
 
 const app = express();
 app.use(express.json());
@@ -137,6 +137,7 @@ test("admin user and order endpoints reject ordinary buyers even with forged adm
   assert.equal((await request("/admin/orders", { session: "admin" })).status, 200);
   assert.equal((await request("/admin/users", { session: "admin" })).status, 200);
   assert.equal((await request("/admin/orders/owned/refund", { method: "PATCH", session: "owner", body: {} })).status, 403);
+  assert.equal((await request("/admin/orders/owned/settle", { method: "PATCH", session: "owner", body: {} })).status, 403);
 });
 
 test("seller order history is private to each active shop", async () => {
@@ -183,4 +184,131 @@ test("a seller cannot update another shop's order even with a valid status chang
   assert.equal(first.status, "confirmed");
   assert.equal(second.status, "pending_confirmation");
   assert.equal(sellerOrders.length, 2);
+});
+
+test("checkout options include free store pickup alongside courier delivery", async () => {
+  const options = await request("/checkout/options");
+  assert.equal(options.status, 200);
+  assert.deepEqual(options.data.fulfillmentMethods, ["courier", "store_pickup"]);
+});
+
+test("courier checkout still requires an address, pickup uses the shop location and zero fee", async () => {
+  const missingAddress = await request("/orders", {
+    method: "POST",
+    body: { ...checkout, deliveryAddress: undefined, guestAccessToken: "d".repeat(64) },
+  });
+  assert.equal(missingAddress.status, 400);
+
+  const pickup = await request("/orders", {
+    method: "POST",
+    body: {
+      customerName: "Buyer",
+      customerEmail: "buyer@example.com",
+      customerPhone: "0500000000",
+      fulfillmentMethod: "store_pickup",
+      paymentMethod: "pay_on_delivery",
+      guestAccessToken: "e".repeat(64),
+      items: [{ productId: "product-1", quantity: 1 }],
+    },
+  });
+  assert.equal(pickup.status, 201);
+  assert.equal(pickup.data.fulfillmentMethod, "store_pickup");
+  assert.equal(pickup.data.deliveryAddress, "Optics, Bakı, Nizami 12");
+  assert.equal(pickup.data.deliveryArea, "Bakı");
+
+  const sellerOrder = sellerOrders.find((row) => row.orderId === pickup.data.id);
+  assert.ok(sellerOrder);
+  const confirmed = await request(`/seller/orders/${sellerOrder.id}`, {
+    method: "PATCH",
+    body: { status: "confirmed" },
+    session: "seller",
+  });
+  assert.equal(confirmed.status, 200);
+  assert.equal(sellerOrder.status, "confirmed");
+  assert.equal(sellerOrder.deliveryFeeQepik, 0);
+  assert.equal(orders[pickup.data.id].status, "confirmed");
+});
+
+test("return requests go to the platform, only for a delivered shop portion, and never record a refund", async () => {
+  seedOrder("owned", "owner", "delivered");
+  const sellerOrder = sellerOrders[0];
+  sellerOrder.status = "delivered";
+  const body = { sellerOrderId: sellerOrder.id, reason: "Çərçivə üzümdə oturmur." };
+  for (const options of [{}, { session: "stranger" }, { accessToken: wrongToken }]) {
+    assert.equal((await request("/orders/owned/returns", { method: "POST", body, ...options })).status, 404);
+  }
+  seedOrder("pending", "owner", "pending_confirmation");
+  const pending = sellerOrders.find((row) => row.orderId === "pending");
+  assert.equal((await request("/orders/pending/returns", {
+    method: "POST", session: "owner", body: { sellerOrderId: pending.id, reason: "Çərçivə üzümdə oturmur." },
+  })).status, 400);
+
+  const created = await request("/orders/owned/returns", { method: "POST", session: "owner", body });
+  assert.equal(created.status, 201);
+  assert.equal(returnRequests.length, 1);
+  assert.equal(returnRequests[0].status, "submitted");
+  assert.equal(orders.owned.refundedQepik, 0);
+  assert.equal((await request("/orders/owned/returns", { method: "POST", session: "owner", body })).status, 400);
+});
+
+test("only the marketplace admin can move a return request, and that does not refund money", async () => {
+  seedOrder("owned", "owner", "delivered");
+  sellerOrders[0].status = "delivered";
+  const created = await request("/orders/owned/returns", {
+    method: "POST",
+    session: "owner",
+    body: { sellerOrderId: sellerOrders[0].id, reason: "Çərçivə üzümdə oturmur." },
+  });
+  assert.equal(created.status, 201);
+  const returnId = returnRequests[0].id;
+  const path = `/admin/orders/owned/returns/${returnId}`;
+  const body = { status: "accepted", adminNote: "Mağaza ilə danışıldı." };
+  assert.equal((await request(path, { method: "PATCH", body })).status, 401);
+  assert.equal((await request(path, { method: "PATCH", body, session: "owner" })).status, 403);
+  const updated = await request(path, { method: "PATCH", body, session: "admin" });
+  assert.equal(updated.status, 200);
+  assert.equal(returnRequests[0].status, "accepted");
+  assert.equal(orders.owned.refundedQepik, 0);
+  assert.equal(orders.owned.paymentStatus, "due_on_delivery");
+});
+
+test("admin can close a payable settlement without moving money", async () => {
+  const { sellerOrder, settlement } = seedPayableOrder("owned");
+  const body = { sellerOrderId: sellerOrder.id, reference: "CASH-2026-09-26" };
+  assert.equal((await request("/admin/orders/owned/settle", { method: "PATCH", body })).status, 401);
+  assert.equal((await request("/admin/orders/owned/settle", { method: "PATCH", body, session: "owner" })).status, 403);
+  assert.equal((await request("/admin/orders/owned/settle", { method: "PATCH", body, session: "seller" })).status, 403);
+
+  const settled = await request("/admin/orders/owned/settle", { method: "PATCH", body, session: "admin" });
+  assert.equal(settled.status, 200);
+  assert.equal(settlement.status, "settled");
+  assert.equal(settlement.settlementReference, "CASH-2026-09-26");
+  assert.equal(orders.owned.refundedQepik, 0);
+  assert.equal(orders.owned.paymentStatus, "paid_on_delivery");
+  assert.equal(orders.owned.totalQepik, 4000);
+  assert.equal(sellerOrder.sellerEarningsQepik, 3800);
+  assert.equal(sellerOrder.commissionQepik, 200);
+  assert.equal(settled.data.sellerOrders[0].settlementStatus, "settled");
+  assert.equal(settled.data.sellerOrders[0].settlementReference, "CASH-2026-09-26");
+  assert.ok(events.some((event) => event.status === "settlement_recorded"));
+
+  assert.equal((await request("/admin/orders/owned/settle", { method: "PATCH", body, session: "admin" })).status, 400);
+});
+
+test("settlement cannot be closed when the shop line is not payable", async () => {
+  seedOrder("owned", "owner", "delivered");
+  const sellerOrder = sellerOrders[0];
+  sellerOrder.status = "delivered";
+  const body = { sellerOrderId: sellerOrder.id, reference: "CASH-NONE" };
+  assert.equal((await request("/admin/orders/owned/settle", { method: "PATCH", body, session: "admin" })).status, 400);
+  assert.equal(settlements.length, 0);
+
+  const { settlement } = seedPayableOrder("adjusted");
+  settlement.status = "reversed";
+  assert.equal((await request("/admin/orders/adjusted/settle", {
+    method: "PATCH",
+    session: "admin",
+    body: { sellerOrderId: sellerOrders.find((row) => row.orderId === "adjusted")!.id, reference: "CASH-REV" },
+  })).status, 400);
+  assert.equal(settlement.status, "reversed");
 });

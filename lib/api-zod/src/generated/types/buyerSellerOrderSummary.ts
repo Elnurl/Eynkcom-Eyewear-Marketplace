@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { OrderLine } from './orderLine';
+import type { OrderReturnRequest } from './orderReturnRequest';
 import type { SellerOrderStatus } from './sellerOrderStatus';
 
 export interface BuyerSellerOrderSummary {
@@ -18,4 +19,5 @@ export interface BuyerSellerOrderSummary {
   deliveryFeeAzN: number | null;
   /** @nullable */
   trackingCode: string | null;
+  returnRequest?: OrderReturnRequest;
 }

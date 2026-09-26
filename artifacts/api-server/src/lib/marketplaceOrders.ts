@@ -5,6 +5,7 @@ import {
   marketplaceOrderEventsTable,
   marketplaceOrderItemsTable,
   marketplaceOrdersTable,
+  marketplaceReturnRequestsTable,
   marketplaceSettlementLedgerTable,
   marketplaceSellerOrdersTable,
   sellerStoresTable,
@@ -17,7 +18,7 @@ function summarizeSellerOrder(
   sellerOrder: typeof marketplaceSellerOrdersTable.$inferSelect,
   storeName: string,
   items: (typeof marketplaceOrderItemsTable.$inferSelect)[],
-  settlementStatus: string | null,
+  settlement?: typeof marketplaceSettlementLedgerTable.$inferSelect,
 ) {
   return {
     id: sellerOrder.id,
@@ -35,9 +36,24 @@ function summarizeSellerOrder(
     sellerEarningsAzN: toAzN(sellerOrder.sellerEarningsQepik),
     commissionAzN: toAzN(sellerOrder.commissionQepik),
     trackingCode: sellerOrder.trackingCode,
-    settlementStatus: settlementStatus ?? "not_eligible",
+    settlementStatus: settlement?.status ?? "not_eligible",
+    ...(settlement?.settlementReference ? { settlementReference: settlement.settlementReference } : {}),
+    ...(settlement?.settledAt ? { settledAt: settlement.settledAt } : {}),
     refundedAzN: toAzN(sellerOrder.refundedQepik)!,
     productRefundedAzN: toAzN(sellerOrder.productRefundedQepik)!,
+  };
+}
+
+function toReturnRequest(row: typeof marketplaceReturnRequestsTable.$inferSelect) {
+  return {
+    id: row.id,
+    sellerOrderId: row.sellerOrderId,
+    status: row.status,
+    reason: row.reason,
+    note: row.note || null,
+    adminNote: row.adminNote || null,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -54,7 +70,7 @@ async function getSellerGroups(orderId: string) {
   if (rows.length === 0) return [];
 
   const ids = rows.map(({ sellerOrder }) => sellerOrder.id);
-  const [items, settlements] = await Promise.all([
+  const [items, settlements, returns] = await Promise.all([
     db
       .select()
       .from(marketplaceOrderItemsTable)
@@ -64,6 +80,10 @@ async function getSellerGroups(orderId: string) {
       .select()
       .from(marketplaceSettlementLedgerTable)
       .where(inArray(marketplaceSettlementLedgerTable.sellerOrderId, ids)),
+    db
+      .select()
+      .from(marketplaceReturnRequestsTable)
+      .where(inArray(marketplaceReturnRequestsTable.sellerOrderId, ids)),
   ]);
   const itemsBySellerOrder = new Map<string, typeof items>();
   for (const item of items) {
@@ -72,18 +92,24 @@ async function getSellerGroups(orderId: string) {
     itemsBySellerOrder.set(item.sellerOrderId, group);
   }
   const settlementsBySellerOrder = new Map(
-    settlements.map((settlement) => [settlement.sellerOrderId, settlement.status]),
+    settlements.map((settlement) => [settlement.sellerOrderId, settlement]),
   );
+  const returnsBySellerOrder = new Map(returns.map((row) => [row.sellerOrderId, row]));
 
   return rows.map(({ sellerOrder, store }) => ({
     sellerOrder,
     storeName: store.name,
-    summary: summarizeSellerOrder(
-      sellerOrder,
-      store.name,
-      itemsBySellerOrder.get(sellerOrder.id) ?? [],
-      settlementsBySellerOrder.get(sellerOrder.id) ?? null,
-    ),
+    summary: {
+      ...summarizeSellerOrder(
+        sellerOrder,
+        store.name,
+        itemsBySellerOrder.get(sellerOrder.id) ?? [],
+        settlementsBySellerOrder.get(sellerOrder.id),
+      ),
+      ...(returnsBySellerOrder.get(sellerOrder.id)
+        ? { returnRequest: toReturnRequest(returnsBySellerOrder.get(sellerOrder.id)!) }
+        : {}),
+    },
   }));
 }
 
@@ -108,6 +134,7 @@ export async function loadBuyerOrder(orderId: string) {
     id: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
+    fulfillmentMethod: order.fulfillmentMethod === "store_pickup" ? "store_pickup" : "courier",
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
     customerName: order.customerName,
@@ -127,6 +154,9 @@ export async function loadBuyerOrder(orderId: string) {
       productSubtotalAzN: summary.productSubtotalAzN,
       deliveryFeeAzN: summary.deliveryFeeAzN,
       trackingCode: summary.trackingCode,
+      ...("returnRequest" in summary && summary.returnRequest
+        ? { returnRequest: summary.returnRequest }
+        : {}),
     })),
     timeline: timeline.map((event) => ({
       status: event.status,
@@ -165,6 +195,7 @@ export async function loadSellerOrder(sellerOrderId: string) {
     deliveryArea: row.order.deliveryArea,
     deliveryAddress: row.order.deliveryAddress,
     deliveryNote: row.order.deliveryNote,
+    fulfillmentMethod: row.order.fulfillmentMethod === "store_pickup" ? "store_pickup" : "courier",
     paymentMethod: row.order.paymentMethod,
     paymentStatus: row.order.paymentStatus,
     updatedAt: row.sellerOrder.updatedAt,
@@ -186,7 +217,7 @@ export async function listSellerOrders(sellerId: string) {
 
   const ids = rows.map(({ sellerOrder }) => sellerOrder.id);
   if (ids.length === 0) return [];
-  const [items, settlements] = await Promise.all([
+  const [items, settlements, returns] = await Promise.all([
     db
       .select()
       .from(marketplaceOrderItemsTable)
@@ -196,6 +227,10 @@ export async function listSellerOrders(sellerId: string) {
       .select()
       .from(marketplaceSettlementLedgerTable)
       .where(inArray(marketplaceSettlementLedgerTable.sellerOrderId, ids)),
+    db
+      .select()
+      .from(marketplaceReturnRequestsTable)
+      .where(inArray(marketplaceReturnRequestsTable.sellerOrderId, ids)),
   ]);
   const itemsBySellerOrder = new Map<string, typeof items>();
   for (const item of items) {
@@ -204,15 +239,19 @@ export async function listSellerOrders(sellerId: string) {
     itemsBySellerOrder.set(item.sellerOrderId, group);
   }
   const settlementsBySellerOrder = new Map(
-    settlements.map((settlement) => [settlement.sellerOrderId, settlement.status]),
+    settlements.map((settlement) => [settlement.sellerOrderId, settlement]),
   );
+  const returnsBySellerOrder = new Map(returns.map((row) => [row.sellerOrderId, row]));
   return rows.map(({ sellerOrder, store, order }) => ({
     ...summarizeSellerOrder(
       sellerOrder,
       store.name,
       itemsBySellerOrder.get(sellerOrder.id) ?? [],
-      settlementsBySellerOrder.get(sellerOrder.id) ?? null,
+      settlementsBySellerOrder.get(sellerOrder.id),
     ),
+    ...(returnsBySellerOrder.get(sellerOrder.id)
+      ? { returnRequest: toReturnRequest(returnsBySellerOrder.get(sellerOrder.id)!) }
+      : {}),
     orderNumber: order.orderNumber,
     customerName: order.customerName,
     customerEmail: order.customerEmail,
@@ -220,6 +259,7 @@ export async function listSellerOrders(sellerId: string) {
     deliveryArea: order.deliveryArea,
     deliveryAddress: order.deliveryAddress,
     deliveryNote: order.deliveryNote,
+    fulfillmentMethod: order.fulfillmentMethod === "store_pickup" ? "store_pickup" : "courier",
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
     updatedAt: sellerOrder.updatedAt,
@@ -238,6 +278,7 @@ export async function listAdminOrders() {
         id: order.id,
         orderNumber: order.orderNumber,
         status: order.status,
+        fulfillmentMethod: order.fulfillmentMethod === "store_pickup" ? "store_pickup" : "courier",
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
         customerName: order.customerName,

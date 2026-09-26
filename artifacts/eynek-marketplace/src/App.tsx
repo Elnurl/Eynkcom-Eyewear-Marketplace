@@ -36,6 +36,7 @@ import SellerLogin from '@/pages/seller-login';
 import SellerPanel from '@/pages/seller-panel';
 import SellerAdminPage from '@/pages/seller-admin';
 import CheckoutPage from '@/pages/checkout';
+import { LegalPage } from '@/pages/legal';
 import OrderPage from '@/pages/order';
 import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
@@ -128,6 +129,58 @@ function FrameVisual({ shape, frameStyle = 'clear', sunglasses = false }: { shap
   );
 }
 
+// Solid header icons (Material Icons paths, Apache-2.0).
+function SolidIcon({ path }: { path: string }) {
+  return <svg className="solid-icon" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d={path} fill="currentColor" /></svg>;
+}
+const HEART_PATH = 'M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z';
+const CART_PATH = 'M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1.003 1.003 0 0 0 20 4H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z';
+const ACCOUNT_PATH = 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z';
+
+const categoryLinks = [
+  { href: '/collection', label: 'Bütün eynəklər' },
+  { href: '/collection?type=optical', label: 'Optik çərçivələr' },
+  { href: '/collection?type=sunglasses', label: 'Gün eynəkləri' },
+];
+
+function CategoryMenu() {
+  const [location] = useLocation();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => setOpen(false), [location]);
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+  return (
+    <div className="nav-category" ref={rootRef}>
+      <button ref={triggerRef} type="button" className={`nav-category-trigger${location.startsWith('/collection') ? ' active' : ''}`} aria-expanded={open} aria-controls="nav-category-menu" onClick={() => setOpen((current) => !current)} data-testid="button-category-menu">
+        Kateqoriya <ChevronDown size={15} strokeWidth={2.4} className="nav-category-chevron" />
+      </button>
+      {open && (
+        <div className="nav-category-menu" id="nav-category-menu" data-testid="menu-category">
+          {categoryLinks.map((item) => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} data-testid={`link-category-${item.href.split('=')[1] ?? 'all'}`}>{item.label}</Link>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: number; onMenu: () => void; menuOpen: boolean; products: Product[]; stores: Vendor[] }) {
   const [location] = useLocation();
   return (
@@ -137,17 +190,17 @@ function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: 
           <button className="icon-button mobile-menu" onClick={onMenu} aria-label="Menyunu aç" aria-expanded={menuOpen} aria-controls="mobile-drawer" data-testid="button-menu"><Menu size={19} /></button>
           <Link href="/" className="brand" data-testid="link-brand"><BrandLogo /></Link>
           <nav className="nav-links" aria-label="Əsas menyu">
-            <Link href="/collection" className={location.startsWith('/collection') ? 'active' : ''} data-testid="link-collection">Kəşf et</Link>
-            <Link href="/collection?type=sunglasses" data-testid="link-sunglasses">Gün eynəkləri</Link>
+            <CategoryMenu />
             <Link href="/brands" className={location.startsWith('/brands') ? 'active' : ''} data-testid="link-brands">Brendlər</Link>
             <Link href="/stores" className={location.startsWith('/stores') ? 'active' : ''} data-testid="link-stores">Mağazalar</Link>
+            <Link href="/seller" className={location === '/seller' ? 'active' : ''} data-testid="link-seller-cta"><BrandWord />-də sat</Link>
           </nav>
+          {/* On phones the search collapses to an icon inside this group; desktop CSS lays the group out in one row. */}
           <div className="nav-actions">
             <HeaderSearch products={products.map((product) => ({ id: product.id, name: product.name, vendor: product.vendor, type: product.type, shape: product.shape, color: product.color, imageUrl: product.image.startsWith('data:') || product.image.startsWith('http') ? product.image : assetUrl(product.image) }))} stores={stores} />
-            <Link href="/wishlist" className="icon-button" aria-label="Seçilmişlər" data-testid="link-wishlist"><Heart size={17} /></Link>
-            <Link href="/seller" className="nav-seller" data-testid="link-seller-cta"><Store size={15} /><span><BrandWord />-də sat</span></Link>
-            <Link href="/account" className="icon-button" aria-label="Hesab" data-testid="link-account"><UserRound size={17} /></Link>
-            <Link href="/cart" className="icon-button cart-button" aria-label="Səbət" data-testid="link-cart"><ShoppingBag size={17} /><span className="cart-count">{cartCount}</span></Link>
+            <Link href="/wishlist" className="icon-button header-icon" aria-label="Seçilmişlər" data-testid="link-wishlist"><SolidIcon path={HEART_PATH} /></Link>
+            <Link href="/account" className="icon-button header-icon header-icon--account" aria-label="Hesab" data-testid="link-account"><SolidIcon path={ACCOUNT_PATH} /></Link>
+            <Link href="/cart" className="icon-button header-icon cart-button" aria-label="Səbət" data-testid="link-cart"><SolidIcon path={CART_PATH} />{cartCount > 0 && <span className="cart-count">{cartCount}</span>}</Link>
           </div>
         </div>
       </header>
@@ -161,8 +214,8 @@ function Footer() {
       <div className="container footer-grid">
         <div><div className="brand"><BrandLogo /></div><p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p></div>
         <div><h3>Kəşf et</h3><Link href="/collection">Eynəklər</Link><Link href="/brands">Brendlər</Link><Link href="/stores">Mağazalar</Link></div>
-        <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link></div>
-        <div><h3>Satıcılar üçün</h3><Link href="/seller"><BrandWord />-də sat</Link><a href="mailto:sat@eynek.com">Bizimlə əlaqə</a><a href="#support">Dəstək</a></div>
+        <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/qaydalar">Qaydalar</Link><Link href="/mexfilik">Məxfilik</Link><Link href="/qaytarma">Qaytarma</Link></div>
+        <div><h3>Satıcılar üçün</h3><Link href="/seller"><BrandWord />-də sat</Link><Link href="/satici-muqavilesi">Satıcı müqaviləsi</Link><a href="mailto:sat@eynek.com">Bizimlə əlaqə</a></div>
       </div>
       <div className="container footer-bottom"><span>© {new Date().getFullYear()} <BrandWord /></span><span>Bakı • Azərbaycan</span></div>
     </footer>
@@ -527,90 +580,76 @@ function AccountPage() {
     },
   });
   const email = user?.email;
+  const firstName = user?.name?.trim().split(/\s+/)[0];
+  const orderCount = orders.data?.length ?? 0;
+  const shortcuts = isSignedIn
+    ? [
+        { href: '#orders', icon: <Package size={20} strokeWidth={1.8} />, title: 'Sifarişlərim', text: orders.isLoading ? 'Yüklənir…' : `${orderCount} sifariş`, testId: 'link-account-orders' },
+        { href: '/wishlist', icon: <Heart size={20} strokeWidth={1.8} />, title: 'Seçilmişlər', text: 'Bəyəndiyin çərçivələr', testId: 'link-account-wishlist' },
+        { href: '/forgot-password', icon: <ShieldCheck size={20} strokeWidth={1.8} />, title: 'Şifrəni dəyiş', text: 'E-poçt linki ilə yenilə', testId: 'link-account-password' },
+      ]
+    : [
+        { href: '/wishlist', icon: <Heart size={20} strokeWidth={1.8} />, title: 'Seçilmişlər', text: 'Bu brauzerdə saxladıqların', testId: 'link-account-wishlist' },
+        { href: '/cart', icon: <ShoppingBag size={20} strokeWidth={1.8} />, title: 'Səbət', text: 'Seçdiyin məhsullar', testId: 'link-account-cart' },
+        { href: '/collection', icon: <Glasses size={20} strokeWidth={1.8} />, title: 'Eynəklərə bax', text: 'Optik və gün eynəkləri', testId: 'link-account-collection' },
+      ];
   return (
     <>
       <main className="account-page">
-        <div className="container account-wrap">
-          <div className="account-intro">
-            <div>
-              <span className="account-kicker">Müştəri hesabı</span>
-              <h1>Hesabın.</h1>
-            </div>
-            <p>Sifarişlərin və profilin üçün rahat bir məkan. Hesab açmaq isə tamamilə sənin seçimindir.</p>
-          </div>
-          <section className="account-panel" aria-label="Hesab məlumatları">
-            <div className="account-feature">
-              <div className="account-feature-top">
-                <span className="account-feature-mark" aria-hidden="true"><Glasses size={22} strokeWidth={1.5} /></span>
-                <span className="account-feature-index">EYNƏK.COM / HESAB</span>
-              </div>
-              <div className="account-feature-copy">
-                <h2>{isLoaded && isSignedIn ? 'Yenidən xoş gəldin.' : 'Baxışın sənə məxsusdur.'}</h2>
-                <p>{isLoaded && isSignedIn ? 'Bu hesabla verdiyin sifarişləri bir yerdən rahatlıqla izlə.' : 'Öz zövqünə uyğun çərçivələri kəşf et. İstəsən, sifarişlərini hesabından izlə.'}</p>
-              </div>
-              <div className="account-feature-bottom"><span>01</span><span aria-hidden="true">—</span><span>Sənin məkanın</span></div>
-            </div>
-            <div className="account-panel-content">
-              <span className="account-card-kicker"><UserRound size={15} strokeWidth={1.8} /> Şəxsi məkan</span>
+        <section className="account-hero-section">
+          <div className="container account-hero">
+            <img className="account-hero-art account-hero-art--desktop" src={`${import.meta.env.BASE_URL}hero-eyewear.webp`} alt="" aria-hidden="true" />
+            <img className="account-hero-art account-hero-art--mobile" src={`${import.meta.env.BASE_URL}hero-eyewear-mobile.webp`} alt="" aria-hidden="true" />
+            <div className="account-hero-content">
+              <span className="account-overline">Hesabım</span>
               {!isLoaded ? (
-                <>
-                  <h2>Hesabın hazırlanır</h2>
-                  <div className="account-loading-skeleton" role="status" data-testid="status-account-loading" aria-label="Hesab məlumatları yüklənir">
-                    <span /><span /><span />
-                  </div>
-                </>
+                <div className="account-loading-skeleton" role="status" data-testid="status-account-loading" aria-label="Hesab məlumatları yüklənir"><span /><span /><span /></div>
               ) : isSignedIn ? (
                 <>
-                  <h2>Hesabına xoş gəldin.</h2>
-                  <p className="account-identity" data-testid="text-account-identity">{user?.name || email || 'EYNƏK.com alıcısı'} ilə daxil olmusunuz.</p>
-                  <ul className="account-benefits">
-                    <li><Check size={16} strokeWidth={2} /> Sifariş tarixçənə aşağıdan bax</li>
-                    <li><Check size={16} strokeWidth={2} /> Şifrəni e-poçt linki ilə istədiyin vaxt yenilə</li>
-                  </ul>
-                  <div className="account-actions">
-                    <Link href="/forgot-password" className="btn account-primary" data-testid="link-account-password">Şifrəni dəyiş <ArrowRight size={15} /></Link>
-                    <Link href="/wishlist" className="btn account-secondary" data-testid="link-account-wishlist">Seçilmişlərə bax</Link>
+                  <h1>Salam{firstName ? `, ${firstName}` : ''}.</h1>
+                  <p className="account-hero-sub" data-testid="text-account-identity">{email} ilə daxil olmusan. Sifarişlərin və seçimlərin burada.</p>
+                  <div className="account-hero-actions">
+                    <Link href="/collection" className="btn account-cta" data-testid="link-account-shop">Eynəkləri kəşf et <ArrowRight size={16} /></Link>
+                    <button className="account-text-action" type="button" onClick={() => void signOutAndGo('/')} data-testid="button-account-sign-out">Hesabdan çıx</button>
                   </div>
-                  <button className="account-quiet-link" type="button" onClick={() => void signOutAndGo('/')} data-testid="button-account-sign-out">Hesabdan çıx</button>
                 </>
               ) : (
                 <>
-                  <h2>Səni görmək xoşdur.</h2>
-                  <p>Hesabına daxil ol, bu hesabla verdiyin sifarişlərə istədiyin vaxt qayıt.</p>
-                  <ul className="account-benefits">
-                    <li><Check size={16} strokeWidth={2} /> Sifarişlərini və çatdırılma yeniliklərini izlə</li>
-                    <li><Check size={16} strokeWidth={2} /> Qonaq kimi verdiyin sifarişlər isə ayrıca izləmə linki ilə açılır</li>
-                  </ul>
-                  <div className="account-actions">
-                    <Link href="/sign-in?redirect_url=%2Faccount" className="btn account-primary" data-testid="link-account-sign-in">Daxil ol <ArrowRight size={16} /></Link>
-                    <Link href="/sign-up" className="btn account-secondary" data-testid="link-account-sign-up">Hesab yarat</Link>
+                  <h1>Sifarişlərin bir yerdə.</h1>
+                  <p className="account-hero-sub">Daxil ol və ya hesab yarat: sifarişlərini izlə, bəyəndiyin çərçivələri saxla.</p>
+                  <div className="account-hero-actions">
+                    <Link href="/sign-in?redirect_url=%2Faccount" className="btn account-cta" data-testid="link-account-sign-in">Daxil ol <ArrowRight size={16} /></Link>
+                    <Link href="/sign-up" className="account-text-action" data-testid="link-account-sign-up">Hesab yarat</Link>
                   </div>
-                  <Link href="/wishlist" className="account-quiet-link" data-testid="link-account-wishlist">Seçilmişlərə bax <ArrowRight size={13} /></Link>
+                  <div className="account-hero-note"><Info size={14} /> Hesab məcburi deyil, qonaq kimi də sifariş verə bilərsən.</div>
                 </>
               )}
             </div>
-          </section>
+          </div>
+        </section>
 
-          {!isSignedIn && isLoaded && (
-            <aside className="account-guest-note">
-              <ShieldCheck size={20} strokeWidth={1.8} aria-hidden="true" />
-              <div>
-                <strong>Hesab açmaq məcburi deyil.</strong>
-                <p>Qonaq kimi də sifariş verə bilərsən. Sifarişini təsdiq səhifəsindəki təhlükəsiz keçidlə izlə.</p>
-              </div>
-            </aside>
-          )}
+        <section className="account-shortcuts-section">
+          <div className="container account-shortcuts">
+            {shortcuts.map((item) => {
+              const body = <><span className="account-shortcut-icon">{item.icon}</span><span className="account-shortcut-text"><strong>{item.title}</strong><small>{item.text}</small></span><ArrowRight size={16} className="account-shortcut-arrow" /></>;
+              return item.href.startsWith('#')
+                ? <a key={item.href} href={item.href} className="account-shortcut" data-testid={item.testId}>{body}</a>
+                : <Link key={item.href} href={item.href} className="account-shortcut" data-testid={item.testId}>{body}</Link>;
+            })}
+          </div>
+        </section>
 
-          {isLoaded && isSignedIn && (
-            <section className="account-orders" aria-labelledby="account-orders-heading">
-              <div className="account-orders-heading">
-                <div><span className="account-kicker">Sifariş tarixçəsi</span><h2 id="account-orders-heading">Sifarişlərin</h2></div>
-                <span data-testid="text-account-order-count">{orders.data?.length ?? 0} sifariş</span>
+        {isLoaded && isSignedIn && (
+          <section className="account-orders" id="orders" aria-labelledby="account-orders-heading">
+            <div className="container">
+              <div className="section-head">
+                <div><div className="home-overline">Sifariş tarixçəsi</div><h2 className="section-title" id="account-orders-heading">Sifarişlərin</h2></div>
+                <span className="home-count" data-testid="text-account-order-count">{orderCount} sifariş</span>
               </div>
               {orders.isLoading ? (
-                <div className="empty-state-mini account-orders-loading" role="status" data-testid="status-account-orders-loading" aria-label="Sifarişlər yüklənir"><span /><span /></div>
+                <div className="account-empty account-orders-loading" role="status" data-testid="status-account-orders-loading" aria-label="Sifarişlər yüklənir"><span /><span /></div>
               ) : orders.isError ? (
-                <div className="account-orders-error" role="alert" data-testid="status-account-orders-error">
+                <div className="account-empty" role="alert" data-testid="status-account-orders-error">
                   <ShieldCheck size={20} aria-hidden="true" />
                   <span>Sifariş tarixçəsini yükləmək alınmadı. Yenidən yoxlayın.</span>
                   <button className="text-link" type="button" onClick={() => void orders.refetch()} data-testid="button-account-orders-retry">Yenidən cəhd et <ArrowRight size={14} /></button>
@@ -622,7 +661,7 @@ function AccountPage() {
                       <div className="account-order-main">
                         <div>
                           <strong>{order.orderNumber}</strong>
-                          <span>{orderStatusLabel(order.status)}</span>
+                          <span>{orderStatusLabel(order.status, order.fulfillmentMethod)}</span>
                         </div>
                         <div>
                           <strong>{order.totalAzN === null ? 'Məbləğ təsdiqlənir' : formatOrderMoney(order.totalAzN)}</strong>
@@ -636,15 +675,15 @@ function AccountPage() {
                   ))}
                 </div>
               ) : (
-                <div className="empty-state-mini" data-testid="status-account-orders-empty">
+                <div className="account-empty" data-testid="status-account-orders-empty">
                   <Package size={20} strokeWidth={1.7} aria-hidden="true" />
                   <span>Hələ bu hesabla sifariş verməmisən. Qonaq sifarişləri hesab tarixçəsinə əlavə olunmur.</span>
                   <Link href="/collection" className="text-link" data-testid="link-account-empty-orders-shop">Eynəklərə bax <ArrowRight size={14} /></Link>
                 </div>
               )}
-            </section>
-          )}
-        </div>
+            </div>
+          </section>
+        )}
       </main>
       <Footer />
     </>
@@ -801,6 +840,7 @@ function Storefront() {
       productId: string;
       productName: string;
       sellerName: string;
+      sellerLocation: string;
       quantity: number;
       unitPriceAzN: number;
       lineTotalAzN: number;
@@ -815,8 +855,9 @@ function Storefront() {
         grouped.set(id, {
           productId: id,
           productName: product.name,
-          sellerName: product.vendor,
-          quantity: 1,
+        sellerName: product.vendor,
+        sellerLocation: product.location,
+        quantity: 1,
           unitPriceAzN: product.price,
           lineTotalAzN: product.price,
         });
@@ -843,7 +884,7 @@ function Storefront() {
   };
   const catalogError = productsQuery.error || storesQuery.error;
   if (location === '/checkout') {
-    return <CheckoutPage items={checkoutItems} onClearCart={() => setCartIds([])} />;
+    return <CheckoutPage items={checkoutItems} stores={stores} onClearCart={() => setCartIds([])} />;
   }
   if (location.startsWith('/order/')) return <OrderPage />;
   return (
@@ -859,6 +900,10 @@ function Storefront() {
         <Route path="/wishlist"><WishlistPage {...common} /></Route>
         <Route path="/cart"><CartPage items={cartItems} stores={stores} onRemove={removeFromCart} onCheckout={() => setLocation('/checkout')} /></Route>
         <Route path="/account"><AccountPage /></Route>
+        <Route path="/qaydalar"><LegalPage slug="qaydalar" /></Route>
+        <Route path="/mexfilik"><LegalPage slug="mexfilik" /></Route>
+        <Route path="/qaytarma"><LegalPage slug="qaytarma" /></Route>
+        <Route path="/satici-muqavilesi"><LegalPage slug="satici-muqavilesi" /></Route>
         <Route path="/vendor/:slug"><VendorPage {...common} /></Route>
         <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={(product) => setTryOnProduct(product)} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
         <Route path="/"><Home {...common} /></Route>

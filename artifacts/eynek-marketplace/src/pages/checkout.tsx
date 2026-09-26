@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { AlertCircle, ArrowRight, CheckCircle2, CreditCard, Info, MapPin, PackageCheck, ShieldCheck, Truck } from 'lucide-react';
+import { AlertCircle, ArrowRight, CheckCircle2, CreditCard, Info, MapPin, PackageCheck, ShieldCheck, Store, Truck } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
+  FulfillmentMethod,
   GuestOrderInputDeliveryArea,
   PaymentMethod,
   useCreateGuestOrder,
@@ -17,13 +18,20 @@ export interface CheckoutCartItem {
   productName?: string;
   name?: string;
   sellerName?: string;
+  sellerLocation?: string;
   quantity: number;
   unitPriceAzN?: number;
   lineTotalAzN?: number;
 }
 
+export interface CheckoutStore {
+  name: string;
+  location: string;
+}
+
 export interface CheckoutPageProps {
   items: CheckoutCartItem[];
+  stores?: CheckoutStore[];
   onClearCart: () => void;
 }
 
@@ -42,7 +50,7 @@ const defaultValues = {
   deliveryNote: '',
 };
 
-export default function CheckoutPage({ items, onClearCart }: CheckoutPageProps) {
+export default function CheckoutPage({ items, stores = [], onClearCart }: CheckoutPageProps) {
   const [, setLocation] = useLocation();
   const checkoutOptions = useGetCheckoutOptions();
   const createOrder = useCreateGuestOrder();
@@ -54,12 +62,24 @@ export default function CheckoutPage({ items, onClearCart }: CheckoutPageProps) 
     deliveryAddress: string;
     deliveryNote: string;
   }>(defaultValues);
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(FulfillmentMethod.courier);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.pay_on_delivery);
   const [formError, setFormError] = useState('');
 
   const options = checkoutOptions.data as CheckoutOptions | undefined;
   const areas = options?.deliveryAreas ?? [GuestOrderInputDeliveryArea.Bakı, GuestOrderInputDeliveryArea.Abşeron];
+  const pickup = fulfillmentMethod === FulfillmentMethod.store_pickup;
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + (item.lineTotalAzN ?? (item.unitPriceAzN ?? 0) * item.quantity), 0), [items]);
+  const pickupShops = useMemo(() => {
+    const unique = new Map<string, { name: string; location: string }>();
+    for (const item of items) {
+      const name = item.sellerName?.trim();
+      if (!name || unique.has(name)) continue;
+      const store = stores.find((candidate) => candidate.name === name);
+      unique.set(name, { name, location: store?.location || item.sellerLocation || 'Ünvan mağaza vitrinində' });
+    }
+    return [...unique.values()];
+  }, [items, stores]);
 
   useEffect(() => {
     if (!areas.includes(form.deliveryArea)) setForm((current) => ({ ...current, deliveryArea: areas[0] ?? GuestOrderInputDeliveryArea.Bakı }));
@@ -74,14 +94,26 @@ export default function CheckoutPage({ items, onClearCart }: CheckoutPageProps) 
       setFormError('Səbətinizdə sifariş üçün məhsul yoxdur.');
       return;
     }
+    if (!pickup && form.deliveryAddress.trim().length < 5) {
+      setFormError('Kuryer üçün ətraflı ünvan yazın.');
+      return;
+    }
     const guestAccessToken = createGuestToken();
     const input: GuestOrderInput = {
-      ...form,
-      deliveryArea: form.deliveryArea as GuestOrderInputDeliveryArea,
+      customerName: form.customerName,
+      customerEmail: form.customerEmail,
+      customerPhone: form.customerPhone,
+      fulfillmentMethod,
       paymentMethod,
       guestAccessToken,
       items: items.map((item) => ({ productId: String(item.productId), quantity: item.quantity })),
       ...(form.deliveryNote.trim() ? { deliveryNote: form.deliveryNote.trim() } : {}),
+      ...(pickup
+        ? {}
+        : {
+            deliveryArea: form.deliveryArea as GuestOrderInputDeliveryArea,
+            deliveryAddress: form.deliveryAddress.trim(),
+          }),
     };
     try {
       const order = await createOrder.mutateAsync({ data: input });
@@ -103,7 +135,7 @@ export default function CheckoutPage({ items, onClearCart }: CheckoutPageProps) 
             <div className="eyebrow" style={{ marginTop: 25 }}>Sifarişin tamamlanması</div>
             <h1>Sifarişini<br />rahat tamamla.</h1>
           </div>
-          <p>Bir sifarişdə bir neçə optik mağazadan məhsul seçə bilərsiniz. Çatdırılma Bakı və Abşeron əraziləri üçün mövcuddur.</p>
+          <p>Kuryer ilə Bakı və Abşerona çatdıra, və ya məhsulları satan optik mağazadan pulsuz götürə bilərsiniz.</p>
         </header>
 
         {checkoutOptions.isLoading ? <LoadingCard lines={5} /> : checkoutOptions.isError ? <QueryError message="Çatdırılma seçimləri yüklənmədi." onRetry={() => void checkoutOptions.refetch()} /> : (
@@ -119,18 +151,51 @@ export default function CheckoutPage({ items, onClearCart }: CheckoutPageProps) 
               </section>
 
               <section className="commerce-card commerce-card-pad">
-                <div className="commerce-card-heading"><div><h2>Çatdırılma ünvanı</h2><p>Hazırda yalnız Bakı və Abşeron üçün çatdırırıq.</p></div><MapPin size={19} color="#5b719a" /></div>
-                <div className="commerce-form">
-                  <div className="commerce-field"><label htmlFor="deliveryArea">Ərazi</label><select id="deliveryArea" data-testid="select-delivery-area" value={form.deliveryArea} onChange={(event) => update('deliveryArea', event.target.value)}>{areas.map((area) => <option value={area} key={area}>{area}</option>)}</select></div>
-                  <div className="commerce-field full"><label htmlFor="deliveryAddress">Ətraflı ünvan</label><textarea id="deliveryAddress" data-testid="input-delivery-address" required minLength={5} placeholder="Küçə, bina, mənzil və ya ofis" value={form.deliveryAddress} onChange={(event) => update('deliveryAddress', event.target.value)} /></div>
-                  <div className="commerce-field full"><label htmlFor="deliveryNote">Çatdırılma qeydi <span style={{ color: '#87909c', fontWeight: 500 }}>(istəyə görə)</span></label><textarea id="deliveryNote" data-testid="input-delivery-note" placeholder="Kuryer üçün əlavə məlumat" value={form.deliveryNote} onChange={(event) => update('deliveryNote', event.target.value)} /></div>
+                <div className="commerce-card-heading"><div><h2>Çatdırılma üsulu</h2><p>Kuryer haqqı sifarişdən sonra dəqiqləşir. Mağazadan götürmə pulsuzdur.</p></div><Truck size={19} color="#5b719a" /></div>
+                <div style={{ paddingTop: 17 }}>
+                  <label className={`payment-choice ${!pickup ? 'selected' : ''}`} data-testid="choice-fulfillment-courier">
+                    <input type="radio" name="fulfillmentMethod" checked={!pickup} onChange={() => setFulfillmentMethod(FulfillmentMethod.courier)} />
+                    <span><strong>Kuryer ilə çatdırılma</strong><span>Bakı və Abşeron. Haqq mağaza təsdiqindən sonra görünəcək.</span></span>
+                    <Truck size={17} color="#5b719a" />
+                  </label>
+                  <label className={`payment-choice ${pickup ? 'selected' : ''}`} data-testid="choice-fulfillment-pickup">
+                    <input type="radio" name="fulfillmentMethod" checked={pickup} onChange={() => setFulfillmentMethod(FulfillmentMethod.store_pickup)} />
+                    <span><strong>Mağazadan pulsuz götürmə</strong><span>Məhsulu satan optikadan özünüz götürün. Çatdırılma haqqı 0 AZN.</span></span>
+                    <Store size={17} color="#5b719a" />
+                  </label>
                 </div>
               </section>
 
+              {pickup ? (
+                <section className="commerce-card commerce-card-pad">
+                  <div className="commerce-card-heading"><div><h2>Götürmə məntəqələri</h2><p>Bir neçə mağazadan alsanız, hər birindən ayrıca götürməlisiniz.</p></div><Store size={19} color="#5b719a" /></div>
+                  <div className="pickup-shops" data-testid="list-pickup-shops">
+                    {(pickupShops.length ? pickupShops : [{ name: 'Seçilmiş mağazalar', location: 'Sifariş təsdiqlənəndə ünvan göstəriləcək' }]).map((shop) => (
+                      <div className="pickup-shop" key={shop.name}>
+                        <strong>{shop.name}</strong>
+                        <span>{shop.location}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="commerce-form" style={{ paddingTop: 8 }}>
+                    <div className="commerce-field full"><label htmlFor="pickupNote">Götürmə qeydi <span style={{ color: '#87909c', fontWeight: 500 }}>(istəyə görə)</span></label><textarea id="pickupNote" data-testid="input-delivery-note" placeholder="Məsələn, axşam 18:00-dan sonra gələcəyəm" value={form.deliveryNote} onChange={(event) => update('deliveryNote', event.target.value)} /></div>
+                  </div>
+                </section>
+              ) : (
+                <section className="commerce-card commerce-card-pad">
+                  <div className="commerce-card-heading"><div><h2>Çatdırılma ünvanı</h2><p>Hazırda yalnız Bakı və Abşeron üçün çatdırırıq.</p></div><MapPin size={19} color="#5b719a" /></div>
+                  <div className="commerce-form">
+                    <div className="commerce-field"><label htmlFor="deliveryArea">Ərazi</label><select id="deliveryArea" data-testid="select-delivery-area" value={form.deliveryArea} onChange={(event) => update('deliveryArea', event.target.value)}>{areas.map((area) => <option value={area} key={area}>{area}</option>)}</select></div>
+                    <div className="commerce-field full"><label htmlFor="deliveryAddress">Ətraflı ünvan</label><textarea id="deliveryAddress" data-testid="input-delivery-address" required={!pickup} minLength={5} placeholder="Küçə, bina, mənzil və ya ofis" value={form.deliveryAddress} onChange={(event) => update('deliveryAddress', event.target.value)} /></div>
+                    <div className="commerce-field full"><label htmlFor="deliveryNote">Çatdırılma qeydi <span style={{ color: '#87909c', fontWeight: 500 }}>(istəyə görə)</span></label><textarea id="deliveryNote" data-testid="input-delivery-note" placeholder="Kuryer üçün əlavə məlumat" value={form.deliveryNote} onChange={(event) => update('deliveryNote', event.target.value)} /></div>
+                  </div>
+                </section>
+              )}
+
               <section className="commerce-card commerce-card-pad">
-                <div className="commerce-card-heading"><div><h2>Ödəniş üsulu</h2><p>Ödənişi məhsullar çatdırılan zaman edin.</p></div><CreditCard size={19} color="#5b719a" /></div>
+                <div className="commerce-card-heading"><div><h2>Ödəniş üsulu</h2><p>{pickup ? 'Ödənişi məhsulu mağazadan götürəndə edin.' : 'Ödənişi məhsullar çatdırılan zaman edin.'}</p></div><CreditCard size={19} color="#5b719a" /></div>
                 <div style={{ paddingTop: 17 }}>
-                  <label className={`payment-choice ${paymentMethod === PaymentMethod.pay_on_delivery ? 'selected' : ''}`}><input type="radio" name="paymentMethod" checked={paymentMethod === PaymentMethod.pay_on_delivery} onChange={() => setPaymentMethod(PaymentMethod.pay_on_delivery)} /><span><strong>Çatdırılmada nağd ödəniş</strong><span>Sifariş qapınıza çatanda ödəyin.</span></span><CheckCircle2 size={17} color="#2a7045" /></label>
+                  <label className={`payment-choice ${paymentMethod === PaymentMethod.pay_on_delivery ? 'selected' : ''}`}><input type="radio" name="paymentMethod" checked={paymentMethod === PaymentMethod.pay_on_delivery} onChange={() => setPaymentMethod(PaymentMethod.pay_on_delivery)} /><span><strong>{pickup ? 'Götürəndə nağd ödəniş' : 'Çatdırılmada nağd ödəniş'}</strong><span>{pickup ? 'Məhsulu aldığınız zaman ödəyin. Mağazada ayrıca kassa razılaşması hələ yoxdur — bu, mövcud çatdırılmada ödəniş üsuludur.' : 'Sifariş qapınıza çatanda ödəyin.'}</span></span><CheckCircle2 size={17} color="#2a7045" /></label>
                   <div className="payment-choice disabled" aria-disabled="true" data-testid="payment-card-unavailable"><CreditCard size={17} /><span><strong>Bank kartı</strong><span>Kartla ödəniş hələ aktiv deyil.</span></span><em>Konfiqurasiya olunmayıb</em></div>
                 </div>
               </section>
@@ -138,13 +203,16 @@ export default function CheckoutPage({ items, onClearCart }: CheckoutPageProps) 
 
             <aside>
               <section className="commerce-card commerce-card-pad">
-                <div className="commerce-card-heading"><div><h2>Sifariş xülasəsi</h2><p>{items.length} məhsul · bir neçə mağaza ola bilər</p></div><PackageCheck size={19} color="#5b719a" /></div>
+                <div className="commerce-card-heading"><div><h2>Sifariş xülasəsi</h2><p>{items.length} məhsul · {pickup ? 'mağazadan götürmə' : 'kuryer çatdırılması'}</p></div><PackageCheck size={19} color="#5b719a" /></div>
                 <div className="checkout-items">{items.map((item, index) => <div className="checkout-item" key={`${item.productId}-${index}`} data-testid={`row-checkout-item-${item.productId}`}><div><strong>{item.productName ?? item.name ?? `Məhsul ${item.productId}`}</strong><small>{item.sellerName ? `${item.sellerName} · ` : ''}Say: {item.quantity}</small></div><span className="checkout-item-price">{money(item.lineTotalAzN ?? (item.unitPriceAzN ?? 0) * item.quantity)}</span></div>)}</div>
-                <div className="summary-lines"><div className="summary-line"><span>Məhsullar</span><strong>{money(subtotal)}</strong></div><div className="summary-line"><span>Çatdırılma</span><strong>Sifarişdən sonra</strong></div><div className="summary-line total"><span>Cəmi</span><strong>{money(subtotal)}</strong></div></div>
-                <div className="commerce-submit"><button className="btn btn-blue" type="submit" disabled={createOrder.isPending || !items.length} data-testid="button-place-order">{createOrder.isPending ? 'Sifariş yaradılır...' : 'Sifarişi təsdiqlə'} <ArrowRight size={15} /></button><p className="commerce-note">Sifarişi təsdiqləməklə əlaqə və çatdırılma məlumatlarınızın işlənməsinə razılaşırsınız.</p></div>
+                <div className="summary-lines"><div className="summary-line"><span>Məhsullar</span><strong>{money(subtotal)}</strong></div><div className="summary-line"><span>Çatdırılma</span><strong>{pickup ? money(0) : 'Sifarişdən sonra'}</strong></div><div className="summary-line total"><span>Cəmi</span><strong>{money(subtotal)}</strong></div></div>
+                <div className="commerce-submit"><button className="btn btn-blue" type="submit" disabled={createOrder.isPending || !items.length} data-testid="button-place-order">{createOrder.isPending ? 'Sifariş yaradılır...' : 'Sifarişi təsdiqlə'} <ArrowRight size={15} /></button><p className="commerce-note">Sifarişi təsdiqləməklə <Link href="/qaydalar">istifadə şərtləri</Link> və <Link href="/mexfilik">məxfilik</Link> qaydaları ilə razılaşırsınız.</p></div>
                 {formError && <div className="commerce-error" role="alert" data-testid="status-checkout-error"><AlertCircle size={16} /><span>{formError}</span></div>}
               </section>
-              <div className="info-ribbon" style={{ marginTop: 14 }}><Truck size={16} /><span>Mağazalar sifarişi təsdiqlədikdən sonra yekun çatdırılma haqqı sifarişinizdə ayrıca göstəriləcək.</span></div>
+              <div className="info-ribbon" style={{ marginTop: 14 }}>
+                {pickup ? <Store size={16} /> : <Truck size={16} />}
+                <span>{pickup ? 'Mağaza sifarişi təsdiqləyəndən sonra götürməyə hazır olduğunu izləmə səhifəsində görəcəksiniz.' : 'Mağazalar sifarişi təsdiqlədikdən sonra yekun çatdırılma haqqı sifarişinizdə ayrıca göstəriləcək.'}</span>
+              </div>
               {createOrder.isSuccess && <div className="info-ribbon" style={{ marginTop: 14 }}><Info size={16} /><span>Sifarişiniz yaradıldı. İzləmə səhifəsinə yönləndirilirsiniz.</span></div>}
             </aside>
           </form>

@@ -33,6 +33,9 @@ import type {
   ListAdminProductsParams,
   ListAdminSellerApplicationsParams,
   OrderRefundInput,
+  OrderReturnInput,
+  OrderReturnUpdate,
+  OrderSettlementInput,
   ProductApprovalUpdate,
   PublicProduct,
   SellerApplication,
@@ -564,6 +567,186 @@ export const useDecideGuestOrderRevision = <TError = ErrorType<ErrorEnvelope>,
       return useMutation(getDecideGuestOrderRevisionMutationOptions(options));
     }
 
+export const getCreateOrderReturnRequestUrl = (orderId: string,) => {
+
+
+
+
+  return `/api/orders/${orderId}/returns`
+}
+
+/**
+ * @summary Submit a return request to EYNƏK for one shop portion of an order
+ */
+export const createOrderReturnRequest = async (orderId: string,
+    orderReturnInput: OrderReturnInput, options?: Parameters<typeof customFetch>[1]): Promise<BuyerOrder> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<BuyerOrder>(getCreateOrderReturnRequestUrl(orderId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(orderReturnInput)
+  }
+);}
+
+
+
+
+
+export const getCreateOrderReturnRequestMutationKey = () => ['createOrderReturnRequest'] as const;
+
+export const getCreateOrderReturnRequestMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrderReturnRequest>>, TError,CreateOrderReturnRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createOrderReturnRequest>>, TError,CreateOrderReturnRequestMutationVariables, TContext> => {
+
+const mutationKey = getCreateOrderReturnRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOrderReturnRequest>>, CreateOrderReturnRequestMutationVariables> = (props) => {
+          const {orderId,data} = props ?? {};
+
+          return  createOrderReturnRequest(orderId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateOrderReturnRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createOrderReturnRequest>>>
+    export type CreateOrderReturnRequestMutationBody = BodyType<OrderReturnInput>
+    export type CreateOrderReturnRequestMutationError = ErrorType<ErrorEnvelope>
+    export type CreateOrderReturnRequestMutationVariables = {orderId: string;data: BodyType<OrderReturnInput>}
+
+    /**
+ * @summary Submit a return request to EYNƏK for one shop portion of an order
+ */
+export const useCreateOrderReturnRequest = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrderReturnRequest>>, TError,CreateOrderReturnRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createOrderReturnRequest>>,
+        TError,
+        CreateOrderReturnRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateOrderReturnRequestMutationOptions(options));
+    }
+
+export const getUpdateOrderReturnRequestUrl = (id: string,
+    returnId: string,) => {
+
+
+
+
+  return `/api/admin/orders/${id}/returns/${returnId}`
+}
+
+/**
+ * @summary Coordinate a buyer return request with the selling shop
+ */
+export const updateOrderReturnRequest = async (id: string,
+    returnId: string,
+    orderReturnUpdate: OrderReturnUpdate, options?: Parameters<typeof customFetch>[1]): Promise<AdminOrder> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminOrder>(getUpdateOrderReturnRequestUrl(id,returnId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(orderReturnUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateOrderReturnRequestMutationKey = () => ['updateOrderReturnRequest'] as const;
+
+export const getUpdateOrderReturnRequestMutationOptions = <TError = ErrorType<ErrorEnvelope | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderReturnRequest>>, TError,UpdateOrderReturnRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateOrderReturnRequest>>, TError,UpdateOrderReturnRequestMutationVariables, TContext> => {
+
+const mutationKey = getUpdateOrderReturnRequestMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOrderReturnRequest>>, UpdateOrderReturnRequestMutationVariables> = (props) => {
+          const {id,returnId,data} = props ?? {};
+
+          return  updateOrderReturnRequest(id,returnId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOrderReturnRequestMutationResult = NonNullable<Awaited<ReturnType<typeof updateOrderReturnRequest>>>
+    export type UpdateOrderReturnRequestMutationBody = BodyType<OrderReturnUpdate>
+    export type UpdateOrderReturnRequestMutationError = ErrorType<ErrorEnvelope | void>
+    export type UpdateOrderReturnRequestMutationVariables = {id: string;returnId: string;data: BodyType<OrderReturnUpdate>}
+
+    /**
+ * @summary Coordinate a buyer return request with the selling shop
+ */
+export const useUpdateOrderReturnRequest = <TError = ErrorType<ErrorEnvelope | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderReturnRequest>>, TError,UpdateOrderReturnRequestMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateOrderReturnRequest>>,
+        TError,
+        UpdateOrderReturnRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateOrderReturnRequestMutationOptions(options));
+    }
+
 export const getListSellerOrdersUrl = () => {
 
 
@@ -1048,6 +1231,95 @@ export const useRecordOrderRefund = <TError = ErrorType<ErrorEnvelope | void>,
         TContext
       > => {
       return useMutation(getRecordOrderRefundMutationOptions(options));
+    }
+
+export const getRecordOrderSettlementUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/orders/${id}/settle`
+}
+
+/**
+ * @summary Record that a shop settlement was closed offline
+ */
+export const recordOrderSettlement = async (id: string,
+    orderSettlementInput: OrderSettlementInput, options?: Parameters<typeof customFetch>[1]): Promise<AdminOrder> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<AdminOrder>(getRecordOrderSettlementUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(orderSettlementInput)
+  }
+);}
+
+
+
+
+
+export const getRecordOrderSettlementMutationKey = () => ['recordOrderSettlement'] as const;
+
+export const getRecordOrderSettlementMutationOptions = <TError = ErrorType<ErrorEnvelope | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordOrderSettlement>>, TError,RecordOrderSettlementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordOrderSettlement>>, TError,RecordOrderSettlementMutationVariables, TContext> => {
+
+const mutationKey = getRecordOrderSettlementMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordOrderSettlement>>, RecordOrderSettlementMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  recordOrderSettlement(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordOrderSettlementMutationResult = NonNullable<Awaited<ReturnType<typeof recordOrderSettlement>>>
+    export type RecordOrderSettlementMutationBody = BodyType<OrderSettlementInput>
+    export type RecordOrderSettlementMutationError = ErrorType<ErrorEnvelope | void>
+    export type RecordOrderSettlementMutationVariables = {id: string;data: BodyType<OrderSettlementInput>}
+
+    /**
+ * @summary Record that a shop settlement was closed offline
+ */
+export const useRecordOrderSettlement = <TError = ErrorType<ErrorEnvelope | void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordOrderSettlement>>, TError,RecordOrderSettlementMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof recordOrderSettlement>>,
+        TError,
+        RecordOrderSettlementMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordOrderSettlementMutationOptions(options));
     }
 
 export const getListProductsUrl = () => {

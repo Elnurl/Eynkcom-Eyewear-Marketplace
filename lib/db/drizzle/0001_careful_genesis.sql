@@ -1,0 +1,1 @@
+ALTER TABLE "marketplace_orders" ADD COLUMN "fulfillment_method" text DEFAULT 'courier' NOT NULL;

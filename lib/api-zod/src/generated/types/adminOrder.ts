@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { FulfillmentMethod } from './fulfillmentMethod';
 import type { OrderStatus } from './orderStatus';
 import type { PaymentMethod } from './paymentMethod';
 import type { PaymentStatus } from './paymentStatus';
@@ -14,6 +15,7 @@ export interface AdminOrder {
   id: string;
   orderNumber: string;
   status: OrderStatus;
+  fulfillmentMethod: FulfillmentMethod;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   customerName: string;

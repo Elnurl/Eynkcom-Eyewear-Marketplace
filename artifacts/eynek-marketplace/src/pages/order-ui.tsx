@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, Clock3 } from 'lucide-react';
-import type { AdminOrder, BuyerOrder, OrderStatus, PaymentStatus, SellerOrderStatus } from '@workspace/api-client-react';
+import type { AdminOrder, BuyerOrder, FulfillmentMethod, OrderStatus, PaymentStatus, ReturnRequestStatus, SellerOrderStatus } from '@workspace/api-client-react';
 
 export function money(value: number | null | undefined) {
   return value === null || value === undefined ? '—' : `${value.toFixed(2)} AZN`;
@@ -42,15 +42,48 @@ const paymentLabels: Record<PaymentStatus, string> = {
   refunded: 'Geri qaytarılıb',
 };
 
-export function orderStatusLabel(status: OrderStatus) {
+export function fulfillmentLabel(method?: FulfillmentMethod | string) {
+  return method === 'store_pickup' ? 'Mağazadan götürmə' : 'Kuryer çatdırılması';
+}
+
+export function orderStatusLabel(status: OrderStatus, fulfillment?: FulfillmentMethod | string) {
+  if (fulfillment === 'store_pickup') {
+    if (status === 'out_for_delivery') return 'Götürməyə hazırdır';
+    if (status === 'delivered') return 'Götürüldü';
+    if (status === 'partially_delivered') return 'Qismən götürüldü';
+  }
   return orderLabels[status] ?? status;
 }
 
-export function sellerStatusLabel(status: SellerOrderStatus) {
+export function sellerStatusLabel(status: SellerOrderStatus, fulfillment?: FulfillmentMethod | string) {
+  if (fulfillment === 'store_pickup') {
+    if (status === 'out_for_delivery') return 'Götürməyə hazırdır';
+    if (status === 'delivered') return 'Götürüldü';
+  }
   return sellerLabels[status] ?? status;
 }
 
-export function paymentStatusLabel(status: PaymentStatus) {
+export function settlementStatusLabel(status: string) {
+  if (status === 'payable') return 'Ödənişə hazırdır';
+  if (status === 'settled') return 'Bağlanıb';
+  if (status === 'adjusted') return 'Geri ödənişə uyğunlaşdırılıb';
+  if (status === 'reversed') return 'Ləğv edilib';
+  return 'Hesablanmayıb';
+}
+
+export function returnStatusLabel(status: ReturnRequestStatus | string) {
+  if (status === 'submitted') return 'EYNƏK-ə göndərilib';
+  if (status === 'coordinating') return 'Mağaza ilə razılaşdırılır';
+  if (status === 'accepted') return 'Qəbul edilib';
+  if (status === 'declined') return 'Qəbul edilməyib';
+  return status;
+}
+
+export function paymentStatusLabel(status: PaymentStatus, fulfillment?: FulfillmentMethod | string) {
+  if (fulfillment === 'store_pickup') {
+    if (status === 'due_on_delivery') return 'Götürəndə ödəniş';
+    if (status === 'paid_on_delivery') return 'Götürəndə ödənildi';
+  }
   return paymentLabels[status] ?? status;
 }
 

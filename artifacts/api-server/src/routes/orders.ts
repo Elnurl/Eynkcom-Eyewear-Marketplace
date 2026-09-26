@@ -4,6 +4,9 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   CreateGuestOrderBody,
   CreateGuestOrderResponse,
+  CreateOrderReturnRequestBody,
+  CreateOrderReturnRequestParams,
+  CreateOrderReturnRequestResponse,
   DecideGuestOrderRevisionBody,
   DecideGuestOrderRevisionParams,
   DecideGuestOrderRevisionResponse,
@@ -16,6 +19,12 @@ import {
   RecordOrderRefundBody,
   RecordOrderRefundParams,
   RecordOrderRefundResponse,
+  RecordOrderSettlementBody,
+  RecordOrderSettlementParams,
+  RecordOrderSettlementResponse,
+  UpdateOrderReturnRequestBody,
+  UpdateOrderReturnRequestParams,
+  UpdateOrderReturnRequestResponse,
   UpdateSellerOrderBody,
   UpdateSellerOrderParams,
   UpdateSellerOrderResponse,
@@ -26,6 +35,7 @@ import {
   marketplaceOrderItemsTable,
   marketplaceOrderRefundsTable,
   marketplaceOrdersTable,
+  marketplaceReturnRequestsTable,
   marketplaceSettlementLedgerTable,
   marketplaceSellerOrdersTable,
   sellerProductsTable,
@@ -52,6 +62,33 @@ const sellerStatusLabels: Record<string, string> = {
   out_for_delivery: "sifarişi çatdırılmaya verdi",
   delivered: "sifarişi çatdırdı",
 };
+
+const pickupStatusLabels: Record<string, string> = {
+  confirmed: "sifarişi mağazadan götürmə üçün təsdiqlədi",
+  declined: "sifarişi qəbul etmədi",
+  preparing: "məhsulları götürmə üçün hazırlayır",
+  out_for_delivery: "sifarişi götürməyə hazır etdi",
+  delivered: "sifarişi mağazadan təhvil verdi",
+};
+
+function isPickup(method: string | undefined) {
+  return method === "store_pickup";
+}
+
+function pickupAddress(stores: { name: string; location: string }[]) {
+  return stores
+    .map((store) => `${store.name}, ${store.location}`)
+    .join(" · ");
+}
+
+function pickupArea(stores: { location: string }[], fallback?: "Bakı" | "Abşeron") {
+  if (fallback) return fallback;
+  const locations = stores.map((store) => store.location);
+  const onlyAbsheron =
+    locations.some((location) => location.includes("Abşeron")) &&
+    !locations.some((location) => location.includes("Bakı"));
+  return onlyAbsheron ? "Abşeron" : "Bakı";
+}
 
 function aznToQepik(amount: number): number | null {
   if (!Number.isFinite(amount) || amount < 0) return null;
@@ -199,6 +236,7 @@ router.get("/checkout/options", (_req, res): void => {
       paymentMethods: ["pay_on_delivery"],
       cardPaymentStatus: "not_configured",
       deliveryAreas: ["Bakı", "Abşeron"],
+      fulfillmentMethods: ["courier", "store_pickup"],
     }),
   );
 });
@@ -213,6 +251,14 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
   if (body.data.paymentMethod !== "pay_on_delivery") {
     res.status(503).json({ error: "Kartla ödəniş hələ konfiqurasiya edilməyib." });
     return;
+  }
+  const fulfillmentMethod = body.data.fulfillmentMethod ?? "courier";
+  if (fulfillmentMethod === "courier") {
+    const address = body.data.deliveryAddress?.trim() ?? "";
+    if (!body.data.deliveryArea || address.length < 5) {
+      res.status(400).json({ error: "Kuryer çatdırılması üçün ərazi və ünvan tələb olunur." });
+      return;
+    }
   }
 
   const accessTokenHash = createHash("sha256")
@@ -298,6 +344,15 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
       0,
     );
 
+    const deliveryArea =
+      fulfillmentMethod === "store_pickup"
+        ? pickupArea(stores, body.data.deliveryArea)
+        : body.data.deliveryArea!;
+    const deliveryAddress =
+      fulfillmentMethod === "store_pickup"
+        ? pickupAddress(stores)
+        : body.data.deliveryAddress!.trim();
+
     await tx.insert(marketplaceOrdersTable).values({
       id: orderId,
       orderNumber,
@@ -306,9 +361,10 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
       customerName: body.data.customerName.trim(),
       customerEmail: body.data.customerEmail.trim().toLocaleLowerCase("en-US"),
       customerPhone: body.data.customerPhone.trim(),
-      deliveryArea: body.data.deliveryArea,
-      deliveryAddress: body.data.deliveryAddress.trim(),
+      deliveryArea,
+      deliveryAddress,
       deliveryNote: body.data.deliveryNote?.trim() ?? "",
+      fulfillmentMethod,
       paymentMethod: "pay_on_delivery",
       paymentStatus: "due_on_delivery",
       status: "pending_confirmation",
@@ -518,6 +574,92 @@ router.post("/orders/:orderId/decision", optionalAuth, async (req, res): Promise
   res.json(DecideGuestOrderRevisionResponse.parse(saved));
 });
 
+router.post("/orders/:orderId/returns", optionalAuth, async (req, res): Promise<void> => {
+  const params = CreateOrderReturnRequestParams.safeParse(req.params);
+  const body = CreateOrderReturnRequestBody.safeParse(req.body);
+  const token = req.get("X-Order-Access-Token") ?? "";
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: "Qaytarma sorğusu düzgün deyil." });
+    return;
+  }
+
+  const result = await db.transaction(async (tx) => {
+    const [order] = await tx
+      .select()
+      .from(marketplaceOrdersTable)
+      .where(eq(marketplaceOrdersTable.id, params.data.orderId))
+      .for("update")
+      .limit(1);
+    const ownsOrder = Boolean(req.dbUser && order?.buyerUserId === req.dbUser.id);
+    const hasGuestAccess = Boolean(
+      order && token.length >= 32 && tokenMatches(token, order.accessTokenHash),
+    );
+    if (!order || (!ownsOrder && !hasGuestAccess)) return { kind: "missing" as const };
+
+    const [sellerOrder] = await tx
+      .select()
+      .from(marketplaceSellerOrdersTable)
+      .where(
+        and(
+          eq(marketplaceSellerOrdersTable.id, body.data.sellerOrderId),
+          eq(marketplaceSellerOrdersTable.orderId, order.id),
+        ),
+      )
+      .for("update")
+      .limit(1);
+    if (!sellerOrder) return { kind: "missing-seller" as const };
+    if (sellerOrder.status !== "delivered") return { kind: "not-delivered" as const };
+
+    const [existing] = await tx
+      .select({ id: marketplaceReturnRequestsTable.id })
+      .from(marketplaceReturnRequestsTable)
+      .where(eq(marketplaceReturnRequestsTable.sellerOrderId, sellerOrder.id))
+      .limit(1);
+    if (existing) return { kind: "duplicate" as const };
+
+    const [store] = await tx
+      .select({ name: sellerStoresTable.name })
+      .from(sellerStoresTable)
+      .where(eq(sellerStoresTable.id, sellerOrder.sellerId))
+      .limit(1);
+    await tx.insert(marketplaceReturnRequestsTable).values({
+      id: randomUUID(),
+      orderId: order.id,
+      sellerOrderId: sellerOrder.id,
+      status: "submitted",
+      reason: body.data.reason.trim(),
+      note: body.data.note?.trim() ?? "",
+    });
+    await addEvent(
+      tx,
+      order.id,
+      "return_requested",
+      `${store?.name ?? "Mağaza"} üçün qaytarma sorğusu EYNƏK-ə göndərildi.`,
+      sellerOrder.id,
+    );
+    return { kind: "created" as const };
+  });
+
+  if (result.kind === "missing" || result.kind === "missing-seller") {
+    res.status(404).json({ error: "Sifariş tapılmadı." });
+    return;
+  }
+  if (result.kind === "not-delivered") {
+    res.status(400).json({ error: "Qaytarma sorğusu yalnız çatdırılmış və ya götürülmüş mağaza sifarişi üçün göndərilə bilər." });
+    return;
+  }
+  if (result.kind === "duplicate") {
+    res.status(400).json({ error: "Bu mağaza sifarişi üçün qaytarma sorğusu artıq var." });
+    return;
+  }
+  const saved = await loadBuyerOrder(params.data.orderId);
+  if (!saved) {
+    res.status(404).json({ error: "Sifariş tapılmadı." });
+    return;
+  }
+  res.status(201).json(CreateOrderReturnRequestResponse.parse(saved));
+});
+
 router.get("/seller/orders", requireAuth, async (req, res): Promise<void> => {
   res.setHeader("Cache-Control", "private, no-store");
   const email = requireUserEmail(req, res);
@@ -578,15 +720,16 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
     if (!sellerOrder) return { kind: "missing" as const };
 
     const nextStatus = body.data.status;
+    const pickupOrder = isPickup(parent.fulfillmentMethod);
     if (nextStatus === "confirmed") {
       if (
         sellerOrder.status !== "pending_confirmation" ||
         parent.status !== "pending_confirmation" ||
-        body.data.deliveryFeeAzN === undefined
+        (!pickupOrder && body.data.deliveryFeeAzN === undefined)
       ) {
         return { kind: "invalid-state" as const };
       }
-      const fee = aznToQepik(body.data.deliveryFeeAzN);
+      const fee = pickupOrder ? 0 : aznToQepik(body.data.deliveryFeeAzN!);
       if (fee === null) return { kind: "invalid-fee" as const };
       await tx
         .update(marketplaceSellerOrdersTable)
@@ -636,7 +779,7 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
       }
       const allowedNext: Record<string, string[]> = {
         confirmed: ["preparing"],
-        preparing: ["out_for_delivery"],
+        preparing: pickupOrder ? ["out_for_delivery", "delivered"] : ["out_for_delivery"],
         out_for_delivery: ["delivered"],
         delivered: ["delivered"],
       };
@@ -669,9 +812,10 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
       .from(sellerStoresTable)
       .where(eq(sellerStoresTable.id, store.id))
       .limit(1);
+    const statusLabels = pickupOrder ? pickupStatusLabels : sellerStatusLabels;
     const eventLabel = body.data.note?.trim()
       ? `${storeRecord?.name ?? "Mağaza"}: ${body.data.note.trim()}`
-      : `${storeRecord?.name ?? "Mağaza"} ${sellerStatusLabels[nextStatus] ?? "sifarişi yenilədi"}.`;
+      : `${storeRecord?.name ?? "Mağaza"} ${statusLabels[nextStatus] ?? "sifarişi yenilədi"}.`;
     await addEvent(tx, parent.id, nextStatus, eventLabel, sellerOrder.id);
 
     if (
@@ -851,6 +995,8 @@ router.patch("/admin/orders/:id/refund", requireAuth, async (req, res): Promise<
         commissionQepik,
         sellerEarningsQepik,
         status: sellerEarningsQepik === 0 ? "reversed" : "adjusted",
+        settlementReference: null,
+        settledAt: null,
       })
       .where(eq(marketplaceSettlementLedgerTable.sellerOrderId, sellerOrder.id));
     await addEvent(
@@ -887,6 +1033,152 @@ router.patch("/admin/orders/:id/refund", requireAuth, async (req, res): Promise<
     return;
   }
   res.json(RecordOrderRefundResponse.parse(saved));
+});
+
+router.patch("/admin/orders/:id/settle", requireAuth, async (req, res): Promise<void> => {
+  if (!requireMarketplaceAdmin(req, res)) return;
+  const params = RecordOrderSettlementParams.safeParse(req.params);
+  const body = RecordOrderSettlementBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: "Hesablaşma məlumatları düzgün deyil." });
+    return;
+  }
+
+  const result = await db.transaction(async (tx) => {
+    const [order] = await tx
+      .select()
+      .from(marketplaceOrdersTable)
+      .where(eq(marketplaceOrdersTable.id, params.data.id))
+      .for("update")
+      .limit(1);
+    if (!order) return { kind: "missing" as const };
+    const [sellerOrder] = await tx
+      .select()
+      .from(marketplaceSellerOrdersTable)
+      .where(
+        and(
+          eq(marketplaceSellerOrdersTable.id, body.data.sellerOrderId),
+          eq(marketplaceSellerOrdersTable.orderId, order.id),
+        ),
+      )
+      .for("update")
+      .limit(1);
+    if (!sellerOrder) return { kind: "missing-seller-order" as const };
+    const [ledger] = await tx
+      .select()
+      .from(marketplaceSettlementLedgerTable)
+      .where(eq(marketplaceSettlementLedgerTable.sellerOrderId, sellerOrder.id))
+      .for("update")
+      .limit(1);
+    if (!ledger || !["payable", "adjusted"].includes(ledger.status)) {
+      return { kind: "not-payable" as const };
+    }
+
+    const reference = body.data.reference.trim();
+    await tx
+      .update(marketplaceSettlementLedgerTable)
+      .set({
+        status: "settled",
+        settlementReference: reference,
+        settledAt: new Date(),
+      })
+      .where(eq(marketplaceSettlementLedgerTable.id, ledger.id));
+    await addEvent(
+      tx,
+      order.id,
+      "settlement_recorded",
+      `Hesablaşma qeydə alındı: ${reference}.`,
+      sellerOrder.id,
+    );
+    return { kind: "recorded" as const };
+  });
+
+  if (result.kind === "missing" || result.kind === "missing-seller-order") {
+    res.status(404).json({ error: "Sifariş tapılmadı." });
+    return;
+  }
+  if (result.kind === "not-payable") {
+    res.status(400).json({ error: "Hesablaşma yalnız ödənişə hazır və ya düzəldilmiş mağaza sətrinə qeydə alına bilər." });
+    return;
+  }
+  const saved = await listAdminOrders().then((orders) =>
+    orders.find((order) => order.id === params.data.id),
+  );
+  if (!saved) {
+    res.status(404).json({ error: "Sifariş tapılmadı." });
+    return;
+  }
+  res.json(RecordOrderSettlementResponse.parse(saved));
+});
+
+router.patch("/admin/orders/:id/returns/:returnId", requireAuth, async (req, res): Promise<void> => {
+  if (!requireMarketplaceAdmin(req, res)) return;
+  const params = UpdateOrderReturnRequestParams.safeParse(req.params);
+  const body = UpdateOrderReturnRequestBody.safeParse(req.body);
+  if (!params.success || !body.success) {
+    res.status(400).json({ error: "Qaytarma yeniləməsi düzgün deyil." });
+    return;
+  }
+
+  const result = await db.transaction(async (tx) => {
+    const [request] = await tx
+      .select()
+      .from(marketplaceReturnRequestsTable)
+      .where(
+        and(
+          eq(marketplaceReturnRequestsTable.id, params.data.returnId),
+          eq(marketplaceReturnRequestsTable.orderId, params.data.id),
+        ),
+      )
+      .for("update")
+      .limit(1);
+    if (!request) return { kind: "missing" as const };
+    const allowedNext: Record<string, string[]> = {
+      submitted: ["coordinating", "accepted", "declined"],
+      coordinating: ["accepted", "declined"],
+    };
+    if (!(allowedNext[request.status] ?? []).includes(body.data.status)) {
+      return { kind: "invalid-state" as const };
+    }
+    await tx
+      .update(marketplaceReturnRequestsTable)
+      .set({
+        status: body.data.status,
+        adminNote: body.data.adminNote?.trim() ?? request.adminNote,
+        updatedAt: new Date(),
+      })
+      .where(eq(marketplaceReturnRequestsTable.id, request.id));
+    const labels: Record<string, string> = {
+      coordinating: "EYNƏK qaytarma sorğusunu mağaza ilə razılaşdırır.",
+      accepted: "EYNƏK qaytarma sorğusunu qəbul etdi. Geri ödəniş ayrıca qeydə alınır.",
+      declined: "EYNƏK qaytarma sorğusunu qəbul etmədi.",
+    };
+    await addEvent(
+      tx,
+      request.orderId,
+      `return_${body.data.status}`,
+      labels[body.data.status] ?? "Qaytarma sorğusu yeniləndi.",
+      request.sellerOrderId,
+    );
+    return { kind: "updated" as const };
+  });
+
+  if (result.kind === "missing") {
+    res.status(404).json({ error: "Qaytarma sorğusu tapılmadı." });
+    return;
+  }
+  if (result.kind === "invalid-state") {
+    res.status(400).json({ error: "Qaytarma sorğusu bu mərhələdə dəyişdirilə bilməz." });
+    return;
+  }
+  const saved = await listAdminOrders().then((orders) =>
+    orders.find((order) => order.id === params.data.id),
+  );
+  if (!saved) {
+    res.status(404).json({ error: "Sifariş tapılmadı." });
+    return;
+  }
+  res.json(UpdateOrderReturnRequestResponse.parse(saved));
 });
 
 export default router;

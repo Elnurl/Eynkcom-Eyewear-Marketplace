@@ -7,10 +7,12 @@
  */
 import type { CheckoutOptionsCardPaymentStatus } from './checkoutOptionsCardPaymentStatus';
 import type { CheckoutOptionsDeliveryAreasItem } from './checkoutOptionsDeliveryAreasItem';
+import type { FulfillmentMethod } from './fulfillmentMethod';
 import type { PaymentMethod } from './paymentMethod';
 
 export interface CheckoutOptions {
   paymentMethods: PaymentMethod[];
   cardPaymentStatus: CheckoutOptionsCardPaymentStatus;
   deliveryAreas: CheckoutOptionsDeliveryAreasItem[];
+  fulfillmentMethods: FulfillmentMethod[];
 }

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { OrderLine } from './orderLine';
+import type { OrderReturnRequest } from './orderReturnRequest';
 import type { SellerOrderStatus } from './sellerOrderStatus';
 import type { SellerOrderSummarySettlementStatus } from './sellerOrderSummarySettlementStatus';
 
@@ -24,8 +25,13 @@ export interface SellerOrderSummary {
   /** @nullable */
   trackingCode: string | null;
   settlementStatus: SellerOrderSummarySettlementStatus;
+  /** @nullable */
+  settlementReference?: string | null;
+  /** @nullable */
+  settledAt?: Date | null;
   /** @minimum 0 */
   refundedAzN: number;
   /** @minimum 0 */
   productRefundedAzN: number;
+  returnRequest?: OrderReturnRequest;
 }

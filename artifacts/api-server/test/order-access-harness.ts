@@ -37,19 +37,23 @@ export const products = [
   { id: "product-1", sellerId: "store-1", name: "Frames", price: 40, stock: 10, status: "Aktiv", approvalStatus: "approved" },
 ];
 export const stores = [
-  { id: "store-1", name: "Optics", status: "active", ownerEmail: "seller@example.com" },
-  { id: "store-2", name: "Other Optics", status: "active", ownerEmail: "other-seller@example.com" },
-  { id: "store-pending", name: "Pending Optics", status: "pending", ownerEmail: "pending-seller@example.com" },
+  { id: "store-1", name: "Optics", status: "active", ownerEmail: "seller@example.com", location: "Bakı, Nizami 12" },
+  { id: "store-2", name: "Other Optics", status: "active", ownerEmail: "other-seller@example.com", location: "Abşeron, Xırdalan" },
+  { id: "store-pending", name: "Pending Optics", status: "pending", ownerEmail: "pending-seller@example.com", location: "Bakı" },
 ];
 export const sellerOrders: any[] = [];
 export const events: any[] = [];
 export const items: any[] = [];
+export const returnRequests: any[] = [];
+export const settlements: any[] = [];
 
 export function reset() {
   for (const key of Object.keys(orders)) delete orders[key];
   sellerOrders.length = 0;
   events.length = 0;
   items.length = 0;
+  returnRequests.length = 0;
+  settlements.length = 0;
   products[0].stock = 10;
 }
 export function seedOrder(id: string, buyerUserId: string | null, status = "awaiting_buyer_approval") {
@@ -57,8 +61,8 @@ export function seedOrder(id: string, buyerUserId: string | null, status = "awai
     id, buyerUserId, status, orderNumber: `EYN-${id}`, accessTokenHash: createHash("sha256").update(token).digest("hex"),
     paymentMethod: "pay_on_delivery", paymentStatus: "due_on_delivery",
     customerName: "Buyer", customerEmail: "buyer@example.com", customerPhone: "0500000000",
-    deliveryArea: "Bakı", deliveryAddress: "Street 1", deliveryNote: "",
-    productSubtotalQepik: 4000, deliveryTotalQepik: 0, totalQepik: 4000, buyerApprovedAt: null,
+    deliveryArea: "Bakı", deliveryAddress: "Street 1", deliveryNote: "", fulfillmentMethod: "courier",
+    productSubtotalQepik: 4000, deliveryTotalQepik: 0, totalQepik: 4000, refundedQepik: 0, buyerApprovedAt: null,
     createdAt: new Date(), updatedAt: new Date(),
   };
   sellerOrders.push({
@@ -77,6 +81,34 @@ export function seedSellerOrder(id: string, storeId: string) {
   sellerOrder.confirmedAt = null;
   sellerOrder.updatedAt = new Date();
   return sellerOrder;
+}
+
+export function seedPayableOrder(id: string) {
+  seedOrder(id, "owner", "delivered");
+  const order = orders[id];
+  order.paymentStatus = "paid_on_delivery";
+  const sellerOrder = sellerOrders[sellerOrders.length - 1];
+  sellerOrder.status = "delivered";
+  sellerOrder.collectedAtDelivery = true;
+  sellerOrder.commissionQepik = 200;
+  sellerOrder.sellerEarningsQepik = 3800;
+  sellerOrder.refundedQepik = 0;
+  sellerOrder.productRefundedQepik = 0;
+  const settlement = {
+    id: `settle-${id}`,
+    orderId: id,
+    sellerOrderId: sellerOrder.id,
+    sellerId: sellerOrder.sellerId,
+    productSalesQepik: 4000,
+    deliveryFeeQepik: 0,
+    commissionQepik: 200,
+    sellerEarningsQepik: 3800,
+    status: "payable",
+    settlementReference: null,
+    settledAt: null,
+  };
+  settlements.push(settlement);
+  return { order, sellerOrder, settlement };
 }
 
 const dialect = new PgDialect();
@@ -103,6 +135,8 @@ const data: Record<string, () => any[]> = {
   marketplace_seller_orders: () => sellerOrders,
   marketplace_order_events: () => events,
   marketplace_order_items: () => items,
+  marketplace_return_requests: () => returnRequests,
+  marketplace_settlement_ledger: () => settlements,
   seller_products: () => products,
   seller_stores: () => stores,
 };
@@ -169,6 +203,7 @@ export async function loadBuyerOrder(id: string) {
   if (!order) return null;
   return {
     id: order.id, orderNumber: order.orderNumber, status: order.status,
+    fulfillmentMethod: order.fulfillmentMethod ?? "courier",
     paymentMethod: order.paymentMethod, paymentStatus: order.paymentStatus,
     customerName: order.customerName, customerEmail: order.customerEmail,
     customerPhone: order.customerPhone, deliveryArea: order.deliveryArea,
@@ -178,21 +213,83 @@ export async function loadBuyerOrder(id: string) {
     sellerOrders: [], timeline: [], createdAt: order.createdAt,
   };
 }
-export async function listAdminOrders() { return []; }
+function mapSettlement(sellerOrderId: string) {
+  const settlement = settlements.find((item) => item.sellerOrderId === sellerOrderId);
+  return {
+    settlementStatus: settlement?.status ?? "not_eligible",
+    ...(settlement?.settlementReference ? { settlementReference: settlement.settlementReference } : {}),
+    ...(settlement?.settledAt ? { settledAt: settlement.settledAt } : {}),
+  };
+}
+
+function mapReturnRequest(sellerOrderId: string) {
+  const request = returnRequests.find((item) => item.sellerOrderId === sellerOrderId);
+  return request
+    ? {
+        id: request.id,
+        sellerOrderId: request.sellerOrderId,
+        status: request.status,
+        reason: request.reason,
+        note: request.note || null,
+        adminNote: request.adminNote || null,
+        createdAt: request.createdAt ?? new Date(),
+        updatedAt: request.updatedAt ?? new Date(),
+      }
+    : undefined;
+}
+
+export async function listAdminOrders() {
+  return Object.values(orders).map((order) => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    fulfillmentMethod: order.fulfillmentMethod ?? "courier",
+    paymentMethod: order.paymentMethod,
+    paymentStatus: order.paymentStatus,
+    customerName: order.customerName,
+    customerEmail: order.customerEmail,
+    customerPhone: order.customerPhone,
+    productSubtotalAzN: order.productSubtotalQepik / 100,
+    deliveryTotalAzN: order.deliveryTotalQepik === null ? null : order.deliveryTotalQepik / 100,
+    totalAzN: order.totalQepik === null ? null : order.totalQepik / 100,
+    refundedAzN: (order.refundedQepik ?? 0) / 100,
+    sellerOrders: sellerOrders.filter((row) => row.orderId === order.id).map((row) => {
+      const store = stores.find((store) => store.id === row.sellerId);
+      return {
+        id: row.id,
+        sellerName: store?.name ?? "Mağaza",
+        status: row.status,
+        items: [],
+        productSubtotalAzN: row.productSubtotalQepik / 100,
+        deliveryFeeAzN: row.deliveryFeeQepik === null ? null : row.deliveryFeeQepik / 100,
+        sellerEarningsAzN: null,
+        commissionAzN: null,
+        trackingCode: null,
+        ...mapSettlement(row.id),
+        refundedAzN: 0,
+        productRefundedAzN: 0,
+        ...(mapReturnRequest(row.id) ? { returnRequest: mapReturnRequest(row.id) } : {}),
+      };
+    }),
+    createdAt: order.createdAt,
+  }));
+}
 function sellerOrderResponse(row: any) {
   const order = orders[row.orderId];
   const store = stores.find((store) => store.id === row.sellerId);
   if (!order || !store) return null;
+  const returnRequest = mapReturnRequest(row.id);
   return {
     id: row.id, sellerName: store.name, status: row.status, items: [],
     productSubtotalAzN: row.productSubtotalQepik / 100,
     deliveryFeeAzN: row.deliveryFeeQepik === null ? null : row.deliveryFeeQepik / 100,
     sellerEarningsAzN: null, commissionAzN: null, trackingCode: null,
-    settlementStatus: "not_eligible", refundedAzN: 0, productRefundedAzN: 0,
+    ...mapSettlement(row.id), refundedAzN: 0, productRefundedAzN: 0,
     orderNumber: order.orderNumber, customerName: order.customerName,
     customerEmail: order.customerEmail, customerPhone: order.customerPhone,
     deliveryArea: order.deliveryArea, deliveryAddress: order.deliveryAddress,
-    deliveryNote: order.deliveryNote, paymentMethod: order.paymentMethod,
+    deliveryNote: order.deliveryNote, fulfillmentMethod: order.fulfillmentMethod ?? "courier", paymentMethod: order.paymentMethod,
+    ...(returnRequest ? { returnRequest } : {}),
     paymentStatus: order.paymentStatus, updatedAt: row.updatedAt,
   };
 }

@@ -7,6 +7,7 @@
  */
 import type { BuyerOrderDeliveryArea } from './buyerOrderDeliveryArea';
 import type { BuyerSellerOrderSummary } from './buyerSellerOrderSummary';
+import type { FulfillmentMethod } from './fulfillmentMethod';
 import type { OrderStatus } from './orderStatus';
 import type { OrderTimelineEvent } from './orderTimelineEvent';
 import type { PaymentMethod } from './paymentMethod';
@@ -16,6 +17,7 @@ export interface BuyerOrder {
   id: string;
   orderNumber: string;
   status: OrderStatus;
+  fulfillmentMethod: FulfillmentMethod;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   customerName: string;

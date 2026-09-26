@@ -161,6 +161,53 @@
 .commerce-submit { margin-top: 20px; }
 .commerce-submit .btn { width: 100%; min-height: 49px; border-radius: 12px; }
 .commerce-note { margin: 11px 0 0; color: #87909c; font-size: 10px; line-height: 1.5; text-align: center; }
+.commerce-note a { color: #355d91; font-weight: 700; }
+
+.pickup-shops { display: grid; gap: 10px; padding-top: 18px; }
+.pickup-shop {
+  border: 1px solid #e4e8ef;
+  border-radius: 12px;
+  padding: 13px 14px;
+  background: #fbfcfd;
+}
+.return-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  border: 1px solid #ece4d6;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fffaf3;
+}
+.return-box strong { color: #2b3540; font-size: 12px; }
+.return-box p, .return-box small { margin: 0; color: #6d6760; font-size: 11px; line-height: 1.5; }
+.return-box .btn { justify-self: start; min-height: 40px; }
+.return-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.pickup-shop strong { display: block; color: #202a38; font-size: 13px; }
+.pickup-shop span { display: block; margin-top: 4px; color: #6d7784; font-size: 11px; }
+
+.legal-page { padding: 36px 0 80px; background: #f8f6f1; }
+.legal-wrap { width: min(820px, calc(100% - 48px)); margin: 0 auto; }
+.legal-card {
+  border: 1px solid #e6e1d6;
+  border-radius: 28px;
+  padding: 36px 38px 42px;
+  background: #fffdf8;
+  box-shadow: 0 16px 36px rgba(48, 38, 18, .05);
+}
+.legal-card h1 { margin: 10px 0 14px; color: #171b22; font-size: clamp(34px, 5vw, 52px); letter-spacing: -.06em; line-height: .98; }
+.legal-card .legal-lead { margin: 0 0 28px; color: #6d6760; font-size: 14px; line-height: 1.65; max-width: 560px; }
+.legal-card h2 { margin: 28px 0 8px; color: #1d232c; font-size: 18px; letter-spacing: -.03em; }
+.legal-card p, .legal-card li { color: #5d5852; font-size: 13px; line-height: 1.7; }
+.legal-card ul { margin: 0; padding-left: 18px; }
+.legal-card li + li { margin-top: 6px; }
+.legal-nav { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 32px; padding-top: 18px; border-top: 1px solid #ece7dc; }
+.legal-nav a { color: #355d91; font-size: 12px; font-weight: 700; }
+@media (max-width: 620px) {
+  .legal-wrap { width: min(100% - 28px, 560px); }
+  .legal-card { padding: 24px 20px 28px; border-radius: 22px; }
+}
 
 .checkout-items { display: grid; gap: 0; margin-top: 16px; }
 .checkout-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid #edf0f4; }
@@ -262,6 +309,7 @@
 .admin-order-values small { display: block; color: #8a929d; font-size: 9px; }
 .admin-order-values strong { display: block; margin-top: 4px; color: #27313c; font-size: 12px; }
 .refund-box { display: grid; grid-template-columns: 1fr 1fr 1.4fr auto; align-items: end; gap: 9px; }
+.refund-box.settlement-box { grid-template-columns: 1.4fr 1fr auto; }
 .refund-box .btn { min-height: 42px; padding: 0 14px; font-size: 11px; }
 .refund-note { margin: 10px 0 0; color: #7d8792; font-size: 10px; line-height: 1.45; }
 .sidebar-summary { padding: 18px; }

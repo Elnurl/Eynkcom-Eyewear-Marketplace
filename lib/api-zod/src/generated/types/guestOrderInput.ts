@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { FulfillmentMethod } from './fulfillmentMethod';
 import type { GuestOrderInputDeliveryArea } from './guestOrderInputDeliveryArea';
 import type { GuestOrderLineInput } from './guestOrderLineInput';
 import type { PaymentMethod } from './paymentMethod';
@@ -22,12 +23,13 @@ export interface GuestOrderInput {
      * @maxLength 40
      */
   customerPhone: string;
-  deliveryArea: GuestOrderInputDeliveryArea;
+  fulfillmentMethod?: FulfillmentMethod;
+  deliveryArea?: GuestOrderInputDeliveryArea;
   /**
      * @minLength 5
      * @maxLength 500
      */
-  deliveryAddress: string;
+  deliveryAddress?: string;
   /** @maxLength 500 */
   deliveryNote?: string;
   paymentMethod: PaymentMethod;

@@ -182,6 +182,89 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+  /orders/{orderId}/returns:
+    post:
+      operationId: createOrderReturnRequest
+      tags: [orders]
+      summary: Submit a return request to EYNƏK for one shop portion of an order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Order-Access-Token
+          in: header
+          required: false
+          schema:
+            type: string
+            minLength: 32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderReturnInput"
+      responses:
+        "201":
+          description: Return request recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerOrder"
+        "400":
+          description: Return request is not available for this shop order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Order not found or current token/session is not authorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /admin/orders/{id}/returns/{returnId}:
+    patch:
+      operationId: updateOrderReturnRequest
+      tags: [orders]
+      summary: Coordinate a buyer return request with the selling shop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: returnId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderReturnUpdate"
+      responses:
+        "200":
+          description: Updated return request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrder"
+        "400":
+          description: Return request cannot move to that status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Authentication required
+        "403":
+          description: Marketplace administrator access required
+        "404":
+          description: Return request not found
   /seller/orders:
     get:
       operationId: listSellerOrders
@@ -320,6 +403,42 @@ paths:
                 $ref: "#/components/schemas/AdminOrder"
         "400":
           description: Refund is invalid for this order or exceeds the refundable amount
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Authentication required
+        "403":
+          description: Marketplace administrator access required
+        "404":
+          description: Order not found
+  /admin/orders/{id}/settle:
+    patch:
+      operationId: recordOrderSettlement
+      tags: [orders]
+      summary: Record that a shop settlement was closed offline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderSettlementInput"
+      responses:
+        "200":
+          description: Settlement marked settled without moving money
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrder"
+        "400":
+          description: Settlement is not payable or already closed
           content:
             application/json:
               schema:
@@ -1159,7 +1278,7 @@ components:
           maxLength: 1000
     CheckoutOptions:
       type: object
-      required: [paymentMethods, cardPaymentStatus, deliveryAreas]
+      required: [paymentMethods, cardPaymentStatus, deliveryAreas, fulfillmentMethods]
       properties:
         paymentMethods:
           type: array
@@ -1173,6 +1292,13 @@ components:
           items:
             type: string
             enum: [Bakı, Abşeron]
+        fulfillmentMethods:
+          type: array
+          items:
+            $ref: "#/components/schemas/FulfillmentMethod"
+    FulfillmentMethod:
+      type: string
+      enum: [courier, store_pickup]
     PaymentMethod:
       type: string
       enum: [pay_on_delivery, card]
@@ -1198,7 +1324,7 @@ components:
           maximum: 20
     GuestOrderInput:
       type: object
-      required: [customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, paymentMethod, guestAccessToken, items]
+      required: [customerName, customerEmail, customerPhone, paymentMethod, guestAccessToken, items]
       properties:
         customerName:
           type: string
@@ -1212,6 +1338,8 @@ components:
           type: string
           minLength: 7
           maxLength: 40
+        fulfillmentMethod:
+          $ref: "#/components/schemas/FulfillmentMethod"
         deliveryArea:
           type: string
           enum: [Bakı, Abşeron]
@@ -1282,12 +1410,19 @@ components:
         settlementStatus:
           type: string
           enum: [not_eligible, payable, settled, adjusted, reversed]
+        settlementReference:
+          type: ["string", "null"]
+        settledAt:
+          type: ["string", "null"]
+          format: date-time
         refundedAzN:
           type: number
           minimum: 0
         productRefundedAzN:
           type: number
           minimum: 0
+        returnRequest:
+          $ref: "#/components/schemas/OrderReturnRequest"
     OrderTimelineEvent:
       type: object
       required: [status, label, createdAt]
@@ -1319,9 +1454,11 @@ components:
           type: ["number", "null"]
         trackingCode:
           type: ["string", "null"]
+        returnRequest:
+          $ref: "#/components/schemas/OrderReturnRequest"
     BuyerOrder:
       type: object
-      required: [id, orderNumber, status, paymentMethod, paymentStatus, customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, productSubtotalAzN, deliveryTotalAzN, totalAzN, sellerOrders, timeline, createdAt]
+      required: [id, orderNumber, status, fulfillmentMethod, paymentMethod, paymentStatus, customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, productSubtotalAzN, deliveryTotalAzN, totalAzN, sellerOrders, timeline, createdAt]
       properties:
         id:
           type: string
@@ -1329,6 +1466,8 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/OrderStatus"
+        fulfillmentMethod:
+          $ref: "#/components/schemas/FulfillmentMethod"
         paymentMethod:
           $ref: "#/components/schemas/PaymentMethod"
         paymentStatus:
@@ -1392,7 +1531,7 @@ components:
       allOf:
         - $ref: "#/components/schemas/SellerOrderSummary"
         - type: object
-          required: [orderNumber, customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, deliveryNote, paymentMethod, paymentStatus, updatedAt]
+          required: [orderNumber, customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, deliveryNote, fulfillmentMethod, paymentMethod, paymentStatus, updatedAt]
           properties:
             orderNumber:
               type: string
@@ -1409,6 +1548,8 @@ components:
               type: string
             deliveryNote:
               type: ["string", "null"]
+            fulfillmentMethod:
+              $ref: "#/components/schemas/FulfillmentMethod"
             paymentMethod:
               $ref: "#/components/schemas/PaymentMethod"
             paymentStatus:
@@ -1437,7 +1578,7 @@ components:
           maxLength: 500
     AdminOrder:
       type: object
-      required: [id, orderNumber, status, paymentMethod, paymentStatus, customerName, customerEmail, customerPhone, productSubtotalAzN, deliveryTotalAzN, totalAzN, refundedAzN, sellerOrders, createdAt]
+      required: [id, orderNumber, status, fulfillmentMethod, paymentMethod, paymentStatus, customerName, customerEmail, customerPhone, productSubtotalAzN, deliveryTotalAzN, totalAzN, refundedAzN, sellerOrders, createdAt]
       properties:
         id:
           type: string
@@ -1445,6 +1586,8 @@ components:
           type: string
         status:
           $ref: "#/components/schemas/OrderStatus"
+        fulfillmentMethod:
+          $ref: "#/components/schemas/FulfillmentMethod"
         paymentMethod:
           $ref: "#/components/schemas/PaymentMethod"
         paymentStatus:
@@ -1488,6 +1631,66 @@ components:
           minLength: 1
           maxLength: 160
         reason:
+          type: string
+          maxLength: 500
+    OrderSettlementInput:
+      type: object
+      required: [sellerOrderId, reference]
+      properties:
+        sellerOrderId:
+          type: string
+          minLength: 1
+        reference:
+          type: string
+          minLength: 1
+          maxLength: 160
+    ReturnRequestStatus:
+      type: string
+      enum: [submitted, coordinating, accepted, declined]
+    OrderReturnRequest:
+      type: object
+      required: [id, sellerOrderId, status, reason, createdAt]
+      properties:
+        id:
+          type: string
+        sellerOrderId:
+          type: string
+        status:
+          $ref: "#/components/schemas/ReturnRequestStatus"
+        reason:
+          type: string
+        note:
+          type: ["string", "null"]
+        adminNote:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    OrderReturnInput:
+      type: object
+      required: [sellerOrderId, reason]
+      properties:
+        sellerOrderId:
+          type: string
+          minLength: 1
+        reason:
+          type: string
+          minLength: 8
+          maxLength: 400
+        note:
+          type: string
+          maxLength: 500
+    OrderReturnUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [coordinating, accepted, declined]
+        adminNote:
           type: string
           maxLength: 500
     Error:

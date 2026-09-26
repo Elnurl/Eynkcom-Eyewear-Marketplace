@@ -101,8 +101,8 @@ export function HeaderSearch({ products, stores }: { products: SearchProduct[]; 
 
   return (
     <div className="nav-search-wrap" ref={rootRef}>
-      <button ref={triggerRef} type="button" className="nav-search" aria-label="Eynək və mağaza axtar" aria-expanded={open} aria-controls="header-search-panel" onClick={() => setOpen((current) => !current)} data-testid="link-search">
-        <Search size={17} /><span>Eynək və mağaza axtar</span>
+      <button ref={triggerRef} type="button" className="nav-search" aria-label="Eynək, brend və ya mağaza axtar" aria-expanded={open} aria-controls="header-search-panel" onClick={() => setOpen((current) => !current)} data-testid="link-search">
+        <span>Eynək, brend və ya mağaza axtar...</span><Search size={18} strokeWidth={2.4} />
       </button>
       {open && <>
         <button type="button" className="header-search-backdrop" onClick={() => setOpen(false)} aria-label="Axtarışı bağla" tabIndex={-1} />
