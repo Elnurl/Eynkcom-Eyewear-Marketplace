@@ -1003,6 +1003,17 @@ body { background: #f8faff; }
 .nav-actions .header-icon:hover { background: #f1f2f4; }
 .solid-icon { width: 24px; height: 24px; display: block; }
 .nav-actions .cart-count { top: 0; right: 0; background: #111317; color: #fff; }
+.help-menu { position: relative; }
+.help-trigger { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; padding: 0; background: transparent; color: #171717; font: inherit; font-size: 11px; font-weight: 700; line-height: 1; cursor: pointer; }
+.help-trigger-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #4d4d4d; color: #fff; font-size: 16px; font-weight: 700; }
+.help-panel { position: absolute; top: calc(100% + 12px); right: 0; z-index: 40; width: min(300px, calc(100vw - 24px)); padding: 16px 18px 14px; border-radius: 4px; background: #fff; box-shadow: 0 16px 48px rgba(17, 19, 23, .16); }
+.help-panel-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.help-panel-head strong { color: #171717; font-size: 18px; }
+.help-panel-close { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #111; color: #fff; cursor: pointer; }
+.help-link { display: block; padding: 13px 2px; color: #2a2a2a; font-size: 16px; font-weight: 500; }
+.help-link:hover { color: #111; }
+.help-center { min-height: 46px; display: flex; align-items: center; justify-content: center; margin-top: 8px; background: #111; color: #fff; font-size: 16px; font-weight: 700; }
+.help-center:hover { background: #000; color: #fff; }
 
 @media (min-width: 981px) {
   .nav { min-height: 72px; display: flex; align-items: center; gap: 28px; padding: 12px 0; }
@@ -1016,7 +1027,8 @@ body { background: #f8faff; }
   .nav-actions .nav-search { width: 100%; min-width: 0; min-height: 42px; justify-content: space-between; gap: 12px; padding: 0 16px 0 20px; border: 1.5px solid #1b1d22; box-shadow: none; color: #8a8f99; font-size: 14px; }
   .nav-actions .nav-search span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nav-actions .nav-search svg { flex: 0 0 auto; color: #111317; }
-  .nav-actions .header-icon { order: 3; width: 40px; height: 40px; }
+  .help-menu { order: 3; position: relative; }
+.nav-actions .header-icon { order: 3; width: 40px; height: 40px; }
   .nav-actions .cart-button { order: 4; }
   .nav-actions .header-icon--account { order: 5; }
 }

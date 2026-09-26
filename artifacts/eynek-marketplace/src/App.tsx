@@ -37,6 +37,7 @@ import SellerPanel from '@/pages/seller-panel';
 import SellerAdminPage from '@/pages/seller-admin';
 import CheckoutPage from '@/pages/checkout';
 import { LegalPage } from '@/pages/legal';
+import { HelpPage } from '@/pages/help';
 import OrderPage from '@/pages/order';
 import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
@@ -193,6 +194,57 @@ function CategoryMenu() {
   );
 }
 
+const helpLinks = [
+  { href: '/account', label: 'Sifarişimi izlə', testId: 'link-help-track' },
+  { href: '/destek#suallar', label: 'Suallar', testId: 'link-help-faq' },
+  { href: '/destek#telimat', label: 'Təlimatlar', testId: 'link-help-guides' },
+  { href: '/destek#pd', label: 'Bəbək məsafəsi — PD', testId: 'link-help-pd' },
+];
+
+function HelpMenu() {
+  const [location] = useLocation();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => setOpen(false), [location]);
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+  return (
+    <div className="help-menu" ref={rootRef}>
+      <button ref={triggerRef} type="button" className="help-trigger" aria-expanded={open} aria-controls="help-panel" onClick={() => setOpen((current) => !current)} data-testid="button-help">
+        <span className="help-trigger-mark" aria-hidden="true">?</span>
+        Dəstək
+      </button>
+      {open && (
+        <div className="help-panel" id="help-panel" role="dialog" aria-label="Dəstək" data-testid="panel-help">
+          <div className="help-panel-head">
+            <button type="button" className="help-panel-close" onClick={() => { setOpen(false); triggerRef.current?.focus(); }} aria-label="Dəstəyi bağla" data-testid="button-help-close"><X size={16} /></button>
+            <strong>Dəstək</strong>
+          </div>
+          {helpLinks.map((item) => <Link key={item.href} href={item.href} className="help-link" onClick={() => setOpen(false)} data-testid={item.testId}>{item.label}</Link>)}
+          <Link href="/destek" className="help-center" onClick={() => setOpen(false)} data-testid="link-help-center">Dəstək mərkəzi</Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: number; onMenu: () => void; menuOpen: boolean; products: Product[]; stores: Vendor[] }) {
   const [location] = useLocation();
   return (
@@ -208,6 +260,7 @@ function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: 
           </nav>
           {/* On phones the search collapses to an icon inside this group; desktop CSS lays the group out in one row. */}
           <div className="nav-actions">
+            <HelpMenu />
             <HeaderSearch products={products.map((product) => ({ id: product.id, name: product.name, vendor: product.vendor, type: product.type, shape: product.shape, color: product.color, imageUrl: product.image.startsWith('data:') || product.image.startsWith('http') ? product.image : assetUrl(product.image) }))} stores={stores} />
             <Link href="/wishlist" className="icon-button header-icon" aria-label="Seçilmişlər" data-testid="link-wishlist"><SolidIcon path={HEART_PATH} /></Link>
             <Link href="/account" className="icon-button header-icon header-icon--account" aria-label="Hesab" data-testid="link-account"><SolidIcon path={ACCOUNT_PATH} /></Link>
@@ -225,7 +278,7 @@ function Footer() {
       <div className="container footer-grid">
         <div><div className="brand"><BrandLogo /></div><p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p></div>
         <div><h3>Kəşf et</h3><Link href="/collection">Eynəklər</Link><Link href="/brands">Brendlər</Link><Link href="/stores">Mağazalar</Link></div>
-        <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/qaydalar">Qaydalar</Link><Link href="/mexfilik">Məxfilik</Link><Link href="/qaytarma">Qaytarma</Link></div>
+        <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/destek">Dəstək</Link><Link href="/qaydalar">Qaydalar</Link><Link href="/mexfilik">Məxfilik</Link><Link href="/qaytarma">Qaytarma</Link></div>
         <div><h3>Satıcılar üçün</h3><Link href="/seller"><BrandWord />-də sat</Link><Link href="/satici-muqavilesi">Satıcı müqaviləsi</Link><a href="mailto:sat@eynek.com">Bizimlə əlaqə</a></div>
       </div>
       <div className="container footer-bottom"><span>© {new Date().getFullYear()} <BrandWord /></span><span>Bakı • Azərbaycan</span></div>
@@ -776,6 +829,7 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
           </nav>
           <div className="mobile-drawer-label mobile-drawer-label--secondary">SƏNİN ÜÇÜN</div>
           <nav className="mobile-drawer-links" aria-label="Şəxsi keçidlər">
+            <Link href="/destek" onClick={onClose} data-testid="link-mobile-help">Dəstək <ChevronRight size={18} /></Link>
             <Link href="/wishlist" onClick={onClose}>Seçilmişlər <ChevronRight size={18} /></Link>
             <Link href="/cart" onClick={onClose}>Səbətim <ChevronRight size={18} /></Link>
           </nav>
@@ -925,6 +979,7 @@ function Storefront() {
         <Route path="/wishlist"><WishlistPage {...common} /></Route>
         <Route path="/cart"><CartPage items={cartItems} stores={stores} onRemove={removeFromCart} onCheckout={() => setLocation('/checkout')} /></Route>
         <Route path="/account"><AccountPage /></Route>
+        <Route path="/destek"><HelpPage /></Route>
         <Route path="/qaydalar"><LegalPage slug="qaydalar" /></Route>
         <Route path="/mexfilik"><LegalPage slug="mexfilik" /></Route>
         <Route path="/qaytarma"><LegalPage slug="qaytarma" /></Route>
