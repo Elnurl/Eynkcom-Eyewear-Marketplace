@@ -736,31 +736,6 @@ paths:
           description: Image does not belong to seller
         "500":
           description: Image could not be removed
-  /storage/public-objects/{filePath}:
-    get:
-      tags: [Storage]
-      operationId: getPublicObject
-      summary: Serve a public storage asset
-      parameters:
-        - name: filePath
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Object content
-          content:
-            "*/*":
-              schema:
-                type: string
-                format: binary
-        "404":
-          description: File not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorEnvelope"
   /storage/objects/{objectPath}:
     get:
       tags: [Storage]

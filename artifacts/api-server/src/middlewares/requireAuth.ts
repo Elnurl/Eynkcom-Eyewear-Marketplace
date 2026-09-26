@@ -22,11 +22,10 @@ export async function requireAuth(
     return;
   }
 
-  // The Replit-managed Clerk provisioner configures a custom session-token
-  // template containing userId (externalId for migrated users, native ID for
-  // new users) and email. getAuth only exposes these claims after
-  // clerkMiddleware has verified the signed session. Neither value is read
-  // from request headers or the request body.
+  // Claims come from the Clerk session token after clerkMiddleware verified
+  // its signature; nothing here is read from headers or the body. The Clerk
+  // "Customize session token" template must add `userId` and `email`
+  // (see README); a session without them is rejected.
   const claims = auth.sessionClaims as Record<string, unknown> | undefined;
   const localUserId = claims?.userId;
   if (typeof localUserId !== "string" || !localUserId) {

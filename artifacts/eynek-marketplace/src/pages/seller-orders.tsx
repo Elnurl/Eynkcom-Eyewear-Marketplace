@@ -70,6 +70,10 @@ export default function SellerOrdersPage() {
     const draft = draftFor(order);
     setError('');
     setSavedId('');
+    if (draft.status === SellerOrderUpdateStatus.confirmed && !draft.deliveryFeeAzN.trim()) {
+      setError('Təsdiqləmək üçün çatdırılma haqqını yazın. Pulsuzdursa 0 yazın.');
+      return;
+    }
     const data: SellerOrderUpdate = {
       status: draft.status,
       ...(draft.deliveryFeeAzN.trim() ? { deliveryFeeAzN: Number(draft.deliveryFeeAzN) } : {}),

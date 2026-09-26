@@ -58,11 +58,30 @@ import {
 } from '@workspace/api-client-react';
 
 const queryClient = new QueryClient();
+const CART_STORAGE_KEY = 'eynek.cart.v1';
+const WISHLIST_STORAGE_KEY = 'eynek.wishlist.v1';
+
+function readStoredIds(key: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(key) ?? '[]');
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredIds(key: string, ids: string[]): void {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(ids));
+  } catch {
+    // Private mode or full storage: keep the in-memory state only.
+  }
+}
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
 );
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL || undefined;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 function stripBase(path: string): string {
@@ -207,7 +226,7 @@ function Footer() {
       <div className="container footer-grid">
         <div><div className="brand"><BrandLogo /></div><p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p></div>
         <div><h3>Kəşf et</h3><Link href="/collection">Eynəklər</Link><Link href="/brands">Brendlər</Link><Link href="/stores">Mağazalar</Link></div>
-        <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/collection">Çatdırılma məlumatı</Link></div>
+        <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link></div>
         <div><h3>Satıcılar üçün</h3><Link href="/seller"><BrandWord />-də sat</Link><a href="mailto:sat@eynek.com">Bizimlə əlaqə</a><a href="#support">Dəstək</a></div>
       </div>
       <div className="container footer-bottom"><span>© {new Date().getFullYear()} <BrandWord /></span><span>Bakı • Azərbaycan</span></div>
@@ -351,7 +370,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
   );
 }
 
-function Filters({ filters, setFilters, open, stores }: { filters: { gender: string; material: string; type: string; maxPrice: number; size: string; seller: string }; setFilters: (filters: { gender: string; material: string; type: string; maxPrice: number; size: string; seller: string }) => void; open: boolean; stores: Vendor[] }) {
+function Filters({ filters, setFilters, open, stores, priceCeiling }: { filters: { gender: string; material: string; type: string; maxPrice: number; size: string; seller: string }; setFilters: (filters: { gender: string; material: string; type: string; maxPrice: number; size: string; seller: string }) => void; open: boolean; stores: Vendor[]; priceCeiling: number }) {
   const update = (key: keyof typeof filters, value: string | number) => setFilters({ ...filters, [key]: value });
   return (
     <aside className={`filter-panel ${open ? 'open' : ''}`}>
@@ -359,7 +378,7 @@ function Filters({ filters, setFilters, open, stores }: { filters: { gender: str
       <div className="filter-group"><div className="filter-title">Satıcı <ChevronDown size={14} /></div>{stores.map((vendor) => <label className="check-row" key={vendor.slug}><input type="radio" name="seller" checked={filters.seller === vendor.slug} onChange={() => update('seller', filters.seller === vendor.slug ? '' : vendor.slug)} />{vendor.name}</label>)}</div>
       <div className="filter-group"><div className="filter-title">Cins <ChevronDown size={14} /></div>{genders.map((item) => <label className="check-row" key={item}><input type="radio" name="gender" checked={filters.gender === item} onChange={() => update('gender', filters.gender === item ? '' : item)} />{item}</label>)}</div>
       <div className="filter-group"><div className="filter-title">Material <ChevronDown size={14} /></div>{materials.map((item) => <label className="check-row" key={item}><input type="radio" name="material" checked={filters.material === item} onChange={() => update('material', filters.material === item ? '' : item)} />{item}</label>)}</div>
-      <div className="filter-group"><div className="filter-title">Maksimum qiymət</div><input type="range" min="60" max="1000" step="10" value={filters.maxPrice} onChange={(event) => update('maxPrice', Number(event.target.value))} /><div className="range-labels"><span>60 AZN</span><span>{filters.maxPrice} AZN</span></div></div>
+      <div className="filter-group"><div className="filter-title">Maksimum qiymət</div><input type="range" min="0" max={priceCeiling} step="10" value={filters.maxPrice || priceCeiling} onChange={(event) => { const value = Number(event.target.value); update('maxPrice', value >= priceCeiling ? 0 : value); }} /><div className="range-labels"><span>0 AZN</span><span>{filters.maxPrice ? `${filters.maxPrice} AZN` : 'Limitsiz'}</span></div></div>
       <div className="filter-group"><div className="filter-title">Ölçü <ChevronDown size={14} /></div>{['S', 'M', 'L'].map((item) => <label className="check-row" key={item}><input type="radio" name="size" checked={filters.size === item} onChange={() => update('size', filters.size === item ? '' : item)} />{item} çərçivə</label>)}</div>
     </aside>
   );
@@ -375,7 +394,8 @@ function Collection({ products, stores, likedIds, onFavorite, onQuickView, onTry
   const [focused, setFocused] = useState(false);
   const [sort, setSort] = useState('Tövsiyə olunan');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({ gender: '', material: '', type: '', maxPrice: 1000, size: '', seller: '' });
+  const [filters, setFilters] = useState({ gender: '', material: '', type: '', maxPrice: 0, size: '', seller: '' });
+  const priceCeiling = useMemo(() => Math.max(100, Math.ceil(Math.max(0, ...products.map((product) => product.price)) / 10) * 10), [products]);
   const shape = params.get('shape') ?? '';
   const queryType = params.get('type');
   const filtered = useMemo(() => {
@@ -384,21 +404,21 @@ function Collection({ products, stores, likedIds, onFavorite, onQuickView, onTry
       const matchesQuery = haystack.includes(query.toLowerCase());
       const matchesShape = !shape || product.shape.toLowerCase() === shape.toLowerCase();
       const matchesType = filters.type ? product.type === filters.type : queryType === 'sunglasses' ? product.type === 'Gün eynəyi' : queryType === 'optical' ? product.type === 'Optik çərçivə' : true;
-      return matchesQuery && matchesShape && matchesType && (!filters.size || product.size.startsWith(filters.size)) && (!filters.seller || product.vendorSlug === filters.seller) && (!filters.gender || product.gender === filters.gender) && (!filters.material || product.material === filters.material) && product.price <= filters.maxPrice;
+      return matchesQuery && matchesShape && matchesType && (!filters.size || product.size.startsWith(filters.size)) && (!filters.seller || product.vendorSlug === filters.seller) && (!filters.gender || product.gender === filters.gender) && (!filters.material || product.material === filters.material) && (!filters.maxPrice || product.price <= filters.maxPrice);
     });
     if (sort === 'Qiymət: aşağıdan yuxarı') return [...list].sort((a, b) => a.price - b.price);
     if (sort === 'Qiymət: yuxarıdan aşağı') return [...list].sort((a, b) => b.price - a.price);
     if (sort === 'Ada görə') return [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
   }, [products, filters, query, queryType, shape, sort]);
-  const clearFilters = () => { setFilters({ gender: '', material: '', type: '', maxPrice: 1000, size: '', seller: '' }); setQuery(''); setLocation('/collection'); };
+  const clearFilters = () => { setFilters({ gender: '', material: '', type: '', maxPrice: 0, size: '', seller: '' }); setQuery(''); setLocation('/collection'); };
   const suggestion = (value: string) => { setQuery(value); setFocused(false); };
   return (
     <>
       <main className="collection-page"><div className="container">
         <div className="collection-intro"><div><div className="eyebrow">Shop</div><h1>Eynəyini<br />burada tap.</h1></div><p>Təsdiqlənmiş optik mağazaların məhsullarını marka, model, forma, satıcı və ölçü ilə axtar.</p></div>
         <div className="collection-tools"><div className="search-box"><Search size={16} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setFocused(true)} placeholder="Eynək, marka və ya model axtar..." data-testid="input-search-products" />{focused && <div className="search-suggestions"><h4>Tez axtarış</h4><div className="suggestion-row"><button onClick={() => suggestion('Gün eynəyi')} data-testid="button-suggestion-sunglasses">Gün eynəyi</button><button onClick={() => suggestion('Aviator')} data-testid="button-suggestion-aviator">Aviator</button><button onClick={() => suggestion('Optika')} data-testid="button-suggestion-optika">Optika</button></div><h4 style={{ marginTop: 16 }}>Formalar</h4><div className="suggestion-row">{shapes.slice(0, 4).map((item) => <button key={item} onClick={() => suggestion(item)}>{item}</button>)}</div></div>}</div><button className="btn btn-secondary filter-toggle" onClick={() => setFilterOpen(!filterOpen)} data-testid="button-toggle-filters"><SlidersHorizontal size={14} /> Filtrlər</button><select className="select-control" value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sıralama" data-testid="select-sort"><option>Tövsiyə olunan</option><option>Qiymət: aşağıdan yuxarı</option><option>Qiymət: yuxarıdan aşağı</option><option>Ada görə</option></select></div>
-        <div className="catalog-layout"><Filters filters={filters} setFilters={setFilters} open={filterOpen} stores={stores} /><section><div className="catalog-head"><span><strong>{filtered.length}</strong> model</span><button className="text-link" onClick={clearFilters} data-testid="button-clear-filters">Təmizlə <X size={12} /></button></div><div className="product-grid">{filtered.length ? filtered.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Search size={22} /><h3>Bu axtarışa uyğun eynək tapılmadı.</h3><p>Axtarışı və ya filtrləri bir az yumşalt.</p><button className="btn btn-secondary" onClick={clearFilters} data-testid="button-empty-reset">Filtrləri sıfırla</button></div>}</div></section></div>
+        <div className="catalog-layout"><Filters filters={filters} setFilters={setFilters} open={filterOpen} stores={stores} priceCeiling={priceCeiling} /><section><div className="catalog-head"><span><strong>{filtered.length}</strong> model</span><button className="text-link" onClick={clearFilters} data-testid="button-clear-filters">Təmizlə <X size={12} /></button></div><div className="product-grid">{filtered.length ? filtered.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Search size={22} /><h3>Bu axtarışa uyğun eynək tapılmadı.</h3><p>Axtarışı və ya filtrləri bir az yumşalt.</p><button className="btn btn-secondary" onClick={clearFilters} data-testid="button-empty-reset">Filtrləri sıfırla</button></div>}</div></section></div>
       </div></main><Footer />
     </>
   );
@@ -548,7 +568,7 @@ function SellerPage() {
   const latestApplication = applications[0];
   const statusText: Record<string, string> = { pending: 'Gözləmədə', approved: 'Təsdiqləndi', rejected: 'Rədd edildi', needs_changes: 'Dəyişiklik tələb olunur' };
   const hasPendingOrApproved = applications.some((application) => application.status === 'pending' || application.status === 'approved');
-  return <><main className="seller-page"><div className="container form-shell"><div className="seller-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start', maxWidth: '100%' }}><div style={{ maxWidth: '700px' }}><div className="eyebrow">Satıcı onboarding</div><h1><BrandWord />-də sat.</h1><p>Mağazanızı <BrandWord />-ə qoşun və məhsullarınızı Azərbaycanda daha çox müştəriyə çatdırın. Müraciətlər saxlanılır və təsdiqdən sonra satıcı hesabı aktivləşdirilir.</p></div><Link href="/seller-login" className="btn btn-secondary" data-testid="link-seller-login">Mövcud satıcı? Daxil ol</Link></div>{myApplications.isSuccess && !latestApplication && <p data-testid="status-my-applications-loaded">Hələ müraciətiniz yoxdur.</p>}{(sent || latestApplication) && <div className="form-success" data-testid="status-seller-application"><strong>Müraciət statusu: {statusText[latestApplication?.status ?? 'pending']}</strong>{latestApplication?.reviewNotes && <p>{latestApplication.reviewNotes}</p>}{latestApplication?.status === 'approved' && <p>Satıcı hesabınız aktivdir. <Link href="/seller-panel">Panelə keç</Link></p>}{sent && <p>Məlumatlarınız nəzərdən keçirilmək üçün saxlanıldı.</p>}</div>}{!hasPendingOrApproved && !sent && <form className="seller-form" onSubmit={submit} noValidate>{field('storeName', 'Mağaza adı', true)}{field('owner', 'Məsul şəxs', true)}{field('phone', 'Telefon', true, 'tel')}{field('email', 'E-poçt', true, 'email')}<div className="field full"><label htmlFor="seller-business">Biznes haqqında *</label><textarea id="seller-business" value={form.business} onChange={(event) => update('business', event.target.value)} aria-invalid={Boolean(errors.business)} data-testid="input-seller-business" />{errors.business && <span className="field-error">{errors.business}</span>}</div>{field('tax', 'VÖEN (əgər varsa)')}{field('address', 'Mağaza ünvanı', true)}{field('instagram', 'Instagram')}{field('website', 'Veb-sayt')}{field('categories', 'Məhsul kateqoriyaları', true)}<div className="field full"><span className="field-help">Müraciət zamanı mağaza şəkilləri və tələb olunan sənədlər növbəti mərhələdə komanda tərəfindən istənilə bilər.</span></div>{submitError && <div className="field-error" role="alert">{submitError}</div>}<div className="form-actions"><button className="btn" type="submit" disabled={createApplication.isPending} data-testid="button-submit-seller">{createApplication.isPending ? 'Göndərilir...' : 'Müraciəti göndər'} <ArrowRight size={14} /></button><span className="field-help">* məcburi sahələr</span></div></form>}</div></main><Footer /></>;
+  return <><main className="seller-page"><div className="container form-shell"><div className="seller-header" style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', justifyContent: 'space-between', alignItems: 'flex-start', maxWidth: '100%' }}><div style={{ maxWidth: '700px' }}><div className="eyebrow">Satıcı onboarding</div><h1><BrandWord />-də sat.</h1><p>Mağazanızı <BrandWord />-ə qoşun və məhsullarınızı Bakı və Abşerondakı daha çox müştəriyə çatdırın. Müraciətlər saxlanılır və təsdiqdən sonra satıcı hesabı aktivləşdirilir.</p></div><Link href="/seller-login" className="btn btn-secondary" data-testid="link-seller-login">Mövcud satıcı? Daxil ol</Link></div>{myApplications.isSuccess && !latestApplication && <p data-testid="status-my-applications-loaded">Hələ müraciətiniz yoxdur.</p>}{(sent || latestApplication) && <div className="form-success" data-testid="status-seller-application"><strong>Müraciət statusu: {statusText[latestApplication?.status ?? 'pending']}</strong>{latestApplication?.reviewNotes && <p>{latestApplication.reviewNotes}</p>}{latestApplication?.status === 'approved' && <p>Satıcı hesabınız aktivdir. <Link href="/seller-panel">Panelə keç</Link></p>}{sent && <p>Məlumatlarınız nəzərdən keçirilmək üçün saxlanıldı.</p>}</div>}{!hasPendingOrApproved && !sent && <form className="seller-form" onSubmit={submit} noValidate>{field('storeName', 'Mağaza adı', true)}{field('owner', 'Məsul şəxs', true)}{field('phone', 'Telefon', true, 'tel')}{field('email', 'E-poçt', true, 'email')}<div className="field full"><label htmlFor="seller-business">Biznes haqqında *</label><textarea id="seller-business" value={form.business} onChange={(event) => update('business', event.target.value)} aria-invalid={Boolean(errors.business)} data-testid="input-seller-business" />{errors.business && <span className="field-error">{errors.business}</span>}</div>{field('tax', 'VÖEN (əgər varsa)')}{field('address', 'Mağaza ünvanı', true)}{field('instagram', 'Instagram')}{field('website', 'Veb-sayt')}{field('categories', 'Məhsul kateqoriyaları', true)}<div className="field full"><span className="field-help">Müraciət zamanı mağaza şəkilləri və tələb olunan sənədlər növbəti mərhələdə komanda tərəfindən istənilə bilər.</span></div>{submitError && <div className="field-error" role="alert">{submitError}</div>}<div className="form-actions"><button className="btn" type="submit" disabled={createApplication.isPending} data-testid="button-submit-seller">{createApplication.isPending ? 'Göndərilir...' : 'Müraciəti göndər'} <ArrowRight size={14} /></button><span className="field-help">* məcburi sahələr</span></div></form>}</div></main><Footer /></>;
 }
 
 function WishlistPage({ products, likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
@@ -777,9 +797,11 @@ function Storefront() {
   const [location, setLocation] = useLocation();
   const productsQuery = useListProducts();
   const storesQuery = useListStores();
+  const productRows = Array.isArray(productsQuery.data) ? productsQuery.data : [];
+  const storeRows = Array.isArray(storesQuery.data) ? storesQuery.data : [];
   const allProducts = useMemo(
     () =>
-      (productsQuery.data ?? []).map((product: PublicProduct): Product => ({
+      productRows.map((product: PublicProduct): Product => ({
         id: product.id,
         name: product.name,
         image: product.frontImage,
@@ -801,11 +823,11 @@ function Storefront() {
         isAvailable: product.isAvailable,
         location: product.location,
       })),
-    [productsQuery.data],
+    [productRows],
   );
   const stores = useMemo(
     () =>
-      (storesQuery.data ?? []).map((store: SellerStore): Vendor => ({
+      storeRows.map((store: SellerStore): Vendor => ({
         slug: store.slug,
         name: store.name,
         initials: store.initials,
@@ -814,11 +836,25 @@ function Storefront() {
         description: store.description,
         count: store.productCount,
       })),
-    [storesQuery.data],
+    [storeRows],
   );
 
-  const [cartItems, setCartItems] = useState<Product[]>([]);
-  const [likedIds, setLikedIds] = useState<Set<number | string>>(new Set());
+  const [cartIds, setCartIds] = useState<string[]>(() => readStoredIds(CART_STORAGE_KEY));
+  const [likedIds, setLikedIds] = useState<Set<number | string>>(() => new Set(readStoredIds(WISHLIST_STORAGE_KEY)));
+  useEffect(() => writeStoredIds(CART_STORAGE_KEY, cartIds), [cartIds]);
+  useEffect(() => writeStoredIds(WISHLIST_STORAGE_KEY, [...likedIds].map(String)), [likedIds]);
+  const productsById = useMemo(() => new Map(allProducts.map((product) => [String(product.id), product])), [allProducts]);
+  // Cart holds ids only; price and availability always come from the live catalog.
+  const cartItems = useMemo(
+    () => cartIds.flatMap((id) => { const product = productsById.get(id); return product ? [product] : []; }),
+    [cartIds, productsById],
+  );
+  const addUnits = (product: Product, quantity: number) => setCartIds((current) => {
+    const id = String(product.id);
+    const inCart = current.filter((item) => item === id).length;
+    const room = Math.max(0, Math.min(product.stock, 10) - inCart);
+    return [...current, ...Array.from({ length: Math.min(room, Math.max(1, quantity)) }, () => id)];
+  });
   const [quickProduct, setQuickProduct] = useState<Product | null>(null);
   const [tryOnProduct, setTryOnProduct] = useState<Product | null>(null);
   const [toast, setToast] = useState('');
@@ -856,13 +892,13 @@ function Storefront() {
   }, [cartItems]);
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id)) { next.delete(id); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
-  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (!product.isAvailable) { showToast('Bu məhsul hazırda stokda yoxdur'); return; } setCartItems((current) => [...current, ...Array.from({ length: Math.min(product.stock, 10, Math.max(1, quantity)) }, () => product)]); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
+  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (!product.isAvailable) { showToast('Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
   const buyNow = (product: Product, quantity = 1) => {
     if (!product.isAvailable) { showToast('Bu məhsul hazırda stokda yoxdur'); return; }
-    setCartItems((current) => [...current, ...Array.from({ length: Math.min(product.stock, 10, Math.max(1, quantity)) }, () => product)]);
+    addUnits(product, quantity);
     setLocation('/checkout');
   };
-  const removeFromCart = (id: number | string) => setCartItems((current) => { const index = current.findIndex((item) => item.id === id); return index === -1 ? current : current.filter((_, itemIndex) => itemIndex !== index); });
+  const removeFromCart = (id: number | string) => setCartIds((current) => { const index = current.indexOf(String(id)); return index === -1 ? current : current.filter((_, itemIndex) => itemIndex !== index); });
   const common: CommonProps = {
     products: allProducts,
     stores,
@@ -873,7 +909,7 @@ function Storefront() {
   };
   const catalogError = productsQuery.error || storesQuery.error;
   if (location === '/checkout') {
-    return <CheckoutPage items={checkoutItems} onClearCart={() => setCartItems([])} />;
+    return <CheckoutPage items={checkoutItems} onClearCart={() => setCartIds([])} />;
   }
   if (location.startsWith('/order/')) return <OrderPage />;
   return (

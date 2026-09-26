@@ -1,4 +1,3 @@
-import { Readable } from "node:stream";
 import { and, eq } from "drizzle-orm";
 import { db, productImageUploadsTable, sellerStoresTable } from "@workspace/db";
 import {
@@ -8,12 +7,8 @@ import {
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
 import { Router, type IRouter, type Request, type Response } from "express";
-import {
-  ObjectNotFoundError,
-  ObjectStorageService,
-} from "../lib/objectStorage";
-import { getObjectAclPolicy } from "../lib/objectAcl";
-import { removeUnusedImage } from "../lib/productImages";
+import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import { isPublishedImage, removeUnusedImage } from "../lib/productImages";
 import { requireUserEmail } from "./access";
 import { requireAuth } from "../middlewares/requireAuth";
 
@@ -44,8 +39,7 @@ router.post(
     }
 
     try {
-      const uploadURL = await storage.getObjectEntityUploadURL();
-      const objectPath = storage.normalizeObjectEntityPath(uploadURL);
+      const { uploadURL, objectPath } = await storage.createUpload(parsed.data.contentType);
       await db.insert(productImageUploadsTable).values({
         objectPath,
         sellerId: store.id,
@@ -82,6 +76,8 @@ router.post(
     }
 
     try {
+      // The ticket binds the object to this shop and account; a caller cannot
+      // finalize an upload issued to someone else.
       const [ticket] = await db.select().from(productImageUploadsTable)
         .where(and(
           eq(productImageUploadsTable.objectPath, parsed.data.objectPath),
@@ -92,34 +88,27 @@ router.post(
         res.status(403).json({ error: "Yükləmə icazəsi tapılmadı və ya vaxtı bitib." });
         return;
       }
-      const file = await storage.getObjectEntityFile(ticket.objectPath);
-      const [metadata] = await file.getMetadata();
-      if (Number(metadata.size) !== ticket.size || metadata.contentType !== ticket.contentType) {
+      const object = await storage.stat(ticket.objectPath);
+      if (object.size !== ticket.size || object.contentType !== ticket.contentType) {
         res.status(400).json({ error: "Yüklənmiş şəklin formatı və ya ölçüsü uyğun deyil." });
         return;
       }
-      const [header] = await file.download({ start: 0, end: 7 });
+      const header = await storage.readHeader(ticket.objectPath, 8);
       const isJpeg = header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
       const isPng = header.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
       if (!(ticket.contentType === "image/jpeg" ? isJpeg : isPng)) {
         res.status(400).json({ error: "Fayl JPG və ya PNG şəkli deyil." });
         return;
       }
-      // A caller must not be able to finalize an object owned by another account.
-      const policy = await getObjectAclPolicy(file);
-      if (policy && policy.owner !== req.dbUser!.id) {
-        res.status(403).json({ error: "Bu şəkil başqa hesaba məxsusdur." });
+      await db.update(productImageUploadsTable).set({ finalizedAt: new Date() })
+        .where(eq(productImageUploadsTable.objectPath, ticket.objectPath));
+      req.log.info({ objectPath: ticket.objectPath, owner: req.dbUser!.id }, "Product image upload finalized");
+      res.json(CompleteUploadResponse.parse({ objectPath: ticket.objectPath }));
+    } catch (error) {
+      if (error instanceof ObjectNotFoundError) {
+        res.status(400).json({ error: "Şəkil storage-ə yüklənməyib." });
         return;
       }
-      const objectPath = await storage.setObjectEntityAclPolicy(
-        ticket.objectPath,
-        { owner: req.dbUser!.id, visibility: "public" },
-      );
-      await db.update(productImageUploadsTable).set({ finalizedAt: new Date() })
-        .where(eq(productImageUploadsTable.objectPath, objectPath));
-      req.log.info({ objectPath, owner: req.dbUser!.id }, "Product image upload finalized");
-      res.json(CompleteUploadResponse.parse({ objectPath }));
-    } catch (error) {
       req.log.error({ err: error }, "Failed to finalize product image upload");
       res.status(500).json({ error: "Şəkil yükləməsi tamamlana bilmədi." });
     }
@@ -154,36 +143,22 @@ router.post("/storage/uploads/discard", requireAuth, async (req: Request, res: R
 });
 
 router.get(
-  "/storage/public-objects/*filePath",
-  async (req: Request, res: Response): Promise<void> => {
-    const raw = req.params.filePath;
-    const filePath = Array.isArray(raw) ? raw.join("/") : raw;
-    const file = await storage.searchPublicObject(filePath);
-    if (!file) {
-      res.status(404).json({ error: "Fayl tapılmadı." });
-      return;
-    }
-    await streamFile(file, res);
-  },
-);
-
-router.get(
   "/storage/objects/*path",
   async (req: Request, res: Response): Promise<void> => {
+    const raw = req.params.path;
+    const objectPath = `/objects/${Array.isArray(raw) ? raw.join("/") : raw}`;
+    if (!(await isPublishedImage(objectPath))) {
+      res.sendStatus(404);
+      return;
+    }
     try {
-      const raw = req.params.path;
-      const path = Array.isArray(raw) ? raw.join("/") : raw;
-      if (!/^uploads\/[a-f0-9-]{36}$/.test(path)) {
-        res.sendStatus(404);
-        return;
-      }
-      const file = await storage.getObjectEntityFile(`/objects/${path}`);
-      const policy = await getObjectAclPolicy(file);
-      if (policy?.visibility !== "public") {
-        res.sendStatus(404);
-        return;
-      }
-      await streamFile(file, res);
+      const object = await storage.open(objectPath);
+      res.setHeader("Content-Type", object.contentType);
+      if (object.contentLength !== undefined) res.setHeader("Content-Length", String(object.contentLength));
+      // Object keys are random UUIDs and never rewritten, so they can be cached for long.
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      object.body.on("error", () => res.destroy());
+      object.body.pipe(res);
     } catch (error) {
       if (error instanceof ObjectNotFoundError) {
         res.status(404).json({ error: "Şəkil tapılmadı." });
@@ -193,19 +168,5 @@ router.get(
     }
   },
 );
-
-async function streamFile(
-  file: Awaited<ReturnType<ObjectStorageService["getObjectEntityFile"]>>,
-  res: Response,
-): Promise<void> {
-  const response = await storage.downloadObject(file);
-  res.status(response.status);
-  response.headers.forEach((value, key) => res.setHeader(key, value));
-  if (!response.body) {
-    res.end();
-    return;
-  }
-  Readable.fromWeb(response.body as ReadableStream<Uint8Array>).pipe(res);
-}
 
 export default router;

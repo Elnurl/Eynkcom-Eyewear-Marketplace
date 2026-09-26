@@ -177,8 +177,9 @@ router.patch("/seller/products/:id", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  const publicContentChanged = Object.keys(parsed.data).some(
-    (key) => key !== "stock" && key !== "status",
+  const current = existing as Record<string, unknown>;
+  const publicContentChanged = Object.entries(parsed.data).some(
+    ([key, value]) => key !== "stock" && key !== "status" && value !== current[key],
   );
   const [product] = await db
     .update(sellerProductsTable)

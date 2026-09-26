@@ -110,7 +110,7 @@ export default function CheckoutPage({ items, onClearCart }: CheckoutPageProps) 
           <form className="commerce-grid" onSubmit={submit}>
             <div>
               <section className="commerce-card commerce-card-pad">
-                <div className="commerce-card-heading"><div><h2>Əlaqə məlumatları</h2><p>Sifarişin vəziyyəti bu məlumatlarla sizə göndəriləcək.</p></div><ShieldCheck size={19} color="#5b719a" /></div>
+                <div className="commerce-card-heading"><div><h2>Əlaqə məlumatları</h2><p>Mağaza və ya EYNƏK sifarişlə bağlı bu məlumatlarla sizinlə əlaqə saxlayacaq.</p></div><ShieldCheck size={19} color="#5b719a" /></div>
                 <div className="commerce-form">
                   <div className="commerce-field"><label htmlFor="customerName">Ad və soyad</label><input id="customerName" data-testid="input-customer-name" required minLength={2} value={form.customerName} onChange={(event) => update('customerName', event.target.value)} /></div>
                   <div className="commerce-field"><label htmlFor="customerPhone">Telefon</label><input id="customerPhone" data-testid="input-customer-phone" required minLength={7} type="tel" placeholder="+994 50 000 00 00" value={form.customerPhone} onChange={(event) => update('customerPhone', event.target.value)} /></div>

@@ -2,13 +2,9 @@
  * Clerk Frontend API Proxy Middleware
  *
  * Proxies Clerk Frontend API requests through your domain, enabling Clerk
- * authentication on custom domains and .replit.app deployments without
- * requiring CNAME DNS configuration.
- *
- * AUTH CONFIGURATION: To manage users, enable/disable login providers
- * (Google, GitHub, etc.), change app branding, or configure OAuth credentials,
- * use the Auth pane in the workspace toolbar. There is no external Clerk
- * dashboard — all auth configuration is done through the Auth pane.
+ * authentication on a custom domain without clerk.<domain> CNAME records.
+ * The same URL (https://<domain>/api/__clerk) must be set as the Proxy URL
+ * in the Clerk dashboard and as VITE_CLERK_PROXY_URL for the storefront.
  *
  * IMPORTANT:
  * - Only active in production (Clerk proxying doesn't work for dev instances)
@@ -92,7 +88,7 @@ export function clerkProxyMiddleware(): RequestHandler {
       },
       // Clerk's dynamic Frontend API responses (/v1/environment, /v1/client,
       // JWKS, ...) arrive without a Content-Length, so relaying them would use
-      // Transfer-Encoding: chunked — which the deployment edge (Cloud Run)
+      // Transfer-Encoding: chunked — which some hosting edges
       // rejects, turning the app's 200 into a 500. Buffer only those so they can
       // be re-sent with a Content-Length; the body is forwarded untouched so
       // Content-Encoding is preserved. Length-known responses (e.g. /npm/*

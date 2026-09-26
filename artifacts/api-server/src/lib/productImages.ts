@@ -1,25 +1,34 @@
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, isNotNull, or } from "drizzle-orm";
 import { db, productImageUploadsTable, sellerProductsTable } from "@workspace/db";
-import { getObjectAclPolicy } from "./objectAcl";
-import { ObjectStorageService } from "./objectStorage";
+import { ObjectNotFoundError, ObjectStorageService } from "./objectStorage";
 import { logger } from "./logger";
 
 const storage = new ObjectStorageService();
 export const isUploadedImage = (path: string) => path.startsWith("/objects/");
+export const UPLOADED_IMAGE_PATH = /^\/objects\/uploads\/[a-f0-9-]{36}$/;
 
 export async function imageBelongsToSeller(path: string, sellerId: string): Promise<boolean> {
-  if (!/^\/objects\/uploads\/[a-f0-9-]{36}$/.test(path)) return false;
+  if (!UPLOADED_IMAGE_PATH.test(path)) return false;
   const [ticket] = await db.select().from(productImageUploadsTable)
     .where(and(eq(productImageUploadsTable.objectPath, path), eq(productImageUploadsTable.sellerId, sellerId)))
     .limit(1);
   if (!ticket?.finalizedAt) return false;
   try {
-    const file = await storage.getObjectEntityFile(path);
-    const policy = await getObjectAclPolicy(file);
-    return policy?.owner === ticket.ownerId && policy.visibility === "public";
+    await storage.stat(path);
+    return true;
   } catch {
     return false;
   }
+}
+
+/** Only finalized uploads are publicly readable. */
+export async function isPublishedImage(path: string): Promise<boolean> {
+  if (!UPLOADED_IMAGE_PATH.test(path)) return false;
+  const [ticket] = await db.select({ objectPath: productImageUploadsTable.objectPath })
+    .from(productImageUploadsTable)
+    .where(and(eq(productImageUploadsTable.objectPath, path), isNotNull(productImageUploadsTable.finalizedAt)))
+    .limit(1);
+  return Boolean(ticket);
 }
 
 export async function removeUnusedImage(path: string, sellerId: string): Promise<void> {
@@ -33,15 +42,15 @@ export async function removeUnusedImage(path: string, sellerId: string): Promise
     .limit(1);
   if (reference) return;
   try {
-    const file = await storage.getObjectEntityFile(path);
-    const policy = await getObjectAclPolicy(file);
-    if (policy && policy.owner !== ticket.ownerId) throw new Error("Object owner mismatch");
-    if (!policy && ticket.finalizedAt) throw new Error("Missing object owner");
-    await file.delete();
+    try {
+      await storage.delete(path);
+    } catch (error) {
+      if (!(error instanceof ObjectNotFoundError)) throw error;
+    }
     await db.delete(productImageUploadsTable)
       .where(and(eq(productImageUploadsTable.objectPath, path), eq(productImageUploadsTable.sellerId, sellerId)));
   } catch (error) {
-    // Keep the ticket for a later retry, rather than deleting an unverified object.
+    // Keep the ticket for a later retry, rather than losing track of the object.
     logger.error({ err: error, objectPath: path }, "Could not remove unused product image");
     throw error;
   }

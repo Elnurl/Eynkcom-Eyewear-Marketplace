@@ -1113,16 +1113,6 @@ export const DiscardUploadResponse = zod.void()
 
 
 /**
- * @summary Serve a public storage asset
- */
-export const GetPublicObjectParams = zod.object({
-  "filePath": zod.coerce.string()
-})
-
-export const GetPublicObjectResponse = zod.unknown()
-
-
-/**
  * @summary Serve an uploaded product object
  */
 export const GetStorageObjectParams = zod.object({

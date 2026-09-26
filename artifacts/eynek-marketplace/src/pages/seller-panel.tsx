@@ -5,7 +5,7 @@ import { useAuth } from '@clerk/react';
 import { 
   LogOut, Plus, Search, MoreVertical, Edit2, Trash2, 
   Image as ImageIcon, ArrowLeft, Store, Settings, 
-  Package, LayoutDashboard, X, Check, AlertCircle
+  Package, LayoutDashboard, X, Check, AlertCircle, Truck
 } from 'lucide-react';
 import { useSellerWorkspace, type SellerProduct, type SellerProductInput } from '@/hooks/use-seller-workspace';
 import { BrandLogo } from '@/components/brand-logo';
@@ -169,6 +169,9 @@ export default function SellerPanel() {
           >
             <Settings size={18} /> Mağaza məlumatları
           </button>
+          <Link href="/seller-orders" className="seller-nav-item" data-testid="nav-orders">
+            <Truck size={18} /> Sifarişlər
+          </Link>
         </nav>
 
         <div className="seller-sidebar-footer">
