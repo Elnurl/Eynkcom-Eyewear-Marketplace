@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 import { signOutAndGo, useAuthSession, useClearQueriesOnUserChange } from '@/lib/auth-client';
 import {
   ArrowRight,
+  Bell,
   Camera,
   Check,
   ChevronDown,
@@ -245,6 +246,68 @@ function HelpMenu() {
   );
 }
 
+function NotificationMenu() {
+  const [location] = useLocation();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const { isLoaded, isSignedIn } = useAuthSession();
+  const orders = useListAccountOrders({
+    query: {
+      queryKey: getListAccountOrdersQueryKey(),
+      enabled: isLoaded && isSignedIn,
+      retry: false,
+    },
+  });
+  const notes = useMemo(() => (orders.data ?? [])
+    .map((order) => {
+      const latest = order.timeline[order.timeline.length - 1];
+      if (!latest) return null;
+      return { id: order.id, orderNumber: order.orderNumber, label: latest.label, at: latest.createdAt };
+    })
+    .filter((item): item is { id: string; orderNumber: string; label: string; at: string } => Boolean(item))
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, 6), [orders.data]);
+  useEffect(() => setOpen(false), [location]);
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+  return (
+    <div className="notice-menu" ref={rootRef}>
+      <button ref={triggerRef} type="button" className="icon-button header-icon notice-trigger" aria-expanded={open} aria-controls="notice-panel" aria-label="Bildirişlər" onClick={() => setOpen((current) => !current)} data-testid="button-notices">
+        <Bell size={22} strokeWidth={1.8} />
+        {isSignedIn && notes.length > 0 && <span className="notice-dot" />}
+      </button>
+      {open && (
+        <div className="notice-panel" id="notice-panel" role="dialog" aria-label="Bildirişlər" data-testid="panel-notices">
+          <strong>Bildirişlər</strong>
+          {!isSignedIn ? <p>Sifariş xəbərləri hesabla açılır. <Link href="/sign-in?redirect_url=%2F" onClick={() => setOpen(false)}>Daxil ol</Link></p> : orders.isLoading ? <p>Yüklənir...</p> : notes.length ? notes.map((note) => (
+            <Link key={note.id} href={`/order/${note.id}`} className="notice-item" onClick={() => setOpen(false)} data-testid={`link-notice-${note.id}`}>
+              <span>{note.label}</span>
+              <small>{note.orderNumber} · {dateLabel(note.at)}</small>
+            </Link>
+          )) : <p>Yeni bildiriş yoxdur.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: number; onMenu: () => void; menuOpen: boolean; products: Product[]; stores: Vendor[] }) {
   const [location] = useLocation();
   return (
@@ -262,6 +325,7 @@ function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: 
           <div className="nav-actions">
             <HelpMenu />
             <HeaderSearch products={products.map((product) => ({ id: product.id, name: product.name, vendor: product.vendor, type: product.type, shape: product.shape, color: product.color, imageUrl: product.image.startsWith('data:') || product.image.startsWith('http') ? product.image : assetUrl(product.image) }))} stores={stores} />
+            <NotificationMenu />
             <Link href="/wishlist" className="icon-button header-icon" aria-label="Seçilmişlər" data-testid="link-wishlist"><SolidIcon path={HEART_PATH} /></Link>
             <Link href="/account" className="icon-button header-icon header-icon--account" aria-label="Hesab" data-testid="link-account"><SolidIcon path={ACCOUNT_PATH} /></Link>
             <Link href="/cart" className="icon-button header-icon cart-button" aria-label="Səbət" data-testid="link-cart"><SolidIcon path={CART_PATH} />{cartCount > 0 && <span className="cart-count">{cartCount}</span>}</Link>
