@@ -357,7 +357,19 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
             )}
           </div>
         </section>
-        <section className="section" style={{ paddingTop: 0 }}><div className="container seller-banner"><h2>Mağazanızı <span className="banner-brand-word"><BrandWord />-ə</span> gətirin.</h2><Link href="/seller" className="btn" data-testid="link-home-seller"><BrandWord />-də sat <ArrowRight size={14} /></Link></div></section>
+        <section className="section" style={{ paddingTop: 0 }}>
+          <div className="container">
+            <div className="seller-banner">
+              <div className="seller-banner-copy">
+                <div className="seller-banner-kicker">Satıcılar üçün</div>
+                <h2>Mağazanı <span className="banner-brand-word"><BrandWord /></span>.com-da aç, daha çox alıcıya çat</h2>
+                <p>Məhsullarını yerləşdir, sifarişlərini idarə et və mağazanı Bakı və Abşeronda tanıt.</p>
+                <Link href="/seller" className="btn" data-testid="link-home-seller">Satıcı ol <ArrowRight size={14} /></Link>
+              </div>
+              <Store className="seller-banner-mark" size={78} strokeWidth={1.35} aria-hidden="true" />
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </>

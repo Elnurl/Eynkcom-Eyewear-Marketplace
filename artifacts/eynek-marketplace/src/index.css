@@ -156,10 +156,17 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .feature-card .btn-secondary { border-color: rgba(255,255,255,.32); color: var(--white); }
 .feature-card .btn-secondary:hover { background: rgba(255,255,255,.1); }
 .feature-card:last-child .btn { background: var(--white); color: var(--navy); border-color: var(--white); }
-.seller-banner { display: flex; align-items: center; justify-content: space-between; gap: 25px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 28px 0; }
-.seller-banner h2 { margin: 0; color: var(--navy); font-size: 25px; letter-spacing: -.045em; }
-.banner-brand-word { margin-inline: .17em .2em; white-space: nowrap; }
-.seller-banner .btn .brand-word img { filter: brightness(0) invert(1); }
+.seller-banner { display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 28px 32px; border-radius: 18px; background: #e8e6e1; }
+.seller-banner-copy { display: grid; justify-items: start; gap: 12px; max-width: 640px; }
+.seller-banner-kicker { color: #8d8983; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.seller-banner h2 { margin: 0; color: #171717; font-size: clamp(26px, 3vw, 34px); font-weight: 800; line-height: 1.15; letter-spacing: -.045em; }
+.seller-banner p { margin: 0; color: #6f6b66; font-size: 13px; line-height: 1.5; }
+.seller-banner .btn { min-height: 40px; margin-top: 6px; border-color: #1c1c1c; border-radius: 10px; background: #1c1c1c; }
+.seller-banner .btn:hover { background: #111; }
+.seller-banner .brand-word { vertical-align: -.12em; }
+.seller-banner .brand-word img { height: .78em; }
+.banner-brand-word { margin-inline: .08em .02em; white-space: nowrap; }
+.seller-banner-mark { flex: none; color: #b7b3ac; }
 
 .collection-page, .directory-page, .account-page, .cart-page, .seller-page { padding: 53px 0 88px; }
 .collection-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; padding-bottom: 32px; }
@@ -905,7 +912,8 @@ body { background: #f8faff; }
   .feature-card p { max-width: none; font-size: 11px; line-height: 1.5; }
   .feature-card--virtual, .feature-card--store { min-height: 0; padding-bottom: 78px; }
   .feature-card .btn { left: 22px; bottom: 18px; }
-  .seller-banner { align-items: start; flex-direction: column; }
+  .seller-banner { align-items: start; flex-direction: column; padding: 22px; }
+  .seller-banner-mark { display: none; }
   .collection-page, .directory-page, .account-page, .cart-page, .seller-page { padding: 32px 0 65px; }
   .collection-intro, .directory-header { align-items: start; flex-direction: column; }
   .collection-intro h1, .directory-header h1, .seller-header h1 { font-size: 49px; }
