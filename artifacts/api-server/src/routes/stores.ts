@@ -43,7 +43,6 @@ async function getPublicProductCounts(storeIds: string[]): Promise<Map<string, n
     .where(
       and(
         inArray(sellerProductsTable.sellerId, storeIds),
-        eq(sellerProductsTable.status, "Aktiv"),
         eq(sellerProductsTable.approvalStatus, "approved"),
       ),
     )

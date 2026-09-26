@@ -63,7 +63,6 @@ router.get("/products", async (_req, res): Promise<void> => {
     .innerJoin(sellerStoresTable, eq(sellerProductsTable.sellerId, sellerStoresTable.id))
     .where(
       and(
-        eq(sellerProductsTable.status, "Aktiv"),
         eq(sellerProductsTable.approvalStatus, "approved"),
         eq(sellerStoresTable.status, "active"),
       ),
@@ -257,7 +256,12 @@ router.patch("/admin/products/:id/approval", requireAuth, async (req, res): Prom
   }
   const [product] = await db
     .update(sellerProductsTable)
-    .set({ approvalStatus: body.data.approvalStatus, moderationNote: body.data.moderationNote ?? null })
+    .set({
+      approvalStatus: body.data.approvalStatus,
+      moderationNote: body.data.moderationNote ?? null,
+      ...(body.data.approvalStatus === "approved" ? { status: "Aktiv" } : {}),
+      updatedAt: new Date(),
+    })
     .where(eq(sellerProductsTable.id, params.data.id))
     .returning();
   if (!product) {
