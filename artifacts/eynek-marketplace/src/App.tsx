@@ -100,9 +100,21 @@ type Product = {
   stock: number;
   isAvailable: boolean;
   location: string;
+  previewOnly?: boolean;
 };
 
 type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'since' | 'description'> & { count: number };
+
+const sampleCatalog: Product[] = [
+  { id: 'sample-merdekan-03', name: 'Mərdəkan 03', brand: 'EYNƏK', image: 'product-images/merdekan-03.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Gün eynəyi', gender: 'Uniseks', shape: 'Square', material: 'Asetat', size: 'M', color: 'Qara', tone: 'tone-1', frameStyle: 'sunglass', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
+  { id: 'sample-iceriseher-09', name: 'İçərişəhər 09', brand: 'EYNƏK', image: 'product-images/iceriseher-09.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Optik çərçivə', gender: 'Uniseks', shape: 'Rectangle', material: 'Metal', size: 'M', color: 'Gümüş', tone: 'tone-1', frameStyle: 'clear', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
+  { id: 'sample-caspian-sun', name: 'Caspian Sun', brand: 'EYNƏK', image: 'product-images/caspian-sun.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Gün eynəyi', gender: 'Qadın', shape: 'Cat-Eye', material: 'Asetat', size: 'M', color: 'Kəhrəba', tone: 'tone-1', frameStyle: 'sunglass', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
+  { id: 'sample-xezer-air', name: 'Xəzər Air', brand: 'EYNƏK', image: 'product-images/xezer-air.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Gün eynəyi', gender: 'Uniseks', shape: 'Aviator', material: 'Metal', size: 'M', color: 'Qızılı', tone: 'tone-1', frameStyle: 'gold', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
+  { id: 'sample-mimoza-02', name: 'Mimoza 02', brand: 'EYNƏK', image: 'product-images/mimoza-02.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Optik çərçivə', gender: 'Qadın', shape: 'Cat-Eye', material: 'Asetat', size: 'M', color: 'Şaftalı', tone: 'tone-1', frameStyle: 'clear', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
+  { id: 'sample-sahil-11', name: 'Sahil 11', brand: 'EYNƏK', image: 'product-images/sahil-11.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Gün eynəyi', gender: 'Uniseks', shape: 'Wayfarer', material: 'Asetat', size: 'M', color: 'Zeytun', tone: 'tone-1', frameStyle: 'olive', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
+  { id: 'sample-nisan-07', name: 'Nisan 07', brand: 'EYNƏK', image: 'product-images/nisan-07.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Optik çərçivə', gender: 'Kişi', shape: 'Rectangle', material: 'Metal', size: 'M', color: 'Qrafit', tone: 'tone-1', frameStyle: 'clear', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
+  { id: 'sample-luna-24', name: 'Luna 24', brand: 'EYNƏK', image: 'product-images/luna-24.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Optik çərçivə', gender: 'Uniseks', shape: 'Round', material: 'Asetat', size: 'M', color: 'Tısbağa', tone: 'tone-1', frameStyle: 'clear', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
+];
 
 const shapes: Product['shape'][] = ['Aviator', 'Cat-Eye', 'Rectangle', 'Round', 'Square', 'Wayfarer'];
 const genders = ['Qadın', 'Kişi', 'Uniseks'];
@@ -231,17 +243,12 @@ function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product
         <Link href={`/product/${product.id}`} className="product-image-link" aria-label={`${product.name} məhsul səhifəsini aç`} data-testid={`link-product-image-${product.id}`}>
           <img className={`product-photo ${hovered && product.sideImage ? 'side-view' : ''}`} src={displayImage.startsWith('data:') || displayImage.startsWith('http') ? displayImage : assetUrl(displayImage)} alt={`${product.name} — ${product.color} eynək modeli ${hovered && product.sideImage ? 'yan görünüş' : 'ön görünüş'}`} loading="lazy" />
         </Link>
-        <button className={`heart-button ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} seçilmişlərə əlavə et`} data-testid={`button-favorite-${product.id}`}><Heart size={23} strokeWidth={1.8} fill={liked ? 'currentColor' : 'none'} /></button>
-        <div className="product-card-actions">
-          <Link href={`/product/${product.id}`} className="quick-view" data-testid={`button-quick-view-${product.id}`}>Məhsula bax</Link>
-          <button className="try-card" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}><ScanFace size={17} strokeWidth={2} /> Önizlə</button>
-        </div>
+        <button className={`heart-button ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} seçilmişlərə əlavə et`} data-testid={`button-favorite-${product.id}`}><Heart size={18} strokeWidth={1.8} fill={liked ? 'currentColor' : 'none'} /></button>
+        <button type="button" className="product-badge" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}><span className="badge-light" aria-hidden="true" />3D YOXLA</button>
       </div>
       <div className="product-info">
-        <span className="product-label">{product.brand ? `${product.brand} · ${product.type}` : product.type}</span>
+        <span className="product-label">{product.brand || product.type}</span>
         <Link href={`/product/${product.id}`} data-testid={`link-product-${product.id}`}><h3 className="product-name">{product.name}</h3></Link>
-        <span className="product-price">{money(product.price)}</span>
-        <div className="product-meta"><Link href={`/vendor/${product.vendorSlug}`} className="product-vendor" data-testid={`link-vendor-${product.id}`}>{product.vendor} · {product.location}</Link><span className="product-type">{product.isAvailable ? `${product.stock} stokda` : 'Stokda yoxdur'}</span></div>
       </div>
     </article>
   );
@@ -471,21 +478,28 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
           </div>
           <div className="detail-info">
             <div className="detail-heading">
-              <div><div className="eyebrow">{product.vendor.toUpperCase()} · {product.type}</div><h1>{product.name}</h1></div>
-              <strong className="detail-price">{money(product.price)}</strong>
+              <div><div className="eyebrow">{product.brand || product.type}</div><h1>{product.name}</h1></div>
+              {!product.previewOnly && <strong className="detail-price">{money(product.price)}</strong>}
             </div>
             <p className="detail-copy">{product.description}</p>
+            {product.previewOnly ? (
+              <div className="detail-seller">
+                <span className="seller-avatar">N</span>
+                <span><strong>Nümunə vitrin</strong><small>Satış üçün deyil · təsdiqlənmiş mağaza məhsulu gələndə əvəz olunur</small></span>
+              </div>
+            ) : (
             <Link href={`/vendor/${product.vendorSlug}`} className="detail-seller" data-testid="link-detail-vendor">
               <span className="seller-avatar">{stores.find((vendor) => vendor.slug === product.vendorSlug)?.initials || 'S'}</span>
               <span><strong>{product.vendor}</strong><small>Satıcının vitrininə bax · {product.location}</small></span>
               <ArrowRight size={16} />
             </Link>
+            )}
             <div className="detail-options">
               <div className="detail-option"><div className="detail-option-label">ÇƏRÇİVƏ ÖLÇÜSÜ</div><div className="detail-size-row"><span className="detail-size-selected">{sizeLetter}</span><span className="detail-option-note">{product.size} · mövcud ölçü</span></div></div>
               <div className="detail-option"><div className="detail-option-label">{product.brand ? 'BREND · RƏNG' : 'RƏNG'}</div><div className="detail-color-row"><span className="detail-color-swatch" style={{ background: swatchColor }} aria-hidden="true" /><span>{product.brand ? `${product.brand} · ` : ''}{product.color}</span></div></div>
             </div>
-            <div className="detail-quantity"><div><div className="detail-option-label">SAY</div><small>{product.isAvailable ? `${product.stock} ədəd stokda` : 'Hazırda stokda yoxdur'}</small></div><div className="quantity-stepper"><button disabled={!product.isAvailable || quantity <= 1} onClick={() => setQuantity((count) => Math.max(1, count - 1))} aria-label="Sayı azalt">−</button><span aria-live="polite">{quantity}</span><button disabled={!product.isAvailable || quantity >= Math.min(10, product.stock)} onClick={() => setQuantity((count) => Math.min(10, product.stock, count + 1))} aria-label="Sayı artır">+</button></div></div>
-            <div className="detail-purchase"><button className={`detail-favorite ${likedIds.has(product.id) ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label="Seçilmişlərə əlavə et" data-testid="button-detail-favorite"><Heart size={19} fill={likedIds.has(product.id) ? 'currentColor' : 'none'} /></button><button className="detail-add" disabled={!product.isAvailable} onClick={() => onAdd(product, `${quantity} ədəd ${product.name} səbətə əlavə edildi`, quantity)} data-testid="button-add-cart-detail"><ShoppingBag size={17} /> {product.isAvailable ? `Səbətə əlavə et · ${money(product.price * quantity)}` : 'Stokda yoxdur'}</button><button className="detail-buy-now" disabled={!product.isAvailable} onClick={() => onBuyNow(product, quantity)} data-testid="button-buy-now-detail">İndi sifariş et <ArrowRight size={16} /></button></div>
+            <div className="detail-quantity"><div><div className="detail-option-label">SAY</div><small>{product.previewOnly ? 'Bu model satış üçün deyil' : product.isAvailable ? `${product.stock} ədəd stokda` : 'Hazırda stokda yoxdur'}</small></div><div className="quantity-stepper"><button disabled={product.previewOnly || !product.isAvailable || quantity <= 1} onClick={() => setQuantity((count) => Math.max(1, count - 1))} aria-label="Sayı azalt">−</button><span aria-live="polite">{quantity}</span><button disabled={product.previewOnly || !product.isAvailable || quantity >= Math.min(10, product.stock)} onClick={() => setQuantity((count) => Math.min(10, product.stock, count + 1))} aria-label="Sayı artır">+</button></div></div>
+            <div className="detail-purchase"><button className={`detail-favorite ${likedIds.has(product.id) ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label="Seçilmişlərə əlavə et" data-testid="button-detail-favorite"><Heart size={19} fill={likedIds.has(product.id) ? 'currentColor' : 'none'} /></button><button className="detail-add" disabled={product.previewOnly || !product.isAvailable} onClick={() => onAdd(product, `${quantity} ədəd ${product.name} səbətə əlavə edildi`, quantity)} data-testid="button-add-cart-detail"><ShoppingBag size={17} /> {product.previewOnly ? 'Nümunə model' : product.isAvailable ? `Səbətə əlavə et · ${money(product.price * quantity)}` : 'Stokda yoxdur'}</button><button className="detail-buy-now" disabled={product.previewOnly || !product.isAvailable} onClick={() => onBuyNow(product, quantity)} data-testid="button-buy-now-detail">İndi sifariş et <ArrowRight size={16} /></button></div>
             <p className="detail-disclaimer">Mağaza sifarişi təsdiqlədikdən sonra çatdırılma haqqı dəqiqləşdirilir; ödəniş qapıda edilir.</p>
           </div>
         </div>
@@ -502,7 +516,7 @@ function QuickView({ product, onClose, onAdd, onTryOn }: { product: Product; onC
 
 function VirtualTryOn({ products, product, onClose, onSelect, onAdd, onSave }: { products: Product[]; product: Product; onClose: () => void; onSelect: (product: Product) => void; onAdd: (product: Product, message?: string) => void; onSave: (id: number | string) => void }) {
   const options = products.slice(0, 6);
-  return <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Üzümdə yoxla"><div className="tryon-modal"><div className="tryon-top"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}>VTO inteqrasiya sərhədi</div><h2>Üzümdə yoxla</h2><p>Provayder qoşulana qədər məhsul önizləməsi</p></div><button className="icon-button close-light" onClick={onClose} aria-label="VTO pəncərəsini bağla" data-testid="button-close-tryon"><X size={20} /></button></div><div className="camera-stage"><div className="provider-state"><Camera size={16} /><span>Kamera icazəsi və VTO provayderi gözlənilir</span></div><div className="preview-product"><FrameVisual shape={product.shape} frameStyle={product.frameStyle} sunglasses={product.type === 'Gün eynəyi'} /><div className="preview-caption">{product.name} · məhsul çərçivəsi önizləməsi</div></div></div><div className="tryon-bottom"><p>Çərçivəni dəyiş</p><div className="frame-switcher">{options.map((option) => <button key={option.id} className={`frame-choice ${option.id === product.id ? 'active' : ''}`} onClick={() => onSelect(option)} aria-label={`${option.name} modelini önizlə`} data-testid={`button-tryon-frame-${option.id}`}><FrameVisual shape={option.shape} frameStyle={option.frameStyle} /><small>{option.name}</small></button>)}</div><div className="tryon-actions"><button className="btn btn-secondary" onClick={() => onSave(product.id)} data-testid="button-save-tryon"><Heart size={14} /> Yadda saxla</button><button className="btn btn-blue" disabled={!product.isAvailable} onClick={() => onAdd(product, 'Model səbətə əlavə edildi')} data-testid="button-add-cart-tryon"><ShoppingBag size={14} /> {product.isAvailable ? 'Səbətə əlavə et' : 'Stokda yoxdur'}</button></div></div></div></div>;
+  return <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Üzümdə yoxla"><div className="tryon-modal"><div className="tryon-top"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}>VTO inteqrasiya sərhədi</div><h2>Üzümdə yoxla</h2><p>Provayder qoşulana qədər məhsul önizləməsi</p></div><button className="icon-button close-light" onClick={onClose} aria-label="VTO pəncərəsini bağla" data-testid="button-close-tryon"><X size={20} /></button></div><div className="camera-stage"><div className="provider-state"><Camera size={16} /><span>Kamera icazəsi və VTO provayderi gözlənilir</span></div><div className="preview-product"><FrameVisual shape={product.shape} frameStyle={product.frameStyle} sunglasses={product.type === 'Gün eynəyi'} /><div className="preview-caption">{product.name} · məhsul çərçivəsi önizləməsi</div></div></div><div className="tryon-bottom"><p>Çərçivəni dəyiş</p><div className="frame-switcher">{options.map((option) => <button key={option.id} className={`frame-choice ${option.id === product.id ? 'active' : ''}`} onClick={() => onSelect(option)} aria-label={`${option.name} modelini önizlə`} data-testid={`button-tryon-frame-${option.id}`}><FrameVisual shape={option.shape} frameStyle={option.frameStyle} /><small>{option.name}</small></button>)}</div><div className="tryon-actions"><button className="btn btn-secondary" onClick={() => onSave(product.id)} data-testid="button-save-tryon"><Heart size={14} /> Yadda saxla</button><button className="btn btn-blue" disabled={product.previewOnly || !product.isAvailable} onClick={() => onAdd(product, 'Model səbətə əlavə edildi')} data-testid="button-add-cart-tryon"><ShoppingBag size={14} /> {product.previewOnly ? 'Nümunə model' : product.isAvailable ? 'Səbətə əlavə et' : 'Stokda yoxdur'}</button></div></div></div></div>;
 }
 
 type SellerForm = { storeName: string; owner: string; phone: string; email: string; business: string; tax: string; address: string; instagram: string; website: string; categories: string };
@@ -772,7 +786,7 @@ function Storefront() {
   const storesQuery = useListStores();
   const productRows = Array.isArray(productsQuery.data) ? productsQuery.data : [];
   const storeRows = Array.isArray(storesQuery.data) ? storesQuery.data : [];
-  const allProducts = useMemo(
+  const catalogProducts = useMemo(
     () =>
       productRows.map((product: PublicProduct): Product => ({
         id: product.id,
@@ -798,6 +812,7 @@ function Storefront() {
       })),
     [productRows],
   );
+  const allProducts = catalogProducts.length > 0 ? catalogProducts : sampleCatalog;
   const stores = useMemo(
     () =>
       storeRows.map((store: SellerStore): Vendor => ({
@@ -867,9 +882,9 @@ function Storefront() {
   }, [cartItems]);
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id)) { next.delete(id); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
-  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (!product.isAvailable) { showToast('Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
+  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
   const buyNow = (product: Product, quantity = 1) => {
-    if (!product.isAvailable) { showToast('Bu məhsul hazırda stokda yoxdur'); return; }
+    if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; }
     addUnits(product, quantity);
     setLocation('/checkout');
   };
