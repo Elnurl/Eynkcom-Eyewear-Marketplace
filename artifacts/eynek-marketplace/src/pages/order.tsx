@@ -22,10 +22,21 @@ function initialToken(orderId: string) {
   return token || sessionStorage.getItem(`eynek:order-token:${orderId}`) || '';
 }
 
+function orderIdFromLocation(path: string) {
+  const match = /^\/order\/([^/?#]+)/.exec(path);
+  if (!match?.[1]) return '';
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return match[1];
+  }
+}
+
 export default function OrderPage() {
-  const { orderId = '' } = useParams<{ orderId: string }>();
+  const [location] = useLocation();
+  const { orderId: routeOrderId = '' } = useParams<{ orderId: string }>();
+  const orderId = routeOrderId || orderIdFromLocation(location);
   const { isLoaded, isSignedIn } = useAuthSession();
-  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [accessToken, setAccessToken] = useState(() => initialToken(orderId));
   const [tokenInput, setTokenInput] = useState('');
