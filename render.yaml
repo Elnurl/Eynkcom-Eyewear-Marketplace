@@ -23,15 +23,23 @@ services:
           property: connectionString
       - key: MARKETPLACE_ADMIN_EMAIL
         value: hmdzadelnur@gmail.com
-      - key: CLERK_SECRET_KEY
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: BETTER_AUTH_URL
+        value: https://xn--eynk-x6b.com
+      - key: AUTH_TRUSTED_ORIGINS
+        value: https://www.xn--eynk-x6b.com
+      - key: RESEND_API_KEY
         sync: false
-      - key: CLERK_PUBLISHABLE_KEY
+      - key: EMAIL_FROM
+        value: "EYNƏK.com <no-reply@xn--eynk-x6b.com>"
+      # Optional Google sign-in; set VITE_GOOGLE_SIGN_IN=true once both are filled in
+      - key: GOOGLE_CLIENT_ID
         sync: false
-      - key: VITE_CLERK_PUBLISHABLE_KEY
+      - key: GOOGLE_CLIENT_SECRET
         sync: false
-      # Only for a Clerk production instance: https://xn--eynk-x6b.com/api/__clerk
-      - key: VITE_CLERK_PROXY_URL
-        sync: false
+      - key: VITE_GOOGLE_SIGN_IN
+        value: "false"
       - key: S3_ENDPOINT
         sync: false
       - key: S3_BUCKET

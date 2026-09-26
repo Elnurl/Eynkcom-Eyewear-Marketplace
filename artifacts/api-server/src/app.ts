@@ -2,16 +2,11 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import express, { type Express, type ErrorRequestHandler } from "express";
 import cors from "cors";
-import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
+import { toNodeHandler } from "better-auth/node";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import { auth } from "./lib/auth";
 import { logger } from "./lib/logger";
-import {
-  CLERK_PROXY_PATH,
-  clerkProxyMiddleware,
-  getClerkProxyHost,
-} from "./middlewares/clerkProxyMiddleware";
 import { rateLimit } from "./middlewares/rateLimit";
 
 const app: Express = express();
@@ -47,7 +42,9 @@ app.use((_req, res, next) => {
   next();
 });
 
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
+// Better Auth reads the raw body itself, so it must come before express.json().
+// It applies its own per-IP rate limits to sign-in, sign-up and reset.
+app.all("/api/auth/*splat", toNodeHandler(auth));
 
 // The storefront calls the API on the same origin. Cross-origin access is
 // opt-in via CORS_ALLOWED_ORIGINS (comma-separated) and is otherwise refused.
@@ -59,21 +56,6 @@ app.use(cors({ credentials: true, origin: allowedOrigins.length ? allowedOrigins
 
 app.use(express.json({ limit: "100kb" }));
 app.use(express.urlencoded({ extended: true, limit: "100kb" }));
-
-// Resolve the publishable key from the incoming request host so the same
-// server can serve multiple Clerk custom domains. Falls back to
-// CLERK_PUBLISHABLE_KEY when the host doesn't map to a custom domain.
-//
-// getClerkProxyHost is shared with clerkProxyMiddleware so that both
-// halves of the auth setup agree on which hostname is canonical.
-const clerk = clerkMiddleware((req) => ({
-  publishableKey: publishableKeyFromHost(
-    getClerkProxyHost(req) ?? "",
-    process.env.CLERK_PUBLISHABLE_KEY,
-  ),
-}));
-// The health check must not depend on Clerk, and static pages never need it.
-app.use("/api", (req, res, next) => (req.path === "/healthz" ? next() : clerk(req, res, next)));
 
 const fifteenMinutes = 15 * 60 * 1000;
 app.post("/api/orders", rateLimit({ name: "checkout", limit: 20, windowMs: fifteenMinutes }));

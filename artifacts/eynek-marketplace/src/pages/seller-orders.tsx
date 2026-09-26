@@ -9,7 +9,7 @@ import {
   useUpdateSellerOrder,
 } from '@workspace/api-client-react';
 import type { SellerOrder, SellerOrderUpdate } from '@workspace/api-client-react';
-import { useAuth, useClerk, useUser } from '@clerk/react';
+import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 import { BrandLogo } from '@/components/brand-logo';
 import { LoadingCard, QueryError, StatePill, dateLabel, money, paymentStatusLabel, sellerStatusLabel } from './order-ui';
 import './order-pages.css';
@@ -38,9 +38,7 @@ function errorText(error: unknown) {
 }
 
 export default function SellerOrdersPage() {
-  const { isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { isLoaded, isSignedIn, user } = useAuthSession();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const orders = useListSellerOrders({ query: { enabled: isLoaded && Boolean(isSignedIn), queryKey: getListSellerOrdersQueryKey(), retry: false } });
@@ -95,9 +93,9 @@ export default function SellerOrdersPage() {
     <div className="seller-panel-layout">
       <aside className="seller-sidebar">
         <div className="seller-sidebar-header"><Link href="/" className="brand" data-testid="link-seller-orders-brand"><BrandLogo /></Link><span className="seller-badge">Satıcı Paneli</span></div>
-        <div className="seller-store-info"><div className="store-avatar"><Store size={20} /></div><div><strong>Sifarişlər</strong><small>{user?.primaryEmailAddress?.emailAddress}</small></div></div>
+        <div className="seller-store-info"><div className="store-avatar"><Store size={20} /></div><div><strong>Sifarişlər</strong><small>{user?.email}</small></div></div>
         <nav className="seller-nav"><Link href="/seller-panel" className="seller-nav-item"><Package size={18} /> Məhsullar</Link><Link href="/seller-orders" className="seller-nav-item active"><Truck size={18} /> Sifarişlər</Link></nav>
-        <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Vitrinə qayıt</Link><button className="seller-nav-item text-danger" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })} data-testid="button-seller-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
+        <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Vitrinə qayıt</Link><button className="seller-nav-item text-danger" onClick={() => void signOutAndGo('/')} data-testid="button-seller-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
       </aside>
       <main className="seller-main">
         <div className="seller-content">

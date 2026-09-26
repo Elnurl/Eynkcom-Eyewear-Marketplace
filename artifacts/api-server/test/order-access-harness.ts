@@ -3,29 +3,35 @@ import { getTableName } from "drizzle-orm";
 import { PgDialect } from "drizzle-orm/pg-core";
 import * as tables from "../../../lib/db/src/schema/index";
 
-export const sessions: Record<string, { userId: string | null; sessionClaims?: Record<string, unknown> }> = {
-  owner: { userId: "clerk-owner", sessionClaims: { userId: "owner", email: "owner@example.com" } },
-  stranger: { userId: "clerk-stranger", sessionClaims: { userId: "stranger", email: "stranger@example.com" } },
-  admin: { userId: "clerk-admin", sessionClaims: { userId: "admin", email: "admin@example.com" } },
-  seller: { userId: "clerk-seller", sessionClaims: { userId: "seller", email: "seller@example.com" } },
-  otherSeller: { userId: "clerk-other-seller", sessionClaims: { userId: "other-seller", email: "other-seller@example.com" } },
-  pendingSeller: { userId: "clerk-pending-seller", sessionClaims: { userId: "pending-seller", email: "pending-seller@example.com" } },
-  untrusted: { userId: "clerk-untrusted", sessionClaims: { email: "owner@example.com" } },
+function sessionFor(id: string, email: string, emailVerified = true) {
+  const now = new Date();
+  return { user: { id, name: id, email, emailVerified, image: null, createdAt: now, updatedAt: now } };
+}
+export const sessions: Record<string, ReturnType<typeof sessionFor>> = {
+  owner: sessionFor("owner", "owner@example.com"),
+  stranger: sessionFor("stranger", "stranger@example.com"),
+  admin: sessionFor("admin", "admin@example.com"),
+  seller: sessionFor("seller", "seller@example.com"),
+  otherSeller: sessionFor("other-seller", "other-seller@example.com"),
+  pendingSeller: sessionFor("pending-seller", "pending-seller@example.com"),
+  // Signed in but has not proven the address it claims.
+  untrusted: sessionFor("untrusted", "owner@example.com", false),
 };
-export function getAuth(req: { get: (header: string) => string | undefined }) {
-  return sessions[req.get("X-Test-Session") ?? ""] ?? { userId: null };
+export async function getRequestSession(req: { headers: Record<string, string | string[] | undefined> }) {
+  const key = req.headers["x-test-session"];
+  return sessions[typeof key === "string" ? key : ""] ?? null;
 }
 
 export const token = "a".repeat(64);
 export const wrongToken = "b".repeat(64);
 export const orders: Record<string, any> = {};
 export const users = [
-  { id: "owner", email: "owner@example.com", firstName: "Owner", lastName: "Buyer", createdAt: new Date() },
-  { id: "stranger", email: "stranger@example.com", firstName: "Other", lastName: "Buyer", createdAt: new Date() },
-  { id: "admin", email: "admin@example.com", firstName: "Admin", lastName: "User", createdAt: new Date() },
-  { id: "seller", email: "seller@example.com", firstName: "Seller", lastName: "User", createdAt: new Date() },
-  { id: "other-seller", email: "other-seller@example.com", firstName: "Other", lastName: "Seller", createdAt: new Date() },
-  { id: "pending-seller", email: "pending-seller@example.com", firstName: "Pending", lastName: "Seller", createdAt: new Date() },
+  { id: "owner", email: "owner@example.com", name: "Owner Buyer", createdAt: new Date() },
+  { id: "stranger", email: "stranger@example.com", name: "Other Buyer", createdAt: new Date() },
+  { id: "admin", email: "admin@example.com", name: "Admin User", createdAt: new Date() },
+  { id: "seller", email: "seller@example.com", name: "Seller User", createdAt: new Date() },
+  { id: "other-seller", email: "other-seller@example.com", name: "Other Seller", createdAt: new Date() },
+  { id: "pending-seller", email: "pending-seller@example.com", name: "Pending Seller", createdAt: new Date() },
 ];
 export const products = [
   { id: "product-1", sellerId: "store-1", name: "Frames", price: 40, stock: 10, status: "Aktiv", approvalStatus: "approved" },

@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { ArrowLeft, Check, ClipboardCheck, Package, RotateCcw, ShieldCheck, Store } from 'lucide-react';
 import { Link, useLocation, useParams } from 'wouter';
-import { useAuth } from '@clerk/react';
+import { useAuthSession } from '@/lib/auth-client';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetGuestOrderQueryKey,
@@ -22,7 +22,7 @@ function initialToken(orderId: string) {
 
 export default function OrderPage() {
   const { orderId = '' } = useParams<{ orderId: string }>();
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAuthSession();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [accessToken, setAccessToken] = useState(() => initialToken(orderId));

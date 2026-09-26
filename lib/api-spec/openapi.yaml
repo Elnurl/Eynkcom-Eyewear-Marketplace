@@ -1372,16 +1372,14 @@ components:
           const: true
     AdminUser:
       type: object
-      required: [id, email, firstName, lastName, createdAt, accountType]
+      required: [id, email, name, createdAt, accountType]
       properties:
         id:
           type: string
         email:
-          type: ["string", "null"]
-        firstName:
-          type: ["string", "null"]
-        lastName:
-          type: ["string", "null"]
+          type: string
+        name:
+          type: string
         createdAt:
           type: string
           format: date-time

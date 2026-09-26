@@ -22,8 +22,7 @@ router.get("/admin/users", requireAuth, async (req, res): Promise<void> => {
       .select({
         id: usersTable.id,
         email: usersTable.email,
-        firstName: usersTable.firstName,
-        lastName: usersTable.lastName,
+        name: usersTable.name,
         createdAt: usersTable.createdAt,
       })
       .from(usersTable)
@@ -38,7 +37,7 @@ router.get("/admin/users", requireAuth, async (req, res): Promise<void> => {
   res.json(
     ListAdminUsersResponse.parse(
       users.map((user) => {
-        const email = user.email?.trim().toLocaleLowerCase("en-US") ?? "";
+        const email = user.email.trim().toLocaleLowerCase("en-US");
         return {
           ...user,
           accountType:

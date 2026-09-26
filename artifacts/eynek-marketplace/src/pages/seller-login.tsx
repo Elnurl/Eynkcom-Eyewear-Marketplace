@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { useLocation, Link, useSearch } from 'wouter';
 import { ArrowRight, Store, AlertCircle } from 'lucide-react';
-import { useAuth } from '@clerk/react';
+import { useAuthSession } from '@/lib/auth-client';
 import { BrandLogo, BrandWord } from '@/components/brand-logo';
 
 export default function SellerLogin() {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAuthSession();
   const [, setLocation] = useLocation();
   const search = useSearch();
   const params = new URLSearchParams(search);

@@ -15,7 +15,7 @@ import {
   type SellerProductUpdate,
   type SellerStoreUpdate,
 } from '@workspace/api-client-react';
-import { useAuth, useClerk, useUser } from '@clerk/react';
+import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 
 export type { SellerProduct, SellerProductInput, SellerProductUpdate };
 
@@ -29,9 +29,7 @@ function getErrorMessage(error: unknown): string {
 
 export function useSellerWorkspace() {
   const queryClient = useQueryClient();
-  const { isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { isLoaded, isSignedIn, user } = useAuthSession();
   const storeQuery = useGetSellerStore({
     query: { queryKey: getGetSellerStoreQueryKey(), enabled: isLoaded && Boolean(isSignedIn), retry: false },
   });
@@ -77,7 +75,7 @@ export function useSellerWorkspace() {
     user,
     isAuthenticated: Boolean(isSignedIn),
     isAuthLoading: !isLoaded,
-    signOut,
+    signOut: signOutAndGo,
     store: storeQuery.data,
     storeError: storeQuery.error ? getErrorMessage(storeQuery.error) : '',
     products: productsQuery.data ?? [],

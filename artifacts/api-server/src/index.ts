@@ -19,7 +19,7 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 if (process.env.NODE_ENV === "production") {
-  const missing = ["CLERK_SECRET_KEY", "CLERK_PUBLISHABLE_KEY"].filter((name) => !process.env[name]);
+  const missing = ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL"].filter((name) => !process.env[name]);
   if (missing.length) throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
 }
 

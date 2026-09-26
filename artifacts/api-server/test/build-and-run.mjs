@@ -23,12 +23,12 @@ try {
         build.onResolve({ filter: /^zod\/v4$/ }, () => ({ path: resolve("../../lib/api-zod/node_modules/zod/v4/index.js") }));
         build.onResolve({ filter: /^drizzle-zod$/ }, () => ({ path: resolve("../../lib/db/node_modules/drizzle-zod/index.mjs") }));
         build.onResolve({ filter: /^@workspace\/db$/ }, () => ({ path: "db", namespace: "test-double" }));
-        build.onResolve({ filter: /^@clerk\/express$/ }, () => ({ path: "clerk", namespace: "test-double" }));
+        build.onResolve({ filter: /\/lib\/auth$/ }, () => ({ path: "auth", namespace: "test-double" }));
         build.onResolve({ filter: /\/lib\/marketplaceOrders$/ }, () => ({ path: "orders", namespace: "test-double" }));
         build.onLoad({ filter: /.*/, namespace: "test-double" }, ({ path }) => ({
           contents: path === "db"
             ? `export * from ${JSON.stringify(resolve("../../lib/db/src/schema/index.ts"))}; export { db } from ${JSON.stringify(harness)};`
-            : `export { ${path === "clerk" ? "getAuth" : "loadBuyerOrder, tokenMatches, listAdminOrders, listSellerOrders, loadSellerOrder"} } from ${JSON.stringify(harness)};`,
+            : `export { ${path === "auth" ? "getRequestSession" : "loadBuyerOrder, tokenMatches, listAdminOrders, listSellerOrders, loadSellerOrder"} } from ${JSON.stringify(harness)};`,
           loader: "ts",
           resolveDir: process.cwd(),
         }));

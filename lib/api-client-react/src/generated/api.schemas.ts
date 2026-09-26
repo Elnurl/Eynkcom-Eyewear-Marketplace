@@ -655,12 +655,8 @@ export const AdminUserAccountType = {
 
 export interface AdminUser {
   id: string;
-  /** @nullable */
-  email: string | null;
-  /** @nullable */
-  firstName: string | null;
-  /** @nullable */
-  lastName: string | null;
+  email: string;
+  name: string;
   createdAt: string;
   accountType: AdminUserAccountType;
 }

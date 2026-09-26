@@ -9,12 +9,8 @@ import type { AdminUserAccountType } from './adminUserAccountType';
 
 export interface AdminUser {
   id: string;
-  /** @nullable */
-  email: string | null;
-  /** @nullable */
-  firstName: string | null;
-  /** @nullable */
-  lastName: string | null;
+  email: string;
+  name: string;
   createdAt: Date;
   accountType: AdminUserAccountType;
 }

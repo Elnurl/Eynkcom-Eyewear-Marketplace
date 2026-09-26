@@ -1,13 +1,9 @@
-import { getAuth } from "@clerk/express";
 import type { Request, Response } from "express";
 
+/** Verified email of the signed-in user; seller and admin rights hang off it. */
 export function requireUserEmail(req: Request, res: Response): string | null {
-  const auth = getAuth(req);
-  const emailClaim = (auth.sessionClaims as Record<string, unknown> | undefined)?.email;
-  const email = typeof emailClaim === "string"
-    ? emailClaim.trim().toLocaleLowerCase("en-US")
-    : "";
-  if (!auth.userId || !req.dbUser || !email) {
+  const email = req.dbUser?.emailVerified ? req.dbUser.email.trim().toLocaleLowerCase("en-US") : "";
+  if (!email) {
     res.status(401).json({ error: "Daxil olmaq tələb olunur." });
     return null;
   }

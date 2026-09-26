@@ -383,9 +383,8 @@ export const GetAdminAccessResponse = zod.object({
  */
 export const ListAdminUsersResponseItem = zod.object({
   "id": zod.string(),
-  "email": zod.string().nullable(),
-  "firstName": zod.string().nullable(),
-  "lastName": zod.string().nullable(),
+  "email": zod.string(),
+  "name": zod.string(),
   "createdAt": zod.coerce.date(),
   "accountType": zod.enum(['admin', 'seller', 'buyer'])
 })

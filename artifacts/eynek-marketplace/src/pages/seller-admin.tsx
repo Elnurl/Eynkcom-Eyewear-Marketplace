@@ -16,7 +16,7 @@ import {
   useReviewSellerApplication,
   useReviewSellerProduct,
 } from '@workspace/api-client-react';
-import { useAuth, useClerk, useUser } from '@clerk/react';
+import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 import { BrandLogo } from '@/components/brand-logo';
 
 type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'needs_changes';
@@ -47,9 +47,7 @@ function errorMessage(error: unknown): string {
 }
 
 export default function SellerAdminPage() {
-  const { isLoaded, isSignedIn } = useAuth();
-  const { user } = useUser();
-  const { signOut } = useClerk();
+  const { isLoaded, isSignedIn, user } = useAuthSession();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const adminAccess = useGetAdminAccess({
@@ -138,7 +136,7 @@ export default function SellerAdminPage() {
         </div>
         <div className="seller-store-info">
           <div className="store-avatar"><ShieldCheck size={20} /></div>
-          <div><strong>İdarəetmə</strong><small>{user?.primaryEmailAddress?.emailAddress}</small></div>
+          <div><strong>İdarəetmə</strong><small>{user?.email}</small></div>
         </div>
         <nav className="seller-nav">
           <a className="seller-nav-item active" href="#applications"><ShieldCheck size={18} /> Satıcı müraciətləri</a>
@@ -148,7 +146,7 @@ export default function SellerAdminPage() {
         </nav>
         <div className="seller-sidebar-footer">
           <Link href="/" className="seller-nav-item">Mağazaya qayıt</Link>
-          <button className="seller-nav-item text-danger" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })}><LogOut size={18} /> Çıxış et</button>
+          <button className="seller-nav-item text-danger" onClick={() => void signOutAndGo('/')}><LogOut size={18} /> Çıxış et</button>
         </div>
       </aside>
 
@@ -251,7 +249,7 @@ export default function SellerAdminPage() {
                   <article className="admin-review-card" key={account.id} data-testid={`card-admin-user-${account.id}`}>
                     <div className="admin-review-heading">
                       <div>
-                        <h3>{[account.firstName, account.lastName].filter(Boolean).join(' ') || 'Ad göstərilməyib'}</h3>
+                        <h3>{account.name || 'Ad göstərilməyib'}</h3>
                         <span>{account.email || 'E-poçt göstərilməyib'}</span>
                       </div>
                       <span className={`status-badge ${account.accountType === 'admin' ? 'active' : 'draft'}`}>{accountTypeLabel[account.accountType]}</span>

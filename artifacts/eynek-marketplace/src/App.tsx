@@ -1,8 +1,6 @@
 import { type FormEvent, type ReactNode, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
-import { publishableKeyFromHost } from '@clerk/react/internal';
-import { shadcn } from '@clerk/themes';
+import { signOutAndGo, useAuthSession, useClearQueriesOnUserChange } from '@/lib/auth-client';
 import {
   ArrowRight,
   Camera,
@@ -41,6 +39,7 @@ import CheckoutPage from '@/pages/checkout';
 import OrderPage from '@/pages/order';
 import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
+import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/pages/auth-pages';
 import { dateLabel, money as formatOrderMoney, orderStatusLabel } from '@/pages/order-ui';
 import './account.css';
 import {
@@ -77,71 +76,7 @@ function writeStoredIds(key: string, ids: string[]): void {
     // Private mode or full storage: keep the in-memory state only.
   }
 }
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL || undefined;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
-
-function stripBase(path: string): string {
-  return basePath && path.startsWith(basePath)
-    ? path.slice(basePath.length) || '/'
-    : path;
-}
-
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
-}
-
-const clerkAppearance = {
-  theme: shadcn,
-  cssLayerName: 'clerk',
-  options: {
-    logoPlacement: 'inside' as const,
-    logoLinkUrl: basePath || '/',
-    logoImageUrl: `${window.location.origin}${basePath}/eynek-wordmark.png`,
-  },
-  variables: {
-    colorPrimary: '#171A3A',
-    colorForeground: '#111111',
-    colorMutedForeground: '#626262',
-    colorDanger: '#B42318',
-    colorBackground: '#FAFAF8',
-    colorInput: '#FFFFFF',
-    colorInputForeground: '#111111',
-    colorNeutral: '#D8D8D2',
-    fontFamily: 'Manrope, sans-serif',
-    borderRadius: '0.75rem',
-  },
-  elements: {
-    rootBox: 'w-full flex justify-center',
-    cardBox: 'bg-[#FAFAF8] rounded-2xl w-[440px] max-w-full overflow-hidden',
-    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    headerTitle: 'text-[#111111] font-bold',
-    headerSubtitle: 'text-[#626262]',
-    socialButtonsBlockButtonText: 'text-[#171A3A] font-semibold',
-    formFieldLabel: 'text-[#171A3A] font-semibold',
-    footerActionLink: 'text-[#171A3A] font-semibold',
-    footerActionText: 'text-[#626262]',
-    dividerText: 'text-[#626262]',
-    identityPreviewEditButton: 'text-[#171A3A]',
-    formFieldSuccessText: 'text-[#18794E]',
-    alertText: 'text-[#8B1E16]',
-    logoBox: 'mb-5',
-    logoImage: 'w-[190px] max-w-full h-auto object-contain',
-    socialButtonsBlockButton: 'border-[#D8D8D2] bg-white text-[#171A3A]',
-    formButtonPrimary: 'bg-[#171A3A] text-white hover:bg-[#292D5C]',
-    formFieldInput: 'border-[#D8D8D2] bg-white text-[#111111]',
-    footerAction: 'border-t border-[#E6E6E2]',
-    dividerLine: 'bg-[#E6E6E2]',
-    alert: 'border-[#F1B8B2] bg-[#FFF4F2]',
-    otpCodeFieldInput: 'border-[#D8D8D2] bg-white text-[#111111]',
-    formFieldRow: 'text-[#171A3A]',
-    main: 'text-[#111111]',
-  },
-};
 
 type Product = {
   id: number | string;
@@ -521,8 +456,8 @@ type SellerForm = { storeName: string; owner: string; phone: string; email: stri
 const initialSellerForm: SellerForm = { storeName: '', owner: '', phone: '', email: '', business: '', tax: '', address: '', instagram: '', website: '', categories: '' };
 
 function SellerPage() {
-  const { user, isLoaded } = useUser();
-  const userEmail = user?.primaryEmailAddress?.emailAddress;
+  const { user, isLoaded } = useAuthSession();
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
   const createApplication = useCreateSellerApplication();
   const myApplications = useListMySellerApplications({ query: { queryKey: getListMySellerApplicationsQueryKey(), enabled: isLoaded && Boolean(userEmail) } });
@@ -583,8 +518,7 @@ function CartPage({ items, stores, onRemove, onCheckout }: { items: Product[]; s
 }
 
 function AccountPage() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const { openUserProfile, signOut } = useClerk();
+  const { isLoaded, isSignedIn, user } = useAuthSession();
   const orders = useListAccountOrders({
     query: {
       queryKey: getListAccountOrdersQueryKey(),
@@ -592,7 +526,7 @@ function AccountPage() {
       retry: false,
     },
   });
-  const email = user?.primaryEmailAddress?.emailAddress;
+  const email = user?.email;
   return (
     <>
       <main className="account-page">
@@ -628,16 +562,16 @@ function AccountPage() {
               ) : isSignedIn ? (
                 <>
                   <h2>Hesabına xoş gəldin.</h2>
-                  <p className="account-identity" data-testid="text-account-identity">{user?.fullName || email || 'EYNƏK.com alıcısı'} ilə daxil olmusunuz.</p>
+                  <p className="account-identity" data-testid="text-account-identity">{user?.name || email || 'EYNƏK.com alıcısı'} ilə daxil olmusunuz.</p>
                   <ul className="account-benefits">
                     <li><Check size={16} strokeWidth={2} /> Sifariş tarixçənə aşağıdan bax</li>
-                    <li><Check size={16} strokeWidth={2} /> Profil məlumatlarını istədiyin vaxt yenilə</li>
+                    <li><Check size={16} strokeWidth={2} /> Şifrəni e-poçt linki ilə istədiyin vaxt yenilə</li>
                   </ul>
                   <div className="account-actions">
-                    <button className="btn account-primary" type="button" onClick={() => openUserProfile()} data-testid="button-account-profile">Profili idarə et <ArrowRight size={15} /></button>
+                    <Link href="/forgot-password" className="btn account-primary" data-testid="link-account-password">Şifrəni dəyiş <ArrowRight size={15} /></Link>
                     <Link href="/wishlist" className="btn account-secondary" data-testid="link-account-wishlist">Seçilmişlərə bax</Link>
                   </div>
-                  <button className="account-quiet-link" type="button" onClick={() => void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' })} data-testid="button-account-sign-out">Hesabdan çıx</button>
+                  <button className="account-quiet-link" type="button" onClick={() => void signOutAndGo('/')} data-testid="button-account-sign-out">Hesabdan çıx</button>
                 </>
               ) : (
                 <>
@@ -645,7 +579,7 @@ function AccountPage() {
                   <p>Hesabına daxil ol, bu hesabla verdiyin sifarişlərə istədiyin vaxt qayıt.</p>
                   <ul className="account-benefits">
                     <li><Check size={16} strokeWidth={2} /> Sifarişlərini və çatdırılma yeniliklərini izlə</li>
-                    <li><Check size={16} strokeWidth={2} /> Ad və e-poçt məlumatlarını profilindən idarə et</li>
+                    <li><Check size={16} strokeWidth={2} /> Qonaq kimi verdiyin sifarişlər isə ayrıca izləmə linki ilə açılır</li>
                   </ul>
                   <div className="account-actions">
                     <Link href="/sign-in?redirect_url=%2Faccount" className="btn account-primary" data-testid="link-account-sign-in">Daxil ol <ArrowRight size={16} /></Link>
@@ -938,120 +872,38 @@ function Storefront() {
   );
 }
 
-function HomeRedirect() {
-  const { isLoaded, isSignedIn, user } = useUser();
-  const sellerStore = useGetSellerStore({ query: { queryKey: getGetSellerStoreQueryKey(), enabled: isLoaded && Boolean(isSignedIn), retry: false } });
-  if (!isLoaded) return <Storefront />;
-  if (!isSignedIn) return <Storefront />;
-  const role = String(user?.publicMetadata.role ?? user?.publicMetadata.accountType ?? '').toLowerCase();
-  if (role === 'admin') return <Redirect to="/seller-admin" />;
-  if (role === 'seller') return <Redirect to="/seller-panel" />;
-  if (sellerStore.isLoading) return null;
-  return <Redirect to={sellerStore.data ? '/seller-panel' : '/account'} />;
-}
-
-function SignInPage() {
-  const search = useSearch();
-  const requestedTarget = new URLSearchParams(search).get('redirect_url');
-  const safeTargets = ['/account', '/seller-panel', '/seller-orders', '/seller-admin', '/seller-admin/orders'];
-  const target = requestedTarget && safeTargets.includes(requestedTarget) ? requestedTarget : '/account';
-  const forceRedirectUrl = `${basePath}${target}` || '/';
+function AppRoutes() {
+  useClearQueriesOnUserChange();
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#FAFAF8] px-4 py-8">
-      <SignIn
-        routing="path"
-        path={`${basePath}/sign-in`}
-        signUpUrl={`${basePath}/sign-up`}
-        forceRedirectUrl={forceRedirectUrl}
-      />
-    </div>
-  );
-}
-
-function SignUpPage() {
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-[#FAFAF8] px-4 py-8">
-      <SignUp
-        routing="path"
-        path={`${basePath}/sign-up`}
-        signInUrl={`${basePath}/sign-in`}
-        forceRedirectUrl={`${basePath}/account` || '/'}
-      />
-    </div>
-  );
-}
-
-function ClerkQueryClientCacheInvalidator() {
-  const { addListener } = useClerk();
-  const queryClientInstance = useQueryClient();
-  const prevUserIdRef = useRef<string | null | undefined>(undefined);
-
-  useEffect(() => {
-    const unsubscribe = addListener(({ user }) => {
-      const userId = user?.id ?? null;
-      if (prevUserIdRef.current !== undefined && prevUserIdRef.current !== userId) {
-        queryClientInstance.clear();
-      }
-      prevUserIdRef.current = userId;
-    });
-    return unsubscribe;
-  }, [addListener, queryClientInstance]);
-
-  return null;
-}
-
-function ClerkProviderWithRoutes() {
-  const [, setLocation] = useLocation();
-  return (
-    <ClerkProvider
-      publishableKey={clerkPubKey}
-      proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
-      signInUrl={`${basePath}/sign-in`}
-      signUpUrl={`${basePath}/sign-up`}
-      localization={{
-        signIn: {
-          start: {
-            title: 'Yenidən xoş gəldiniz',
-            subtitle: 'Hesabınıza daxil olun',
-          },
-        },
-        signUp: {
-          start: {
-            title: 'Hesabınızı yaradın',
-            subtitle: 'EYNƏK.com-a qoşulun',
-          },
-        },
-      }}
-      routerPush={(to) => setLocation(stripBase(to))}
-      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
-    >
-      <QueryClientProvider client={queryClient}>
-        <ClerkQueryClientCacheInvalidator />
-        <TooltipProvider>
-          <RoutedErrorBoundary>
-            <Switch>
-              <Route path="/sign-in/*?" component={SignInPage} />
-              <Route path="/sign-up/*?" component={SignUpPage} />
-              <Route path="/seller-login"><SellerLogin /></Route>
-              <Route path="/seller-panel"><SellerPanel /></Route>
-              <Route path="/seller-panel/*"><SellerPanel /></Route>
-              <Route path="/seller-orders"><SellerOrdersPage /></Route>
-              <Route path="/seller-admin/orders"><SellerAdminOrdersPage /></Route>
-              <Route path="/seller-admin"><SellerAdminPage /></Route>
-              <Route path="/"><HomeRedirect /></Route>
-              <Route><Storefront /></Route>
-            </Switch>
-          </RoutedErrorBoundary>
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ClerkProvider>
+    <TooltipProvider>
+      <RoutedErrorBoundary>
+        <Switch>
+          <Route path="/sign-in" component={SignInPage} />
+          <Route path="/sign-up" component={SignUpPage} />
+          <Route path="/forgot-password" component={ForgotPasswordPage} />
+          <Route path="/reset-password" component={ResetPasswordPage} />
+          <Route path="/seller-login"><SellerLogin /></Route>
+          <Route path="/seller-panel"><SellerPanel /></Route>
+          <Route path="/seller-panel/*"><SellerPanel /></Route>
+          <Route path="/seller-orders"><SellerOrdersPage /></Route>
+          <Route path="/seller-admin/orders"><SellerAdminOrdersPage /></Route>
+          <Route path="/seller-admin"><SellerAdminPage /></Route>
+          <Route><Storefront /></Route>
+        </Switch>
+      </RoutedErrorBoundary>
+      <Toaster />
+    </TooltipProvider>
   );
 }
 
 function App() {
-  return <WouterRouter base={basePath}><ClerkProviderWithRoutes /></WouterRouter>;
+  return (
+    <WouterRouter base={basePath}>
+      <QueryClientProvider client={queryClient}>
+        <AppRoutes />
+      </QueryClientProvider>
+    </WouterRouter>
+  );
 }
 
 export default App;

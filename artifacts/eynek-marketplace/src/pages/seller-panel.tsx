@@ -1,7 +1,7 @@
 import { useState, useRef, FormEvent, useMemo, ChangeEvent, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
 import { completeUpload, discardUpload, requestUploadUrl } from '@workspace/api-client-react';
-import { useAuth } from '@clerk/react';
+import { useAuthSession } from '@/lib/auth-client';
 import { 
   LogOut, Plus, Search, MoreVertical, Edit2, Trash2, 
   Image as ImageIcon, ArrowLeft, Store, Settings, 
@@ -88,7 +88,7 @@ export default function SellerPanel() {
   }
 
   const handleLogout = () => {
-    void signOut({ redirectUrl: import.meta.env.BASE_URL || '/' });
+    void signOut('/');
   };
 
   const openAddForm = () => {
@@ -142,7 +142,7 @@ export default function SellerPanel() {
           <div className="store-avatar"><Store size={20} /></div>
           <div>
             <strong>{store.name}</strong>
-            <small>{user?.primaryEmailAddress?.emailAddress}</small>
+            <small>{user?.email}</small>
           </div>
         </div>
 
@@ -399,7 +399,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
   isSaving: boolean;
   serverError: string;
 }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn } = useAuthSession();
   const canUpload = Boolean(isSignedIn);
   const isAuthLoading = !isLoaded;
   const [, setLocation] = useLocation();

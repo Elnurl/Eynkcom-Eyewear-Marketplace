@@ -1,7 +1,6 @@
-import { getAuth } from "@clerk/express";
-import { eq } from "drizzle-orm";
 import type { NextFunction, Request, Response } from "express";
-import { db, usersTable, type User } from "@workspace/db";
+import type { User } from "@workspace/db";
+import { getRequestSession } from "../lib/auth";
 
 declare global {
   namespace Express {
@@ -11,85 +10,34 @@ declare global {
   }
 }
 
-export async function requireAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  const auth = getAuth(req);
-  if (!auth.userId) {
-    res.status(401).json({ error: "Daxil olmaq tələb olunur." });
-    return;
-  }
-
-  // Claims come from the Clerk session token after clerkMiddleware verified
-  // its signature; nothing here is read from headers or the body. The Clerk
-  // "Customize session token" template must add `userId` and `email`
-  // (see README); a session without them is rejected.
-  const claims = auth.sessionClaims as Record<string, unknown> | undefined;
-  const localUserId = claims?.userId;
-  if (typeof localUserId !== "string" || !localUserId) {
-    res.status(401).json({ error: "İstifadəçi sessiyası etibarlı deyil." });
-    return;
-  }
-  const email = typeof claims?.email === "string"
-    ? claims.email.trim().toLocaleLowerCase("en-US")
-    : "";
-  if (!email) {
-    res.status(401).json({ error: "İstifadəçi sessiyasında e-poçt ünvanı yoxdur." });
-    return;
-  }
-
+// The session comes from Better Auth's signed cookie; identity is never read
+// from request headers or the body.
+async function attachUser(req: Request, res: Response, next: NextFunction, optional: boolean): Promise<void> {
   try {
-    let [dbUser] = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, localUserId))
-      .limit(1);
-
-    // A new Clerk account may create its own local row. A migrated account
-    // with a different externalId must already have its migrated local row:
-    // never create an unrelated legacy ID from a missing mapping.
-    if (!dbUser && localUserId === auth.userId) {
-      const [inserted] = await db
-        .insert(usersTable)
-        .values({ id: localUserId, email })
-        .onConflictDoNothing()
-        .returning();
-      dbUser = inserted;
-
-      // Re-read after a conflict to support simultaneous first requests. If
-      // the email unique constraint belongs to another local ID, do not link
-      // this Clerk session to that account.
-      if (!dbUser) {
-        [dbUser] = await db
-          .select()
-          .from(usersTable)
-          .where(eq(usersTable.id, localUserId))
-          .limit(1);
+    const session = await getRequestSession(req);
+    if (!session) {
+      if (optional) {
+        next();
+        return;
       }
-    }
-
-    if (!dbUser) {
-      res.status(403).json({ error: "Bu hesabın yerli istifadəçi profili mövcud deyil." });
+      res.status(401).json({ error: "Daxil olmaq tələb olunur." });
       return;
     }
-
-    req.dbUser = dbUser;
+    if (!session.user.emailVerified) {
+      res.status(401).json({ error: "E-poçt ünvanınızı təsdiqləyin." });
+      return;
+    }
+    req.dbUser = session.user as User;
     next();
   } catch (error) {
     next(error);
   }
 }
 
-export async function optionalAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> {
-  if (!getAuth(req).userId) {
-    next();
-    return;
-  }
-  await requireAuth(req, res, next);
+export function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  return attachUser(req, res, next, false);
+}
+
+export function optionalAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  return attachUser(req, res, next, true);
 }
