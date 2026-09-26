@@ -1004,8 +1004,13 @@ body { background: #f8faff; }
 .solid-icon { width: 24px; height: 24px; display: block; }
 .nav-actions .cart-count { top: 0; right: 0; background: #111317; color: #fff; }
 .help-menu { position: relative; }
-.help-trigger { display: flex; flex-direction: column; align-items: center; gap: 2px; border: 0; padding: 0; background: transparent; color: #171717; font: inherit; font-size: 11px; font-weight: 700; line-height: 1; cursor: pointer; }
-.help-trigger-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #4d4d4d; color: #fff; font-size: 16px; font-weight: 700; }
+.help-trigger { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; padding: 0; background: transparent; color: #111317; cursor: pointer; }
+.help-trigger:hover, .notice-trigger:hover, .nav-icon-group .header-icon:hover { background: #f1f2f4; }
+.nav-icon-group { display: flex; align-items: center; gap: 0; }
+.nav-icon-group .header-icon,
+.nav-icon-group .help-trigger,
+.nav-icon-group .notice-trigger { width: 36px; height: 36px; color: #111317; }
+.nav-icon-group svg { width: 22px; height: 22px; }
 .help-panel { position: absolute; top: calc(100% + 12px); right: 0; z-index: 40; width: min(300px, calc(100vw - 24px)); padding: 16px 18px 14px; border-radius: 4px; background: #fff; box-shadow: 0 16px 48px rgba(17, 19, 23, .16); }
 .help-panel-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .help-panel-head strong { color: #171717; font-size: 18px; }
@@ -1027,15 +1032,21 @@ body { background: #f8faff; }
   .nav-actions .nav-search { width: 100%; min-width: 0; min-height: 42px; justify-content: space-between; gap: 12px; padding: 0 16px 0 20px; border: 1.5px solid #1b1d22; box-shadow: none; color: #8a8f99; font-size: 14px; }
   .nav-actions .nav-search span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nav-actions .nav-search svg { flex: 0 0 auto; color: #111317; }
-  .help-menu { order: 3; position: relative; }
-.nav-actions .header-icon { order: 3; width: 40px; height: 40px; }
-  .nav-actions .cart-button { order: 4; }
-  .nav-actions .header-icon--account { order: 5; }
+  .help-menu { position: relative; }
+  .nav-icon-group { order: 3; display: flex; align-items: center; gap: 2px; margin-left: 8px; }
+  .nav-actions .header-icon,
+  .nav-actions .cart-button,
+  .nav-actions .header-icon--account,
+  .help-menu,
+  .notice-menu { order: 0; }
+  .nav-icon-group .header-icon,
+  .nav-icon-group .help-trigger,
+  .nav-icon-group .notice-trigger { width: 36px; height: 36px; }
 }
 .nav-links .nav-category-menu { min-width: 188px; gap: 2px; padding: 6px; border-radius: 14px; }
 .nav-links .nav-category-menu a { display: flex; align-items: center; min-height: 36px; height: auto; margin: 0; padding: 0 10px; border: 0; border-bottom: 0; border-radius: 8px; color: #1b1d22; font-size: 14px; font-weight: 500; line-height: 1.2; letter-spacing: 0; }
 .nav-links .nav-category-menu a:hover, .nav-links .nav-category-menu a:focus-visible { background: #f4f5f7; }
-.notice-menu { position: relative; order: 3; }
+.notice-menu { position: relative; }
 .notice-trigger { position: relative; }
 .notice-dot { position: absolute; top: 8px; right: 8px; width: 7px; height: 7px; border: 1.5px solid #fff; border-radius: 50%; background: #111317; }
 .notice-panel { position: absolute; top: calc(100% + 10px); right: 0; z-index: 40; width: min(320px, calc(100vw - 24px)); display: grid; gap: 2px; padding: 12px; border: 1px solid #e6e7eb; border-radius: 14px; background: #fff; box-shadow: 0 16px 40px rgba(17, 19, 23, .12); }
@@ -1047,8 +1058,8 @@ body { background: #f8faff; }
 .notice-item span { font-size: 13px; font-weight: 600; line-height: 1.35; }
 .notice-item small { color: #7a828c; font-size: 11px; }
 @media (max-width: 680px) {
-  .nav-actions .notice-menu > .notice-trigger { display: grid; }
-}
-@media (max-width: 680px) {
-  .nav-actions .notice-menu > .notice-trigger { display: grid; }
+  .nav-icon-group { gap: 0; }
+  .nav-actions .nav-icon-group .icon-button,
+  .nav-actions .nav-icon-group .help-trigger,
+  .nav-actions .nav-icon-group .notice-trigger { display: grid; width: 30px; height: 30px; }
 }
