@@ -100,17 +100,22 @@ export default function OrderPage() {
     }
   };
 
-  if (!isLoaded) {
+  const forgetToken = () => {
+    sessionStorage.removeItem(`eynek:order-token:${orderId}`);
+    setAccessToken('');
+  };
+
+  if (!isLoaded || (accountAccess && !accessToken && order.isLoading)) {
     return <main className="commerce-page"><div className="commerce-wrap"><LoadingCard lines={3} /></div></main>;
   }
 
-  if (!accessToken && !accountAccess) {
-    return <main className="commerce-page"><div className="commerce-wrap"><div className="access-card commerce-card"><BrandLogo /><div className="eyebrow" style={{ marginTop: 30 }}>Sifarişə giriş</div><h1 style={{ margin: '8px 0 8px', color: '#171b22', fontSize: 34, letterSpacing: '-.06em' }}>Sifariş izləmə kodunu daxil et.</h1><p style={{ color: '#78828d', fontSize: 12, lineHeight: 1.6 }}>Sifariş yaradılarkən sizə verilən 64 simvolluq giriş kodu bu səhifəni qoruyur.</p><form onSubmit={unlock}><input aria-label="Sifariş giriş kodu" data-testid="input-order-access-token" value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} placeholder="64 simvolluq kod" /><button className="btn btn-blue" type="submit" data-testid="button-unlock-order">Aç</button></form><Link href="/" className="text-link" style={{ marginTop: 20 }} data-testid="link-order-home"><ArrowLeft size={13} /> Mağazaya qayıt</Link></div></div></main>;
+  if (!accessToken && (!accountAccess || order.isError)) {
+    return <main className="commerce-page"><div className="commerce-wrap"><div className="access-card commerce-card"><BrandLogo /><div className="eyebrow" style={{ marginTop: 30 }}>Sifarişə giriş</div><h1 style={{ margin: '8px 0 8px', color: '#171b22', fontSize: 34, letterSpacing: '-.06em' }}>Sifariş izləmə kodunu daxil et.</h1><p style={{ color: '#78828d', fontSize: 12, lineHeight: 1.6 }}>Bu ünvanda kod yoxdur. Sifarişi bitirəndə ünvanın sonunda, # işarəsindən sonra gələn 64 simvolu bura yaz. Sifarişdəki e-poçtla daxil olanda kod lazım olmur.</p><form onSubmit={unlock}><input aria-label="Sifariş giriş kodu" data-testid="input-order-access-token" value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} placeholder="64 simvolluq kod" /><button className="btn btn-blue" type="submit" data-testid="button-unlock-order">Aç</button></form><Link href="/" className="text-link" style={{ marginTop: 20 }} data-testid="link-order-home"><ArrowLeft size={13} /> Mağazaya qayıt</Link></div></div></main>;
   }
 
   return <main className="commerce-page"><div className="commerce-wrap">
     <header className="commerce-header"><div><Link href="/" className="brand" data-testid="link-order-brand"><BrandLogo /></Link><div className="eyebrow" style={{ marginTop: 25 }}>{accessToken ? 'Qonaq sifariş izləmə' : 'Hesab sifariş tarixçəsi'}</div><h1>Sifarişin haradadır?</h1></div><p>Sifarişiniz bir neçə optik mağazadan ibarətdirsə, hər mağazanın hazırlıq və ya götürmə mərhələsini ayrıca görə bilərsiniz.</p></header>
-    {order.isLoading ? <LoadingCard lines={6} /> : order.isError || !order.data ? <QueryError message="Sifariş tapılmadı və ya giriş kodu düzgün deyil." onRetry={() => void order.refetch()} /> : (
+    {order.isLoading ? <LoadingCard lines={6} /> : order.isError || !order.data ? <div><QueryError message="Sifariş tapılmadı və ya giriş kodu düzgün deyil." onRetry={() => void order.refetch()} /><button className="btn btn-secondary" type="button" style={{ marginTop: 12 }} onClick={forgetToken}>Kodu yenidən yaz</button></div> : (
       <>
         <section className="commerce-card order-hero"><div><div className="order-number">SİFARİŞ {order.data.orderNumber}</div><h1>{orderStatusLabel(order.data.status, order.data.fulfillmentMethod)}</h1><p>Yaradılıb: {dateLabel(order.data.createdAt)} · {fulfillmentLabel(order.data.fulfillmentMethod)} · {order.data.deliveryArea}</p></div><StatePill status={order.data.status} label={orderStatusLabel(order.data.status, order.data.fulfillmentMethod)} /></section>
         {order.data.status === 'awaiting_buyer_approval' && <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}><div className="commerce-card-heading"><div><h2>Yenilənmiş sifariş təsdiqinizi gözləyir</h2><p>Mağazalardan biri məhsul və ya çatdırılma detallarını dəyişib. Sifarişi təsdiqləyin və ya ləğv edin.</p></div><ClipboardCheck size={19} color="#9b5c36" /></div><div style={{ display: 'flex', gap: 9, marginTop: 18, flexWrap: 'wrap' }}><button className="btn btn-blue" disabled={decideRevision.isPending} onClick={() => void decide(true)} data-testid="button-approve-revision"><Check size={15} /> {decideRevision.isPending ? 'Göndərilir...' : 'Yenilənmiş sifarişi təsdiqlə'}</button><button className="btn btn-secondary" disabled={decideRevision.isPending} onClick={() => void decide(false)} data-testid="button-cancel-revision"><RotateCcw size={15} /> Sifarişi ləğv et</button></div>{decisionError && <QueryError message={decisionError} />}</section>}

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { Router, type IRouter } from "express";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import {
   CreateGuestOrderBody,
   CreateGuestOrderResponse,
@@ -54,6 +54,18 @@ import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 const router: IRouter = Router();
 type OrderTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const commissionRate = 0.05;
+
+function buyerCanReadOrder(
+  user: { id: string; email?: string | null } | undefined,
+  order: { buyerUserId: string | null; customerEmail: string; accessTokenHash: string } | undefined,
+  token: string,
+) {
+  if (!order) return false;
+  const email = user?.email?.trim().toLocaleLowerCase("en-US") ?? "";
+  const ownsAccount = Boolean(user && (order.buyerUserId === user.id || (email && order.customerEmail === email)));
+  const hasGuestAccess = token.length >= 32 && tokenMatches(token, order.accessTokenHash);
+  return ownsAccount || hasGuestAccess;
+}
 
 const sellerStatusLabels: Record<string, string> = {
   confirmed: "sifarişi təsdiqlədi",
@@ -451,9 +463,7 @@ router.get("/orders/:orderId", optionalAuth, async (req, res): Promise<void> => 
     .from(marketplaceOrdersTable)
     .where(eq(marketplaceOrdersTable.id, params.data.orderId))
     .limit(1);
-  const ownsOrder = Boolean(req.dbUser && order?.buyerUserId === req.dbUser.id);
-  const hasGuestAccess = Boolean(order && token.length >= 32 && tokenMatches(token, order.accessTokenHash));
-  if (!order || (!ownsOrder && !hasGuestAccess)) {
+  if (!order || !buyerCanReadOrder(req.dbUser, order, token)) {
     res.status(404).json({ error: "Sifariş tapılmadı." });
     return;
   }
@@ -471,10 +481,11 @@ router.get("/account/orders", requireAuth, async (req, res): Promise<void> => {
     res.status(401).json({ error: "Daxil olmaq tələb olunur." });
     return;
   }
+  const email = req.dbUser.email.trim().toLocaleLowerCase("en-US");
   const rows = await db
     .select({ id: marketplaceOrdersTable.id })
     .from(marketplaceOrdersTable)
-    .where(eq(marketplaceOrdersTable.buyerUserId, req.dbUser.id))
+    .where(or(eq(marketplaceOrdersTable.buyerUserId, req.dbUser.id), eq(marketplaceOrdersTable.customerEmail, email)))
     .orderBy(desc(marketplaceOrdersTable.createdAt));
   const orders = [];
   for (const row of rows) {
@@ -500,9 +511,7 @@ router.post("/orders/:orderId/decision", optionalAuth, async (req, res): Promise
       .where(eq(marketplaceOrdersTable.id, params.data.orderId))
       .for("update")
       .limit(1);
-    const ownsOrder = Boolean(req.dbUser && order?.buyerUserId === req.dbUser.id);
-    const hasGuestAccess = Boolean(order && token.length >= 32 && tokenMatches(token, order.accessTokenHash));
-    if (!order || (!ownsOrder && !hasGuestAccess)) {
+    if (!order || !buyerCanReadOrder(req.dbUser, order, token)) {
       return { kind: "missing" as const };
     }
     if (order.status !== "awaiting_buyer_approval") {
@@ -590,11 +599,7 @@ router.post("/orders/:orderId/returns", optionalAuth, async (req, res): Promise<
       .where(eq(marketplaceOrdersTable.id, params.data.orderId))
       .for("update")
       .limit(1);
-    const ownsOrder = Boolean(req.dbUser && order?.buyerUserId === req.dbUser.id);
-    const hasGuestAccess = Boolean(
-      order && token.length >= 32 && tokenMatches(token, order.accessTokenHash),
-    );
-    if (!order || (!ownsOrder && !hasGuestAccess)) return { kind: "missing" as const };
+    if (!order || !buyerCanReadOrder(req.dbUser, order, token)) return { kind: "missing" as const };
 
     const [sellerOrder] = await tx
       .select()
