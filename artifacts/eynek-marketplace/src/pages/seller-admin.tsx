@@ -38,6 +38,10 @@ const productStatusLabel: Record<ProductStatus | 'pending', string> = {
 
 const accountTypeLabel = { admin: 'Marketplace admin', seller: 'Satıcı', buyer: 'Alıcı' } as const;
 
+function reviewDate(value: Date | string) {
+  return new Intl.DateTimeFormat('az-AZ', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+}
+
 function errorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'data' in error) {
     const data = (error as { data?: { error?: string } }).data;
@@ -162,83 +166,133 @@ export default function SellerAdminPage() {
 
           <section id="applications" className="seller-panel-section">
             <h2>Satıcı müraciətləri {applications.data ? `(${applications.data.length})` : ''}</h2>
-            {applications.isLoading ? <div className="empty-state-mini">Müraciətlər yüklənir...</div> : applications.data?.length ? (
-              <div className="admin-review-list">
-                {applications.data.map((application) => (
-                  <article className="admin-review-card" key={application.id}>
-                    <div className="admin-review-heading">
-                      <div><h3>{application.storeName}</h3><span>{application.ownerName} · {application.email} · {application.phone}</span></div>
-                      <span className={`status-badge ${application.status === 'approved' ? 'active' : 'draft'}`}>{applicationStatusLabel[application.status]}</span>
-                    </div>
-                    <p>{application.business}</p>
-                    <div className="admin-review-details">
-                      <span><strong>Ünvan:</strong> {application.address}</span>
-                      <span><strong>Kateqoriyalar:</strong> {application.categories}</span>
-                      {application.tax && <span><strong>VÖEN:</strong> {application.tax}</span>}
-                      {application.instagram && <span><strong>Instagram:</strong> {application.instagram}</span>}
-                      {application.website && <span><strong>Veb:</strong> {application.website}</span>}
-                    </div>
-                    <textarea
-                      aria-label={`${application.storeName} üçün baxış qeydi`}
-                      placeholder="Satıcıya göstəriləcək qeyd"
-                      value={applicationNotes[application.id] ?? application.reviewNotes ?? ''}
-                      onChange={(event) => setApplicationNotes((notes) => ({ ...notes, [application.id]: event.target.value }))}
-                    />
-                    <div className="admin-review-actions">
-                      {(['approved', 'needs_changes', 'rejected', 'pending'] as ApplicationStatus[]).map((status) => (
-                        <button
-                          key={status}
-                          className={status === 'approved' ? 'btn btn-blue' : 'btn btn-secondary'}
-                          disabled={reviewApplication.isPending}
-                          onClick={() => saveApplicationStatus(application.id, status)}
-                        >
-                          {applicationStatusLabel[status]}
-                        </button>
+            {applications.isLoading ? <div className="empty-state-mini">Müraciətlər yüklənir...</div> : (() => {
+              const openApplications = applications.data?.filter((application) => application.status === 'pending' || application.status === 'needs_changes') ?? [];
+              const decidedApplications = [...(applications.data?.filter((application) => application.status === 'approved' || application.status === 'rejected') ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+              if (!applications.data?.length) return <div className="empty-state-mini">Yoxlanacaq satıcı müraciəti yoxdur.</div>;
+              return (
+                <>
+                  {openApplications.length ? (
+                    <div className="admin-review-list">
+                      {openApplications.map((application) => (
+                        <article className="admin-review-card" key={application.id}>
+                          <div className="admin-review-heading">
+                            <div><h3>{application.storeName}</h3><span>{application.ownerName} · {application.email} · {application.phone}</span></div>
+                            <span className={`status-badge ${application.status === 'needs_changes' ? 'pending' : 'draft'}`}>{applicationStatusLabel[application.status]}</span>
+                          </div>
+                          <p>{application.business}</p>
+                          <div className="admin-review-details">
+                            <span><strong>Ünvan:</strong> {application.address}</span>
+                            <span><strong>Kateqoriyalar:</strong> {application.categories}</span>
+                            {application.tax && <span><strong>VÖEN:</strong> {application.tax}</span>}
+                            {application.instagram && <span><strong>Instagram:</strong> {application.instagram}</span>}
+                            {application.website && <span><strong>Veb:</strong> {application.website}</span>}
+                          </div>
+                          <textarea
+                            aria-label={`${application.storeName} üçün baxış qeydi`}
+                            placeholder="Satıcıya göstəriləcək qeyd"
+                            value={applicationNotes[application.id] ?? application.reviewNotes ?? ''}
+                            onChange={(event) => setApplicationNotes((notes) => ({ ...notes, [application.id]: event.target.value }))}
+                          />
+                          <div className="admin-review-actions">
+                            {(['approved', 'needs_changes', 'rejected'] as ApplicationStatus[]).map((status) => (
+                              <button
+                                key={status}
+                                className={status === 'approved' ? 'btn btn-blue' : 'btn btn-secondary'}
+                                disabled={reviewApplication.isPending}
+                                onClick={() => saveApplicationStatus(application.id, status)}
+                              >
+                                {applicationStatusLabel[status]}
+                              </button>
+                            ))}
+                          </div>
+                          {application.status === 'pending' && (
+                            <small className="field-help">Təsdiqdən əvvəl müraciətdəki e-poçtla hesab yaradılmalı və ən azı bir dəfə daxil olunmalıdır.</small>
+                          )}
+                        </article>
                       ))}
                     </div>
-                    {application.status === 'pending' && (
-                      <small className="field-help">Təsdiqdən əvvəl müraciətdəki e-poçtla hesab yaradılmalı və ən azı bir dəfə daxil olunmalıdır.</small>
-                    )}
-                  </article>
-                ))}
-              </div>
-            ) : <div className="empty-state-mini">Yoxlanacaq satıcı müraciəti yoxdur.</div>}
+                  ) : <div className="empty-state-mini">Açıq müraciət yoxdur.</div>}
+                  {decidedApplications.length > 0 && (
+                    <div className="admin-log" data-testid="log-seller-applications">
+                      <h3 className="admin-log-title">Qərar jurnalı</h3>
+                      {decidedApplications.map((application) => (
+                        <article className="admin-log-row" key={application.id}>
+                          <time dateTime={new Date(application.updatedAt).toISOString()}>{reviewDate(application.updatedAt)}</time>
+                          <div>
+                            <strong>{application.storeName}</strong>
+                            <span>{application.ownerName} · {application.email}</span>
+                            {application.reviewNotes && <p>Qeyd: {application.reviewNotes}</p>}
+                          </div>
+                          <span className={`status-badge ${application.status === 'approved' ? 'active' : 'draft'}`}>{applicationStatusLabel[application.status]}</span>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </section>
 
           <section id="products" className="seller-panel-section">
             <h2>Məhsul yoxlaması {products.data ? `(${products.data.length})` : ''}</h2>
-            {products.isLoading ? <div className="empty-state-mini">Məhsullar yüklənir...</div> : products.data?.length ? (
-              <div className="admin-review-list">
-                {products.data.map((product) => (
-                  <article className="admin-review-card" key={product.id}>
-                    <div className="admin-review-heading">
-                      <div><h3>{product.name}</h3><span>{product.brand || 'Brendsiz'} · {product.category} · {product.price} AZN · stok: {product.stock} · {product.status}</span></div>
-                      <span className={`status-badge ${product.approvalStatus === 'approved' ? 'active' : 'draft'}`}>{productStatusLabel[product.approvalStatus]}</span>
-                    </div>
-                    <p>{product.description || `${product.color} · ${product.material} · ${product.shape} · ${product.size}`}</p>
-                    {product.moderationNote && <p><strong>Əvvəlki qeyd:</strong> {product.moderationNote}</p>}
-                    <textarea
-                      aria-label={`${product.name} üçün moderasiya qeydi`}
-                      placeholder="Satıcıya göstəriləcək qeyd"
-                      value={productNotes[product.id] ?? product.moderationNote ?? ''}
-                      onChange={(event) => setProductNotes((notes) => ({ ...notes, [product.id]: event.target.value }))}
-                    />
-                    <div className="admin-review-actions">
-                      {(['approved', 'needs_changes', 'rejected'] as ProductStatus[]).map((status) => (
-                        <button
-                          key={status}
-                          className={status === 'approved' ? 'btn btn-blue' : 'btn btn-secondary'}
-                          disabled={reviewProduct.isPending}
-                          onClick={() => saveProductStatus(product.id, status)}
-                        >
-                          {productStatusLabel[status]}
-                        </button>
+            {products.isLoading ? <div className="empty-state-mini">Məhsullar yüklənir...</div> : (() => {
+              const openProducts = products.data?.filter((product) => product.approvalStatus === 'pending' || product.approvalStatus === 'needs_changes') ?? [];
+              const decidedProducts = [...(products.data?.filter((product) => product.approvalStatus === 'approved' || product.approvalStatus === 'rejected') ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+              if (!products.data?.length) return <div className="empty-state-mini">Yoxlanacaq məhsul yoxdur.</div>;
+              return (
+                <>
+                  {openProducts.length ? (
+                    <div className="admin-review-list">
+                      {openProducts.map((product) => (
+                        <article className="admin-review-card" key={product.id}>
+                          <div className="admin-review-heading">
+                            <div><h3>{product.name}</h3><span>{product.brand || 'Brendsiz'} · {product.category} · {product.price} AZN · stok: {product.stock} · {product.status}</span></div>
+                            <span className={`status-badge ${product.approvalStatus === 'needs_changes' ? 'pending' : 'draft'}`}>{productStatusLabel[product.approvalStatus]}</span>
+                          </div>
+                          <p>{product.description || `${product.color} · ${product.material} · ${product.shape} · ${product.size}`}</p>
+                          {product.moderationNote && <p><strong>Əvvəlki qeyd:</strong> {product.moderationNote}</p>}
+                          <textarea
+                            aria-label={`${product.name} üçün moderasiya qeydi`}
+                            placeholder="Satıcıya göstəriləcək qeyd"
+                            value={productNotes[product.id] ?? product.moderationNote ?? ''}
+                            onChange={(event) => setProductNotes((notes) => ({ ...notes, [product.id]: event.target.value }))}
+                          />
+                          <div className="admin-review-actions">
+                            {(['approved', 'needs_changes', 'rejected'] as ProductStatus[]).map((status) => (
+                              <button
+                                key={status}
+                                className={status === 'approved' ? 'btn btn-blue' : 'btn btn-secondary'}
+                                disabled={reviewProduct.isPending}
+                                onClick={() => saveProductStatus(product.id, status)}
+                              >
+                                {productStatusLabel[status]}
+                              </button>
+                            ))}
+                          </div>
+                        </article>
                       ))}
                     </div>
-                  </article>
-                ))}
-              </div>
-            ) : <div className="empty-state-mini">Yoxlanacaq məhsul yoxdur.</div>}
+                  ) : <div className="empty-state-mini">Açıq məhsul yoxlaması yoxdur.</div>}
+                  {decidedProducts.length > 0 && (
+                    <div className="admin-log" data-testid="log-seller-products">
+                      <h3 className="admin-log-title">Qərar jurnalı</h3>
+                      {decidedProducts.map((product) => (
+                        <article className="admin-log-row" key={product.id}>
+                          <time dateTime={new Date(product.updatedAt).toISOString()}>{reviewDate(product.updatedAt)}</time>
+                          <div>
+                            <strong>{product.name}</strong>
+                            <span>{product.brand || 'Brendsiz'} · {product.price} AZN</span>
+                            {product.moderationNote && <p>Qeyd: {product.moderationNote}</p>}
+                          </div>
+                          <span className={`status-badge ${product.approvalStatus === 'approved' ? 'active' : 'draft'}`}>{productStatusLabel[product.approvalStatus]}</span>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </section>
 
           <section id="users" className="seller-panel-section">
