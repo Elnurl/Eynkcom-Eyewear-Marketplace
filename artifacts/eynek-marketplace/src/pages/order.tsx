@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { ArrowLeft, Check, ClipboardCheck, Package, RotateCcw, ShieldCheck, Store } from 'lucide-react';
+import { ArrowLeft, Check, ClipboardCheck, Package, RotateCcw, ShieldCheck, Store, X } from 'lucide-react';
 import { Link, useLocation, useParams } from 'wouter';
 import { useAuthSession } from '@/lib/auth-client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -43,6 +43,7 @@ export default function OrderPage() {
   const [decisionError, setDecisionError] = useState('');
   const [returnDrafts, setReturnDrafts] = useState<Record<string, { reason: string; note: string }>>({});
   const [returnError, setReturnError] = useState('');
+  const [returnFor, setReturnFor] = useState<string | null>(null);
   const accountAccess = isLoaded && Boolean(isSignedIn);
   const queryKey = useMemo(() => [...getGetGuestOrderQueryKey(orderId), accessToken], [orderId, accessToken]);
   const order = useGetGuestOrder(orderId, {
@@ -94,6 +95,7 @@ export default function OrderPage() {
       });
       queryClient.setQueryData(queryKey, updated);
       setReturnDrafts((current) => ({ ...current, [seller.id]: { reason: '', note: '' } }));
+      setReturnFor(null);
     } catch (error) {
       const response = error as { data?: { error?: string } };
       setReturnError(response.data?.error ?? 'Qaytarma sorğusu göndərilmədi.');
@@ -122,8 +124,7 @@ export default function OrderPage() {
         <div className="commerce-grid" style={{ marginTop: 16 }}>
           <div>
             <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Sifariş mərhələləri</h2><p>Son yeniliklər mağazaların təsdiqləmələrinə əsasən yenilənir.</p></div><Package size={19} color="#5b719a" /></div><div className="timeline">{order.data.timeline.map((event, index) => <div className="timeline-row" key={`${event.createdAt}-${index}`} data-testid={`timeline-event-${index}`}><div><strong>{event.label}</strong></div><time>{dateLabel(event.createdAt)}</time></div>)}</div></section>
-            <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Mağaza sifarişləri</h2><p>Sifarişinizdəki mağazalar və məhsullar. Qaytarma sorğusu birbaşa mağazaya yox, EYNƏK-ə gedir.</p></div><Store size={19} color="#5b719a" /></div><div className="seller-summary">{order.data.sellerOrders.map((seller) => {
-              const draft = returnDrafts[seller.id] ?? { reason: '', note: '' };
+            <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Mağaza sifarişləri</h2><p>Sifarişinizdəki mağazalar və məhsullar. Qaytarma sorğusu birbaşa mağazaya yox, EYNƏK-ə gedir.</p></div><Store size={19} color="#5b719a" /></div>            <div className="seller-summary">{order.data.sellerOrders.map((seller) => {
               return <article key={seller.id} className="seller-order-card commerce-card" data-testid={`card-buyer-seller-order-${seller.id}`}>
                 <div className="seller-order-top"><div><strong>{seller.sellerName}</strong><small>{seller.items.length} məhsul</small></div><StatePill status={seller.status} label={sellerStatusLabel(seller.status, (order.data as BuyerOrder).fulfillmentMethod)} /></div>
                 <div className="order-items">{seller.items.map((item) => <div className="order-item-row" key={item.productId}><span><strong>{item.productName}</strong> · {item.quantity} ədəd</span><span>{money(item.lineTotalAzN)}</span></div>)}</div>
@@ -136,22 +137,35 @@ export default function OrderPage() {
                     <small>Bu sorğu geri ödəniş yaratmır. EYNƏK mağaza ilə razılaşdırır.</small>
                   </div>
                 ) : seller.status === 'delivered' ? (
-                  <form className="return-box" onSubmit={(event) => { event.preventDefault(); void submitReturn(seller); }}>
-                    <strong>Qaytarma sorğusu</strong>
-                    <p>Sorğunu EYNƏK-ə göndərin. Geri ödəniş müddəti hələ razılaşdırılmayıb.</p>
-                    <div className="commerce-field"><label htmlFor={`return-reason-${seller.id}`}>Səbəb</label><textarea id={`return-reason-${seller.id}`} required minLength={8} maxLength={400} value={draft.reason} onChange={(event) => setReturnDrafts((current) => ({ ...current, [seller.id]: { ...draft, reason: event.target.value } }))} data-testid={`input-return-reason-${seller.id}`} /></div>
-                    <div className="commerce-field"><label htmlFor={`return-note-${seller.id}`}>Əlavə qeyd <span style={{ color: '#87909c', fontWeight: 500 }}>(istəyə görə)</span></label><textarea id={`return-note-${seller.id}`} maxLength={500} value={draft.note} onChange={(event) => setReturnDrafts((current) => ({ ...current, [seller.id]: { ...draft, note: event.target.value } }))} data-testid={`input-return-note-${seller.id}`} /></div>
-                    <button className="btn btn-secondary" type="submit" disabled={createReturn.isPending} data-testid={`button-submit-return-${seller.id}`}>{createReturn.isPending ? 'Göndərilir...' : 'EYNƏK-ə göndər'}</button>
-                  </form>
+                  <button type="button" className="return-link" onClick={() => { setReturnError(''); setReturnFor(seller.id); }} data-testid={`button-open-return-${seller.id}`}>Qaytarma sorğusu</button>
                 ) : null}
               </article>;
-            })}</div>{returnError && <QueryError message={returnError} />}</section>
+            })}</div></section>
           </div>
           <aside>
             <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Məlumatlar</h2><p>{accessToken ? 'Qonaq sifarişi' : 'Hesab sifarişi'}</p></div><ShieldCheck size={19} color="#5b719a" /></div><dl className="sidebar-summary" style={{ padding: '18px 0 0' }}><div><dt>Üsul</dt><dd>{fulfillmentLabel(order.data.fulfillmentMethod)}</dd></div><div><dt>Müştəri</dt><dd>{order.data.customerName}</dd></div><div><dt>Telefon</dt><dd>{order.data.customerPhone}</dd></div><div><dt>{order.data.fulfillmentMethod === 'store_pickup' ? 'Götürmə yeri' : 'Ünvan'}</dt><dd style={{ textAlign: 'right', maxWidth: 170 }}>{order.data.deliveryAddress}</dd></div><div><dt>Ödəniş</dt><dd>{paymentStatusLabel(order.data.paymentStatus, order.data.fulfillmentMethod)}</dd></div></dl></section>
             <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}><div className="commerce-card-heading"><div><h2>Yekun məbləğ</h2><p>{order.data.fulfillmentMethod === 'store_pickup' ? 'Mağazadan götürmə pulsuzdur.' : 'Mağazalar təsdiq etdikcə dəqiqləşir.'}</p></div></div><div className="summary-lines"><div className="summary-line"><span>Məhsullar</span><strong>{money(order.data.productSubtotalAzN)}</strong></div><div className="summary-line"><span>Çatdırılma</span><strong>{order.data.fulfillmentMethod === 'store_pickup' ? money(0) : money(order.data.deliveryTotalAzN)}</strong></div><div className="summary-line total"><span>Cəmi</span><strong>{money(order.data.totalAzN)}</strong></div></div></section>
           </aside>
         </div>
+        {(() => {
+          const seller = order.data.sellerOrders.find((item) => item.id === returnFor);
+          if (!seller) return null;
+          const draft = returnDrafts[seller.id] ?? { reason: '', note: '' };
+          return (
+            <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Qaytarma sorğusu" onClick={(event) => { if (event.target === event.currentTarget) setReturnFor(null); }}>
+              <form className="return-dialog" onSubmit={(event) => { event.preventDefault(); void submitReturn(seller); }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 12 }}>
+                  <div><h2>Qaytarma sorğusu</h2><p>Sorğunu EYNƏK-ə göndərin. Geri ödəniş müddəti hələ razılaşdırılmayıb.</p></div>
+                  <button type="button" className="icon-button" onClick={() => setReturnFor(null)} aria-label="Sorğunu bağla"><X size={18} /></button>
+                </div>
+                <div className="commerce-field"><label htmlFor={`return-reason-${seller.id}`}>Səbəb</label><textarea id={`return-reason-${seller.id}`} required minLength={8} maxLength={400} value={draft.reason} onChange={(event) => setReturnDrafts((current) => ({ ...current, [seller.id]: { ...draft, reason: event.target.value } }))} data-testid={`input-return-reason-${seller.id}`} /></div>
+                <div className="commerce-field"><label htmlFor={`return-note-${seller.id}`}>Əlavə qeyd <span style={{ color: '#87909c', fontWeight: 500 }}>(istəyə görə)</span></label><textarea id={`return-note-${seller.id}`} maxLength={500} value={draft.note} onChange={(event) => setReturnDrafts((current) => ({ ...current, [seller.id]: { ...draft, note: event.target.value } }))} data-testid={`input-return-note-${seller.id}`} /></div>
+                {returnError && <QueryError message={returnError} />}
+                <button className="btn btn-blue" type="submit" disabled={createReturn.isPending} data-testid={`button-submit-return-${seller.id}`}>{createReturn.isPending ? 'Göndərilir...' : 'EYNƏK-ə göndər'}</button>
+              </form>
+            </div>
+          );
+        })()}
       </>
     )}
   </div></main>;

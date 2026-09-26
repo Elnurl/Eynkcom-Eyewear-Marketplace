@@ -65,6 +65,7 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(FulfillmentMethod.courier);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.pay_on_delivery);
   const [formError, setFormError] = useState('');
+  const [placedOrder, setPlacedOrder] = useState<{ id: string; orderNumber: string; token: string } | null>(null);
 
   const options = checkoutOptions.data as CheckoutOptions | undefined;
   const areas = options?.deliveryAreas ?? [GuestOrderInputDeliveryArea.Bakı, GuestOrderInputDeliveryArea.Abşeron];
@@ -119,12 +120,28 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
       const order = await createOrder.mutateAsync({ data: input });
       sessionStorage.setItem(`eynek:order-token:${order.id}`, guestAccessToken);
       onClearCart();
-      setLocation(`/order/${order.id}#${guestAccessToken}`);
+      setPlacedOrder({ id: order.id, orderNumber: order.orderNumber, token: guestAccessToken });
     } catch (error) {
       const response = error as { data?: { error?: string } };
       setFormError(response.data?.error ?? 'Sifariş yaradılmadı. Məlumatları yoxlayıb yenidən cəhd edin.');
     }
   };
+
+  if (placedOrder) {
+    return (
+      <main className="commerce-page">
+        <div className="commerce-wrap">
+          <section className="commerce-card commerce-card-pad order-complete">
+            <CheckCircle2 size={28} color="#1f8a4c" />
+            <div className="eyebrow">Sifariş qəbul edildi</div>
+            <h1>Sifarişin tamamlandı.</h1>
+            <p>Sifariş {placedOrder.orderNumber} qeydə alındı. Mağaza təsdiqini gözləyir. İzləmə səhifəsində hazırlıq və götürmə mərhələsini görə bilərsən.</p>
+            <button className="btn btn-blue" type="button" data-testid="link-track-order" onClick={() => setLocation(`/order/${placedOrder.id}#${placedOrder.token}`)}>Sifarişi izlə <ArrowRight size={16} /></button>
+          </section>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="commerce-page">

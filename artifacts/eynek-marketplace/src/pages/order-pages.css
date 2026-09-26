@@ -181,7 +181,13 @@
 }
 .return-box strong { color: #2b3540; font-size: 12px; }
 .return-box p, .return-box small { margin: 0; color: #6d6760; font-size: 11px; line-height: 1.5; }
-.return-box .btn { justify-self: start; min-height: 40px; }
+.order-complete { display: grid; justify-items: start; gap: 12px; max-width: 640px; margin: 28px auto; }
+.order-complete h1 { margin: 0; color: #171b22; font-size: clamp(36px, 5vw, 52px); letter-spacing: -.05em; }
+.order-complete p { margin: 0 0 8px; color: #66707c; font-size: 14px; line-height: 1.55; }
+.return-link { display: block; width: fit-content; margin: 10px 0 0 auto; border: 0; padding: 0; background: transparent; color: #24416e; font: inherit; font-size: 12px; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.return-dialog { width: min(480px, 100%); display: grid; gap: 12px; padding: 22px; border: 0; border-radius: 18px; background: white; }
+.return-dialog h2 { margin: 0; color: #171b22; font-size: 22px; }
+.return-dialog p { margin: 0; color: #66707c; font-size: 12px; line-height: 1.5; }
 .return-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .pickup-shop strong { display: block; color: #202a38; font-size: 13px; }
