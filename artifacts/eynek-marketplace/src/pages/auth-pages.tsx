@@ -105,7 +105,7 @@ export function SignInPage() {
   return (
     <AuthShell
       title="Daxil ol"
-      lead="EYNƏK.com hesabınla sifarişlərini izlə və ya mağazanı idarə et."
+      lead="EYNƏK hesabınla sifarişlərini izlə və ya mağazanı idarə et."
       footer={<>Hesabın yoxdur?<Link href={`/sign-up?redirect_url=${encodeURIComponent(target)}`} data-testid="link-to-sign-up">Hesab yarat</Link></>}
     >
       <ErrorBox message={error} />

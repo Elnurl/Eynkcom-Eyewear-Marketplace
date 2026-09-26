@@ -44,12 +44,12 @@ function escapeHtml(value: string): string {
 }
 
 export function actionEmail(options: { to: string; subject: string; intro: string; action: string; url: string; outro: string }): EmailMessage {
-  const text = `${options.intro}\n\n${options.action}: ${options.url}\n\n${options.outro}\n\nEYNƏK.com`;
+  const text = `${options.intro}\n\n${options.action}: ${options.url}\n\n${options.outro}\n\nEYNƏK`;
   const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#171a3a;max-width:520px">
 <p>${escapeHtml(options.intro)}</p>
 <p><a href="${escapeHtml(options.url)}" style="display:inline-block;background:#171a3a;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">${escapeHtml(options.action)}</a></p>
 <p style="color:#5c5c5c;font-size:13px">${escapeHtml(options.outro)}</p>
-<p style="color:#5c5c5c;font-size:13px">EYNƏK.com</p>
+<p style="color:#5c5c5c;font-size:13px">EYNƏK</p>
 </div>`;
   return { to: options.to, subject: options.subject, text, html };
 }

@@ -67,7 +67,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .topbar { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid var(--line); background: rgba(250,250,248,.96); }
 .nav { min-height: 76px; display: flex; align-items: center; gap: 28px; }
 .brand { display: inline-flex; align-items: center; flex: 0 0 auto; }
-.brand-image { display: block; width: 190px; height: auto; }
+.brand-image { display: block; width: 117px; height: auto; }
 .brand-word { display: inline-block; line-height: 1; vertical-align: -.09em; white-space: nowrap; }
 .brand-word img { display: block; width: auto; height: .8em; }
 .vendor-hero .brand-word img { filter: brightness(0) invert(1); }
@@ -165,7 +165,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .seller-banner .btn:hover { background: #111; }
 .seller-banner h2 .brand-word { display: inline-block; line-height: 0; vertical-align: baseline; transform: translateY(0.14em); }
 .seller-banner h2 .brand-word img { display: inline-block; height: 0.74em; }
-.banner-brand-word { margin-inline: .16em .04em; white-space: nowrap; }
+.banner-brand-word { margin-left: .18em; margin-right: 0; white-space: nowrap; }
 .seller-banner-mark { flex: none; color: #b7b3ac; }
 
 .collection-page, .directory-page, .account-page, .cart-page, .seller-page { padding: 53px 0 88px; }
@@ -583,7 +583,7 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .footer { padding: 56px 0 25px; border-top: 1px solid var(--line); background: var(--surface); }
 .footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 32px; }
 .footer h3 { margin: 0 0 14px; color: var(--navy); font-size: 14px; }
-.footer .brand-image { width: 205px; }
+.footer .brand-image { width: 126px; }
 .footer p { max-width: 285px; color: var(--muted); font-size: 11px; line-height: 1.65; }
 .footer a { display: block; margin: 9px 0; color: var(--muted); font-size: 11px; }
 .footer a:hover { color: var(--blue); }
@@ -595,7 +595,7 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .mobile-drawer-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(18,27,44,.56); animation: fade-in .2s ease both; }
 .mobile-drawer-panel { position: absolute; top: 0; bottom: 0; left: 0; width: min(360px, 88vw); display: flex; flex-direction: column; overflow: hidden; background: #fff; color: #192738; box-shadow: 18px 0 50px rgba(14,26,43,.18); animation: drawer-slide-in .25s cubic-bezier(.2,.75,.25,1) both; }
 .mobile-drawer-header { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 21px; border-bottom: 1px solid #edf0f4; }
-.mobile-drawer-header .brand-image { width: 156px; max-width: 100%; }
+.mobile-drawer-header .brand-image { width: 96px; max-width: 100%; }
 .mobile-drawer-close { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border: 0; border-radius: 50%; background: #f3f5f7; color: #192738; }
 .mobile-drawer-close:hover { background: #e8edf1; }
 .mobile-drawer-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 22px 21px 36px; }
@@ -623,7 +623,7 @@ body { background: #f8faff; }
 .nav > .brand { grid-column: 1 / -1; grid-row: 1; width: max-content; }
 .nav > .nav-links { grid-column: 1; grid-row: 2; }
 .nav > .nav-actions { grid-column: 2; grid-row: 2; margin-left: 0; }
-.seller-auth-header .brand-image { width: 210px; }
+.seller-auth-header .brand-image { width: 129px; }
 .nav-links { gap: 8px; color: #191b20; font-weight: 700; }
 .nav-links a { min-height: 38px; border: 1px solid transparent; border-radius: 999px; padding: 0 13px; }
 .nav-links a:hover, .nav-links a.active { color: #111317; border-color: #d7dae3; background: white; }
@@ -710,7 +710,7 @@ body { background: #f8faff; }
 .detail-back { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #e1e5ed; border-radius: 999px; background: white; padding: 9px 13px; font-size: 11px; font-weight: 700; }
 .detail-back svg { transform: rotate(180deg); }
 .detail-back:hover { border-color: #9fa6b3; }
-.detail-brand-image { width: 145px; }
+.detail-brand-image { width: 89px; }
 .detail-layout { grid-template-columns: minmax(0, 1.08fr) minmax(350px, .92fr); gap: 50px; align-items: start; }
 .detail-gallery { position: relative; }
 .detail-art, .detail-art[class*="tone-"] { height: 450px; border-radius: 28px; background: white; border: 1px solid #edf0f5; box-shadow: 0 14px 36px rgba(23,26,58,.035); }
@@ -882,11 +882,11 @@ body { background: #f8faff; }
   .nav { min-height: 66px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; }
   .nav > .brand { grid-column: auto; grid-row: auto; width: auto; min-width: 0; justify-self: start; }
   .nav > .nav-actions { grid-column: auto; grid-row: auto; margin-left: 0; justify-self: end; }
-  .nav .brand-image { width: 145px; max-width: 100%; }
+  .nav .brand-image { width: 89px; max-width: 100%; }
   .nav-actions { gap: 7px; }
   .nav-actions .nav-search { min-width: 44px; width: 44px; min-height: 44px; }
   .nav-actions .icon-button { width: 44px; height: 44px; }
-  .detail-brand-image { width: 130px; }
+  .detail-brand-image { width: 80px; }
   .nav-actions .nav-seller, .nav-actions .icon-button:nth-child(1), .nav-actions .icon-button:nth-child(2) { display: none; }
   .hero { padding: 35px 0 55px; }
   .hero h1 { font-size: 53px; }
@@ -960,7 +960,7 @@ body { background: #f8faff; }
 }
 @media (max-width: 380px) {
   .nav { gap: 6px; }
-  .nav .brand-image { width: 112px; }
+  .nav .brand-image { width: 69px; }
   .mobile-menu { width: 32px; height: 35px; }
   .nav-actions { gap: 4px; }
   .nav-actions .nav-search { min-width: 35px; width: 35px; min-height: 35px; }
@@ -1023,7 +1023,7 @@ body { background: #f8faff; }
 @media (min-width: 981px) {
   .nav { min-height: 72px; display: flex; align-items: center; gap: 28px; padding: 12px 0; }
   .nav > .brand { order: 0; }
-  .nav .brand-image { width: 150px; }
+  .nav .brand-image { width: 92px; }
   .nav > .nav-links { order: 1; gap: 2px; }
   .nav-links a { min-height: 38px; padding: 0 12px; border-radius: 999px; }
   /* Children of .nav-actions join the .nav row, so the search can sit between links and icons. */

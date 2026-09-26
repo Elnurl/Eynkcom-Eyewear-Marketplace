@@ -26,13 +26,13 @@ services:
       - key: BETTER_AUTH_SECRET
         generateValue: true
       - key: BETTER_AUTH_URL
-        value: https://xn--eynk-x6b.com
+        value: https://eynek.store
       - key: AUTH_TRUSTED_ORIGINS
-        value: https://www.xn--eynk-x6b.com
+        value: https://eynek.store,https://www.eynek.store,https://eynek-marketplace.onrender.com
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM
-        value: "EYNƏK.com <no-reply@xn--eynk-x6b.com>"
+        value: "EYNƏK <no-reply@eynek.store>"
       # Optional Google sign-in; set VITE_GOOGLE_SIGN_IN=true once both are filled in
       - key: GOOGLE_CLIENT_ID
         sync: false

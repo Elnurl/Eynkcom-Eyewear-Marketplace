@@ -7,13 +7,13 @@ type LegalSlug = 'qaydalar' | 'mexfilik' | 'qaytarma' | 'satici-muqavilesi';
 const pages: Record<LegalSlug, { eyebrow: string; title: string; lead: string; sections: { heading: string; body: string[] }[] }> = {
   qaydalar: {
     eyebrow: 'İstifadə şərtləri',
-    title: 'EYNƏK.com qaydaları.',
+    title: 'EYNƏK qaydaları.',
     lead: 'Bu səhifə platformanın ilk satış mərhələsi üçün yazılıb. Hüquqi mətn müqavilə kimi yekunlaşdırılmayıb; sifariş, ödəniş və qaytarma şərtləri tərəfdaş mağazalarla razılaşdırıldıqca dəqiqləşəcək.',
     sections: [
       {
         heading: 'Platforma nədir',
         body: [
-          'EYNƏK.com Azərbaycandakı optik mağazaların eynək çərçivələrini bir yerdə göstərən marketplace-dir. Malların satıcısı EYNƏK deyil, təsdiqlənmiş optik mağazadır.',
+          'EYNƏK Azərbaycandakı optik mağazaların eynək çərçivələrini bir yerdə göstərən marketplace-dir. Malların satıcısı EYNƏK deyil, təsdiqlənmiş optik mağazadır.',
           'İlk satış mərhələsində kataloq günəş eynəkləri və optik çərçivələrlə məhdudlaşır. Reseptli linza hazırlığı hələ mövcud deyil.',
         ],
       },
@@ -35,14 +35,14 @@ const pages: Record<LegalSlug, { eyebrow: string; title: string; lead: string; s
       },
       {
         heading: 'Əlaqə',
-        body: ['Suallar üçün sat@eynek.com ünvanına yazın.'],
+        body: ['Suallar üçün sat@eynek.store ünvanına yazın.'],
       },
     ],
   },
   mexfilik: {
     eyebrow: 'Məxfilik',
     title: 'Məlumatlarınız necə işlənir.',
-    lead: 'EYNƏK.com sifarişi yerinə yetirmək və hesabınızı qorumaq üçün yalnız lazımi məlumatı toplayır. Bu mətn ilk satış mərhələsi üçün izahdır, ayrıca məxfilik siyasəti hələ notarial və ya hüquqi yekunlaşdırılmayıb.',
+    lead: 'EYNƏK sifarişi yerinə yetirmək və hesabınızı qorumaq üçün yalnız lazımi məlumatı toplayır. Bu mətn ilk satış mərhələsi üçün izahdır, ayrıca məxfilik siyasəti hələ notarial və ya hüquqi yekunlaşdırılmayıb.',
     sections: [
       {
         heading: 'Hansı məlumat toplanır',
@@ -64,7 +64,7 @@ const pages: Record<LegalSlug, { eyebrow: string; title: string; lead: string; s
         heading: 'Saxlama və hüquqlarınız',
         body: [
           'Sessiya və hesab məlumatları platformanın öz bazasında saxlanılır.',
-          'Məlumatlarınızın silinməsi və ya düzəlişi üçün sat@eynek.com ünvanına yazın.',
+          'Məlumatlarınızın silinməsi və ya düzəlişi üçün sat@eynek.store ünvanına yazın.',
         ],
       },
     ],
@@ -72,13 +72,13 @@ const pages: Record<LegalSlug, { eyebrow: string; title: string; lead: string; s
   qaytarma: {
     eyebrow: 'Qaytarma',
     title: 'Qaytarma necə işləyir.',
-    lead: 'Qaytarma sorğuları əvvəlcə EYNƏK.com-a göndərilməlidir. Geri ödəniş müddəti, qaytarma çatdırılması və hüquqi şərtlər hələ mağazalarla yekun razılaşdırılmayıb.',
+    lead: 'Qaytarma sorğuları əvvəlcə EYNƏK-ə göndərilməlidir. Geri ödəniş müddəti, qaytarma çatdırılması və hüquqi şərtlər hələ mağazalarla yekun razılaşdırılmayıb.',
     sections: [
       {
         heading: 'Kimə müraciət edilir',
         body: [
-          'Alıcı qaytarma sorğusunu birbaşa mağazaya yox, EYNƏK.com-a göndərməlidir. Çatdırılmış və ya götürülmüş mağaza hissəsi üçün bunu sifariş səhifəsindən də etmək olar. Platforma həmin mağazanın sifariş hissəsi ilə əlaqələndirir.',
-          'Malların satıcısı yenə də optik mağazadır. EYNƏK.com məhsulun sahibi kimi çıxış etmir.',
+          'Alıcı qaytarma sorğusunu birbaşa mağazaya yox, EYNƏK-ə göndərməlidir. Çatdırılmış və ya götürülmüş mağaza hissəsi üçün bunu sifariş səhifəsindən də etmək olar. Platforma həmin mağazanın sifariş hissəsi ilə əlaqələndirir.',
+          'Malların satıcısı yenə də optik mağazadır. EYNƏK məhsulun sahibi kimi çıxış etmir.',
         ],
       },
       {
@@ -90,14 +90,14 @@ const pages: Record<LegalSlug, { eyebrow: string; title: string; lead: string; s
       },
       {
         heading: 'Əlaqə',
-        body: ['Qaytarma sorğusu üçün sat@eynek.com ünvanına sifariş nömrənizi yazın.'],
+        body: ['Qaytarma sorğusu üçün sat@eynek.store ünvanına sifariş nömrənizi yazın.'],
       },
     ],
   },
   'satici-muqavilesi': {
     eyebrow: 'Satıcılar üçün',
     title: 'Satıcı şərtləri.',
-    lead: 'Optik mağaza EYNƏK.com-da yalnız admin təsdiqindən sonra sata bilər. Bu səhifə pilot qaydaları izah edir; ayrıca imzalanmış müqavilə hələ tələb olunmur, amma yekun hüquqi mətn yerinə keçmir.',
+    lead: 'Optik mağaza EYNƏK-də yalnız admin təsdiqindən sonra sata bilər. Bu səhifə pilot qaydaları izah edir; ayrıca imzalanmış müqavilə hələ tələb olunmur, amma yekun hüquqi mətn yerinə keçmir.',
     sections: [
       {
         heading: 'Kim sata bilər',

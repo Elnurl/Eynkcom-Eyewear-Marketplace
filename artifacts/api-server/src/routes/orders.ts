@@ -384,7 +384,7 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
       deliveryTotalQepik: null,
       totalQepik: null,
     });
-    await addEvent(tx, orderId, "received", "Sifariş EYNƏK.com tərəfindən qəbul edildi.");
+    await addEvent(tx, orderId, "received", "Sifariş EYNƏK tərəfindən qəbul edildi.");
     await addEvent(
       tx,
       orderId,

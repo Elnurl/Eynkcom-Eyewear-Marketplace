@@ -338,7 +338,7 @@ function Footer() {
         <div><div className="brand"><BrandLogo /></div><p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p></div>
         <div><h3>Kəşf et</h3><Link href="/collection">Eynəklər</Link><Link href="/brands">Brendlər</Link><Link href="/stores">Mağazalar</Link></div>
         <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/destek">Dəstək</Link><Link href="/qaydalar">Qaydalar</Link><Link href="/mexfilik">Məxfilik</Link><Link href="/qaytarma">Qaytarma</Link></div>
-        <div><h3>Satıcılar üçün</h3><Link href="/seller"><BrandWord />-də sat</Link><Link href="/satici-muqavilesi">Satıcı müqaviləsi</Link><a href="mailto:sat@eynek.com">Bizimlə əlaqə</a></div>
+        <div><h3>Satıcılar üçün</h3><Link href="/seller"><BrandWord />-də sat</Link><Link href="/satici-muqavilesi">Satıcı müqaviləsi</Link><a href="mailto:sat@eynek.store">Bizimlə əlaqə</a></div>
       </div>
       <div className="container footer-bottom"><span>© {new Date().getFullYear()} <BrandWord /></span><span>Bakı • Azərbaycan</span></div>
     </footer>
@@ -474,7 +474,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
             <div className="seller-banner">
               <div className="seller-banner-copy">
                 <div className="seller-banner-kicker">Satıcılar üçün</div>
-                <h2>Mağazanı<span className="banner-brand-word"><BrandWord /></span>.com-da aç, daha çox alıcıya çat</h2>
+                <h2>Mağazanı<span className="banner-brand-word"><BrandWord /></span>-də aç, daha çox alıcıya çat</h2>
                 <p>Məhsullarını yerləşdir, sifarişlərini idarə et və mağazanı Bakı və Abşeronda tanıt.</p>
                 <Link href="/seller" className="btn" data-testid="link-home-seller">Satıcı ol <ArrowRight size={14} /></Link>
               </div>
@@ -906,7 +906,7 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
       <button type="button" className="mobile-drawer-backdrop" onClick={onClose} aria-label="Menyunu bağla" tabIndex={-1} />
       <aside ref={drawerRef} id="mobile-drawer" className="mobile-drawer-panel" role="dialog" aria-modal="true" aria-label="Mobil menyu" data-testid="mobile-drawer">
         <div className="mobile-drawer-header">
-          <Link href="/" onClick={onClose} aria-label="EYNƏK.com ana səhifə"><BrandLogo /></Link>
+          <Link href="/" onClick={onClose} aria-label="EYNƏK ana səhifə"><BrandLogo /></Link>
           <button ref={closeRef} type="button" className="mobile-drawer-close" onClick={onClose} aria-label="Menyunu bağla" data-testid="button-close-menu"><X size={21} /></button>
         </div>
         <div className="mobile-drawer-body">

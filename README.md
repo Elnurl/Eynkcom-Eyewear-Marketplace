@@ -51,11 +51,11 @@ migrations at startup (`RUN_MIGRATIONS=false` disables this).
 2. Resend: verify the sending domain and set `RESEND_API_KEY`. Without it nobody
    can confirm an email address, so email + password sign-up cannot finish.
 3. Optional Google sign-in: OAuth client with redirect URI
-   `https://xn--eynk-x6b.com/api/auth/callback/google`, then set the two
+   `https://eynek.store/api/auth/callback/google`, then set the two
    `GOOGLE_*` values and `VITE_GOOGLE_SIGN_IN=true` (rebuild required).
-4. R2 bucket → **CORS policy**: allow `PUT` from `https://xn--eynk-x6b.com` with the
+4. R2 bucket → **CORS policy**: allow `PUT` from `https://eynek.store` with the
    `Content-Type` header (the browser uploads images straight to the bucket).
-5. Render service → **Settings → Custom Domains**: add `xn--eynk-x6b.com` and
-   `www.xn--eynk-x6b.com`, then point DNS at the service as Render instructs.
+5. Render service → **Settings → Custom Domains**: add `eynek.store` and
+   `www.eynek.store`, then point DNS at the service as Render instructs.
 
 Health check: `GET /api/healthz`.

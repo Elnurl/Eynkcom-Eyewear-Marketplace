@@ -36,7 +36,7 @@ const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
 export const googleSignInEnabled = Boolean(googleClientId && googleClientSecret);
 
 export const auth = betterAuth({
-  appName: "EYNƏK.com",
+  appName: "EYNƏK",
   baseURL,
   basePath: "/api/auth",
   secret: process.env.BETTER_AUTH_SECRET,
@@ -61,7 +61,7 @@ export const auth = betterAuth({
       // Not awaited: response time must not reveal whether the account exists.
       void sendEmail(actionEmail({
         to: user.email,
-        subject: "EYNƏK.com — şifrəni yenilə",
+        subject: "EYNƏK — şifrəni yenilə",
         intro: "Hesabının şifrəsini yeniləmək üçün sorğu aldıq.",
         action: "Yeni şifrə təyin et",
         url,
@@ -76,8 +76,8 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       void sendEmail(actionEmail({
         to: user.email,
-        subject: "EYNƏK.com — e-poçtunu təsdiqlə",
-        intro: "EYNƏK.com hesabını aktivləşdirmək üçün e-poçt ünvanını təsdiqlə.",
+        subject: "EYNƏK — e-poçtunu təsdiqlə",
+        intro: "EYNƏK hesabını aktivləşdirmək üçün e-poçt ünvanını təsdiqlə.",
         action: "E-poçtu təsdiqlə",
         url,
         outro: "Hesab yaratmamısansa, bu məktubu nəzərə alma.",
