@@ -52,8 +52,9 @@ const errorMessages: Record<string, string> = {
 
 export function authErrorMessage(error: { code?: string; status?: number } | null | undefined): string {
   if (!error) return '';
+  if (error.code && errorMessages[error.code]) return errorMessages[error.code];
   if (error.status === 429) return 'Çox sayda cəhd edildi. Bir az sonra yenidən yoxlayın.';
   if (error.status === 403) return 'Bu ünvandan hesab əməliyyatı qəbul olunmur. Səhifəni yeniləyib eyni ünvandan yenidən yoxlayın.';
   if (error.status === 500) return 'Server hesabı yaza bilmədi. Bir az sonra yenidən yoxlayın.';
-  return (error.code && errorMessages[error.code]) || 'Əməliyyat alınmadı. Yenidən cəhd edin.';
+  return 'Əməliyyat alınmadı. Yenidən cəhd edin.';
 }
