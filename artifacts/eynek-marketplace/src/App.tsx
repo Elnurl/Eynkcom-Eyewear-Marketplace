@@ -41,6 +41,7 @@ import SellerAdminPage from '@/pages/seller-admin';
 import CheckoutPage from '@/pages/checkout';
 import { LegalPage } from '@/pages/legal';
 import { HelpPage } from '@/pages/help';
+import { AccountAddressSection, AccountPaymentSection, AccountSettingsButton, AccountSettingsPanel, useBuyerProfile } from '@/pages/account-settings';
 import OrderPage from '@/pages/order';
 import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
@@ -708,6 +709,13 @@ function CartPage({ items, stores, onRemove, onCheckout }: { items: Product[]; s
 
 function AccountPage() {
   const { isLoaded, isSignedIn, user } = useAuthSession();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (!settingsOpen) return;
+    document.getElementById('account-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [settingsOpen]);
+  const profileState = useBuyerProfile(isLoaded && isSignedIn ? user?.id ?? null : null, user?.email ?? '');
   const orders = useListAccountOrders({
     query: {
       queryKey: getListAccountOrdersQueryKey(),
@@ -716,13 +724,23 @@ function AccountPage() {
     },
   });
   const email = user?.email;
-  const firstName = user?.name?.trim().split(/\s+/)[0];
+  const displayName = `${profileState.profile.firstName} ${profileState.profile.lastName}`.trim() || user?.name;
+  const firstName = displayName?.trim().split(/\s+/)[0];
   const orderCount = orders.data?.length ?? 0;
+  const saveProfile = async (body: Record<string, string>) => {
+    setSaving(true);
+    try {
+      await profileState.save(body);
+    } catch (saveError) {
+      profileState.setError(saveError instanceof Error ? saveError.message : 'Yadda saxlamaq alınmadı.');
+    } finally {
+      setSaving(false);
+    }
+  };
   const shortcuts = isSignedIn
     ? [
         { href: '#orders', icon: <Package size={20} strokeWidth={1.8} />, title: 'Sifarişlərim', text: orders.isLoading ? 'Yüklənir…' : `${orderCount} sifariş`, testId: 'link-account-orders' },
         { href: '/wishlist', icon: <Heart size={20} strokeWidth={1.8} />, title: 'Seçilmişlər', text: 'Bəyəndiyin çərçivələr', testId: 'link-account-wishlist' },
-        { href: '/forgot-password', icon: <ShieldCheck size={20} strokeWidth={1.8} />, title: 'Şifrəni dəyiş', text: 'E-poçt linki ilə yenilə', testId: 'link-account-password' },
       ]
     : [
         { href: '/wishlist', icon: <Heart size={20} strokeWidth={1.8} />, title: 'Seçilmişlər', text: 'Bu brauzerdə saxladıqların', testId: 'link-account-wishlist' },
@@ -772,8 +790,28 @@ function AccountPage() {
                 ? <a key={item.href} href={item.href} className="account-shortcut" data-testid={item.testId}>{body}</a>
                 : <Link key={item.href} href={item.href} className="account-shortcut" data-testid={item.testId}>{body}</Link>;
             })}
+            {isSignedIn && <AccountSettingsButton open={settingsOpen} onClick={() => setSettingsOpen((current) => !current)} />}
           </div>
         </section>
+
+        {isLoaded && isSignedIn && settingsOpen && (
+          <section className="account-extra">
+            <div className="container account-extra-stack">
+              <AccountSettingsPanel profile={profileState.profile} setProfile={profileState.setProfile} onSave={saveProfile} pending={saving || !profileState.ready} />
+            </div>
+          </section>
+        )}
+
+        {isLoaded && isSignedIn && (
+          <section className="account-extra">
+            <div className="container account-extra-stack">
+              {profileState.error && <p className="account-form-error" role="alert" data-testid="status-account-profile-error">{profileState.error}</p>}
+              {profileState.notice && <p className="account-form-note" role="status" data-testid="status-account-profile-saved">{profileState.notice}</p>}
+              <AccountAddressSection profile={profileState.profile} setProfile={profileState.setProfile} onSave={saveProfile} pending={saving || !profileState.ready} />
+              <AccountPaymentSection />
+            </div>
+          </section>
+        )}
 
         {isLoaded && isSignedIn && (
           <section className="account-orders" id="orders" aria-labelledby="account-orders-heading">

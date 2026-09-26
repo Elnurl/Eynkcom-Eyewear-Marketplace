@@ -62,6 +62,7 @@ app.post("/api/orders", rateLimit({ name: "checkout", limit: 20, windowMs: fifte
 app.post("/api/orders/:orderId/decision", rateLimit({ name: "order-decision", limit: 30, windowMs: fifteenMinutes }));
 app.post("/api/orders/:orderId/returns", rateLimit({ name: "order-return", limit: 10, windowMs: fifteenMinutes }));
 app.post("/api/seller/applications", rateLimit({ name: "seller-application", limit: 5, windowMs: 60 * 60 * 1000 }));
+app.patch("/api/account/profile", rateLimit({ name: "account-profile", limit: 30, windowMs: fifteenMinutes }));
 
 app.use("/api", router);
 

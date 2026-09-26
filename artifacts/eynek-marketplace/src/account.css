@@ -69,6 +69,47 @@
 .account-shortcut-text small { color: #6c737e; font-size: 11px; }
 .account-shortcut-arrow { margin-left: auto; flex: 0 0 auto; color: #9aa0a8; transition: transform .18s, color .18s; }
 .account-shortcut:hover .account-shortcut-arrow { color: #142232; transform: translateX(2px); }
+.account-shortcut.is-open { border-color: #142232; }
+
+.account-extra { padding-top: 18px; }
+.account-extra-stack { display: grid; gap: 14px; }
+.account-panel { padding: 22px 24px; border: 1px solid #eceae4; border-radius: 20px; background: #fff; }
+.account-panel-head h2 { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; color: #142232; font-size: 22px; letter-spacing: -.03em; }
+.account-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.account-field { display: grid; gap: 6px; }
+.account-field--wide { grid-column: 1 / -1; }
+.account-field span { color: #6c737e; font-size: 12px; font-weight: 700; }
+.account-field input,
+.account-field select,
+.account-field textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid #e4e2db;
+  border-radius: 12px;
+  background: #fff;
+  color: #142232;
+  font: inherit;
+  font-size: 14px;
+}
+.account-field textarea { min-height: 88px; padding: 12px 14px; resize: vertical; }
+.account-field input[readonly] { background: #f7f6f2; color: #52616d; }
+.account-password-row { display: flex; align-items: center; gap: 12px; }
+.account-password-row input { flex: 1; }
+.account-password-form { margin-top: 8px; padding-top: 8px; border-top: 1px solid #eeeae3; }
+.account-form-hint, .account-form-note { margin: 0; color: #64717b; font-size: 12px; }
+.account-form-note { color: #1f6b3a; }
+.account-form-error { margin: 0; color: #9b2c2c; font-size: 13px; }
+.account-form .account-cta { justify-self: start; }
+.account-payment-list { display: grid; gap: 10px; margin-top: 16px; }
+.account-payment-choice { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid #eceae4; border-radius: 14px; }
+.account-payment-choice.is-selected { border-color: #142232; }
+.account-payment-choice.is-disabled { color: #8a919a; }
+.account-payment-choice span { display: grid; gap: 3px; }
+.account-payment-choice strong { color: #142232; font-size: 14px; }
+.account-payment-choice small { color: #6c737e; font-size: 12px; line-height: 1.4; }
+.account-payment-choice.is-disabled strong,
+.account-payment-choice.is-disabled small { color: #8a919a; }
 
 .account-orders { padding-top: 56px; scroll-margin-top: 90px; }
 .account-page .account-order-list { display: grid; gap: 10px; }
@@ -99,6 +140,9 @@
 }
 @media (max-width: 760px) {
   .account-shortcuts { grid-template-columns: 1fr; gap: 10px; }
+  .account-form { grid-template-columns: 1fr; }
+  .account-field--wide { grid-column: auto; }
+  .account-password-row { flex-direction: column; align-items: stretch; }
 }
 @media (max-width: 680px) {
   .account-hero-section { padding-top: 12px; }

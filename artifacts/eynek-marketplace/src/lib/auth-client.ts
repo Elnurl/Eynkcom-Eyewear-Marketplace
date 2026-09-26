@@ -48,6 +48,7 @@ const errorMessages: Record<string, string> = {
   PASSWORD_TOO_LONG: 'Şifrə çox uzundur.',
   INVALID_EMAIL: 'Düzgün e-poçt ünvanı yazın.',
   INVALID_TOKEN: 'Link etibarsızdır və ya vaxtı bitib.',
+  INVALID_PASSWORD: 'Cari şifrə yanlışdır.',
 };
 
 export function authErrorMessage(error: { code?: string; status?: number } | null | undefined): string {
