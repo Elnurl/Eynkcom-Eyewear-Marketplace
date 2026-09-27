@@ -42,6 +42,10 @@ export function HelpPage() {
             <h2>Bəbək məsafəsi — PD</h2>
             <p>Bu mərhələdə kataloq hazır gün eynəyi və optik çərçivədir. Reseptli linza və bəbək məsafəsi ölçüsü hələ yoxdur.</p>
           </section>
+          <section id="elaqe">
+            <h2>Əlaqə</h2>
+            <p>Suallar üçün <a href="mailto:info@eynek.store">info@eynek.store</a> ünvanına yazın.</p>
+          </section>
           <nav className="legal-nav" aria-label="Dəstək səhifələri">
             <Link href="/qaydalar">Qaydalar</Link>
             <Link href="/qaytarma">Qaytarma</Link>

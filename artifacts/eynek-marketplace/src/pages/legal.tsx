@@ -35,7 +35,7 @@ const pages: Record<LegalSlug, { eyebrow: string; title: string; lead: string; s
       },
       {
         heading: 'Əlaqə',
-        body: ['Suallar üçün sat@eynek.store ünvanına yazın.'],
+        body: ['Suallar üçün info@eynek.store ünvanına yazın.'],
       },
     ],
   },
@@ -64,7 +64,7 @@ const pages: Record<LegalSlug, { eyebrow: string; title: string; lead: string; s
         heading: 'Saxlama və hüquqlarınız',
         body: [
           'Sessiya və hesab məlumatları platformanın öz bazasında saxlanılır.',
-          'Məlumatlarınızın silinməsi və ya düzəlişi üçün sat@eynek.store ünvanına yazın.',
+          'Məlumatlarınızın silinməsi və ya düzəlişi üçün info@eynek.store ünvanına yazın.',
         ],
       },
     ],
@@ -90,7 +90,7 @@ const pages: Record<LegalSlug, { eyebrow: string; title: string; lead: string; s
       },
       {
         heading: 'Əlaqə',
-        body: ['Qaytarma sorğusu üçün sat@eynek.store ünvanına sifariş nömrənizi yazın.'],
+        body: ['Qaytarma sorğusu üçün info@eynek.store ünvanına sifariş nömrənizi yazın.'],
       },
     ],
   },

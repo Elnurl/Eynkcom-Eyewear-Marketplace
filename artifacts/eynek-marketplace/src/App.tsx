@@ -232,6 +232,7 @@ function HelpMenu() {
             <strong>Dəstək</strong>
           </div>
           {helpLinks.map((item) => <Link key={item.href} href={item.href} className="help-link" onClick={() => setOpen(false)} data-testid={item.testId}>{item.label}</Link>)}
+          <a className="help-link" href="mailto:info@eynek.store" data-testid="link-help-email">info@eynek.store</a>
           <Link href="/destek" className="help-center" onClick={() => setOpen(false)} data-testid="link-help-center">Dəstək mərkəzi</Link>
         </div>
       )}
@@ -337,7 +338,7 @@ function Footer() {
       <div className="container footer-grid">
         <div><div className="brand"><BrandLogo /></div><p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p></div>
         <div><h3>Kəşf et</h3><Link href="/collection">Eynəklər</Link><Link href="/brands">Brendlər</Link><Link href="/stores">Mağazalar</Link></div>
-        <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/destek">Dəstək</Link><Link href="/qaydalar">Qaydalar</Link><Link href="/mexfilik">Məxfilik</Link><Link href="/qaytarma">Qaytarma</Link></div>
+        <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/destek">Dəstək</Link><a href="mailto:info@eynek.store">info@eynek.store</a><Link href="/qaydalar">Qaydalar</Link><Link href="/mexfilik">Məxfilik</Link><Link href="/qaytarma">Qaytarma</Link></div>
         <div><h3>Satıcılar üçün</h3><Link href="/seller"><BrandWord />-də sat</Link><Link href="/satici-muqavilesi">Satıcı müqaviləsi</Link><a href="mailto:sat@eynek.store">Bizimlə əlaqə</a></div>
       </div>
       <div className="container footer-bottom"><span>© {new Date().getFullYear()} <BrandWord /></span><span>Bakı • Azərbaycan</span></div>
@@ -927,6 +928,7 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
           <nav className="mobile-drawer-links" aria-label="Şəxsi keçidlər">
             <Link href="/account" onClick={onClose} data-testid="link-mobile-account">Hesab <ChevronRight size={18} /></Link>
             <Link href="/destek" onClick={onClose} data-testid="link-mobile-help">Dəstək <ChevronRight size={18} /></Link>
+            <a href="mailto:info@eynek.store">info@eynek.store <ChevronRight size={18} /></a>
             <Link href="/wishlist" onClick={onClose}>Seçilmişlər <ChevronRight size={18} /></Link>
             <Link href="/cart" onClick={onClose}>Səbətim <ChevronRight size={18} /></Link>
           </nav>
