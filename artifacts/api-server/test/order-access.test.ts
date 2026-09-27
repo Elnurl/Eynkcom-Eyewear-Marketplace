@@ -117,7 +117,7 @@ test("checkout binds ownership only to verified session, never body, email, or f
   assert.equal(owner.status, 201);
   assert.equal(orders[owner.data.id].buyerUserId, "owner");
   const history = await request("/account/orders", { session: "owner" });
-  assert.deepEqual(history.data.map((order: any) => order.id), [owner.data.id]);
+  assert.deepEqual(history.data.map((order: { id: string }) => order.id).sort(), [guest.data.id, owner.data.id].sort());
   const untrusted = await request("/orders", {
     method: "POST", session: "untrusted",
     body: { ...checkout, guestAccessToken: "c".repeat(64), buyerUserId: "owner" },

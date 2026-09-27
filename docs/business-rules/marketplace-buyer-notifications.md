@@ -3,7 +3,7 @@ name: Marketplace buyer notifications
 description: Channels for transactional buyer updates during the first real-sales release.
 ---
 
-Buyers should receive order confirmation, seller rejection, and delivery-status updates via both email and SMS. No sending providers have yet been selected or connected.
+Buyers should receive order confirmation, seller rejection, and delivery-status updates via both email and SMS. Email uses the existing Resend sender. SMS uses Sinch and is sent only when the Sinch service plan, token, and sender are configured. A missing provider must not block the order.
 
 **Why:** The owner chose both channels for important order changes, including when a guest buyer needs to review the remaining portions of a multi-shop order.
 

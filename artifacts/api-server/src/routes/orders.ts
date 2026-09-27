@@ -50,6 +50,8 @@ import {
   tokenMatches,
 } from "../lib/marketplaceOrders";
 import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
+import { notifyBuyer } from "../lib/buyer-notifications";
+import { noticeForSellerStatus } from "../lib/buyer-notices";
 
 const router: IRouter = Router();
 type OrderTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -447,6 +449,12 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
     res.status(500).json({ error: "Sifariş yaradıldı, lakin məlumatını yükləmək alınmadı." });
     return;
   }
+  notifyBuyer({
+    email: saved.customerEmail,
+    phone: saved.customerPhone,
+    orderNumber: saved.orderNumber,
+    notice: { kind: "placed" },
+  });
   res.status(201).json(CreateGuestOrderResponse.parse(saved));
 });
 
@@ -855,7 +863,15 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
       await addEvent(tx, parent.id, "seller_note", `${storeRecord?.name ?? "Mağaza"}: ${body.data.note.trim()}`, sellerOrder.id);
     }
     await refreshParentOrder(tx, parent.id);
-    return { kind: "updated" as const, orderId: parent.id };
+    const storeName = storeRecord?.name ?? "Mağaza";
+    const notice = noticeForSellerStatus(nextStatus, storeName, pickupOrder);
+    return {
+      kind: "updated" as const,
+      orderId: parent.id,
+      notice: notice
+        ? { email: parent.customerEmail, phone: parent.customerPhone, orderNumber: parent.orderNumber, notice }
+        : null,
+    };
   });
 
   if (result.kind === "missing") {
@@ -875,6 +891,7 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
     res.status(404).json({ error: "Mağaza sifarişi tapılmadı." });
     return;
   }
+  if (result.kind === "updated" && result.notice) notifyBuyer(result.notice);
   res.json(UpdateSellerOrderResponse.parse(saved));
 });
 

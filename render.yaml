@@ -33,6 +33,14 @@ services:
         sync: false
       - key: EMAIL_FROM
         value: "EYNƏK <no-reply@eynek.store>"
+      - key: SINCH_SERVICE_PLAN_ID
+        sync: false
+      - key: SINCH_API_TOKEN
+        sync: false
+      - key: SINCH_SMS_FROM
+        sync: false
+      - key: SINCH_SMS_REGION
+        value: eu
       # Optional Google sign-in; set VITE_GOOGLE_SIGN_IN=true once both are filled in
       - key: GOOGLE_CLIENT_ID
         sync: false

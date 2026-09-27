@@ -112,6 +112,14 @@ export function seedPayableOrder(id: string) {
 }
 
 const dialect = new PgDialect();
+function equalsMatch(row: any, sql: string, params: unknown[]) {
+  return params.every((value, index) => {
+    const field = sql.match(new RegExp(`"([a-z_]+)"\\s*=\\s*\\$${index + 1}`))?.[1];
+    if (!field) return true;
+    const key = field.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+    return row[key] === value;
+  });
+}
 function filter(rows: any[], condition: any) {
   if (!condition) return rows;
   const { sql, params } = dialect.sqlToQuery(condition);
@@ -121,12 +129,8 @@ function filter(rows: any[], condition: any) {
       const allowed = [...placeholders.matchAll(/\$(\d+)/g)].map((match) => params[Number(match[1]) - 1]);
       if (!allowed.includes(row[key])) return false;
     }
-    return params.every((value, index) => {
-      const field = sql.match(new RegExp(`"([a-z_]+)"\\s*=\\s*\\$${index + 1}`))?.[1];
-      if (!field) return true;
-      const key = field.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
-      return row[key] === value;
-    });
+    const alternatives = sql.split(/\s+or\s+/i);
+    return alternatives.some((part) => equalsMatch(row, part, params));
   });
 }
 const data: Record<string, () => any[]> = {
