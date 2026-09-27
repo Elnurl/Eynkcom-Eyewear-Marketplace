@@ -925,6 +925,7 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
           </nav>
           <div className="mobile-drawer-label mobile-drawer-label--secondary">SƏNİN ÜÇÜN</div>
           <nav className="mobile-drawer-links" aria-label="Şəxsi keçidlər">
+            <Link href="/account" onClick={onClose} data-testid="link-mobile-account">Hesab <ChevronRight size={18} /></Link>
             <Link href="/destek" onClick={onClose} data-testid="link-mobile-help">Dəstək <ChevronRight size={18} /></Link>
             <Link href="/wishlist" onClick={onClose}>Seçilmişlər <ChevronRight size={18} /></Link>
             <Link href="/cart" onClick={onClose}>Səbətim <ChevronRight size={18} /></Link>

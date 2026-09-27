@@ -1057,9 +1057,36 @@ body { background: #f8faff; }
 .notice-item:hover { background: #f4f5f7; }
 .notice-item span { font-size: 13px; font-weight: 600; line-height: 1.35; }
 .notice-item small { color: #7a828c; font-size: 11px; }
+@media (max-width: 980px) {
+  .nav-actions .nav-icon-group .header-icon--account,
+  .nav-actions .nav-icon-group .help-menu { display: none; }
+}
 @media (max-width: 680px) {
-  .nav-icon-group { gap: 0; }
+  .nav-icon-group { gap: 2px; }
   .nav-actions .nav-icon-group .icon-button,
-  .nav-actions .nav-icon-group .help-trigger,
-  .nav-actions .nav-icon-group .notice-trigger { display: grid; width: 30px; height: 30px; }
+  .nav-actions .nav-icon-group .notice-trigger { display: grid; width: 36px; height: 36px; }
+  .nav-actions .nav-icon-group .header-icon--account,
+  .nav-actions .nav-icon-group .help-menu { display: none; }
+  .header-search-panel { --search-right: calc(var(--search-gutter) + 120px); }
+  .detail-topline { gap: 10px; min-width: 0; }
+  .detail-back { min-width: 0; max-width: 100%; }
+  .detail-heading { align-items: flex-end; gap: 12px; min-width: 0; }
+  .detail-heading > div { min-width: 0; flex: 1 1 auto; }
+  .detail-info h1 { font-size: clamp(30px, 9vw, 40px); overflow-wrap: anywhere; }
+  .detail-heading .detail-price { font-size: 20px; }
+  .detail-copy { overflow-wrap: anywhere; }
+  .detail-seller { min-width: 0; }
+  .detail-seller > span:nth-child(2) { min-width: 0; }
+  .detail-seller strong, .detail-seller small { overflow-wrap: anywhere; }
+  .detail-options { grid-template-columns: 1fr; gap: 16px; padding: 18px 0; }
+  .detail-size-row, .detail-color-row { flex-wrap: wrap; }
+  .detail-option-note, .detail-color-row { font-size: 12px; line-height: 1.35; }
+  .detail-quantity { align-items: center; gap: 12px; }
+  .detail-quantity > div:first-child { min-width: 0; }
+  .detail-purchase { grid-template-columns: 1fr; gap: 8px; }
+  .detail-favorite { width: 48px; height: 48px; }
+  .detail-add, .detail-buy-now { width: 100%; min-height: 48px; padding: 0 14px; font-size: 14px; line-height: 1.2; white-space: normal; text-align: center; }
+  .detail-disclaimer { font-size: 12px; line-height: 1.5; text-align: left; }
+  .detail-art, .detail-art[class*="tone-"] { height: min(78vw, 340px); }
+  .detail-try-on { max-width: calc(100% - 20px); }
 }
