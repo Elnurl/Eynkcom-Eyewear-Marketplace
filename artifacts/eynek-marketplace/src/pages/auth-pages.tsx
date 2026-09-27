@@ -199,7 +199,7 @@ export function ForgotPasswordPage() {
       footer={<>Şifrəni xatırladın?<Link href="/sign-in" data-testid="link-back-sign-in">Daxil ol</Link></>}
     >
       {sent ? (
-        <NoteBox>Bu e-poçtla hesab varsa, şifrə yeniləmə linki göndərildi.</NoteBox>
+        <NoteBox>Link {email.trim()} ünvanına göndərildi.</NoteBox>
       ) : (
         <>
           <ErrorBox message={error} />
