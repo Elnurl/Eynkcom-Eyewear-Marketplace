@@ -536,13 +536,31 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .btn-sm { min-height: 32px; padding: 0 12px; font-size: 11px; }
 
 @media (max-width: 980px) {
-  .seller-panel-layout { flex-direction: column; }
-  .seller-sidebar { width: 100%; height: auto; position: static; }
-  .seller-nav { flex-direction: row; overflow-x: auto; padding: 10px 20px; }
-  .seller-nav-item { width: auto; white-space: nowrap; }
-  .seller-sidebar-footer { display: flex; padding: 10px 20px; }
-  .seller-main { padding: 25px 20px; }
+  .seller-panel-layout { flex-direction: column; min-width: 0; overflow-x: hidden; }
+  .seller-sidebar { width: 100%; max-width: 100%; height: auto; position: static; }
+  .seller-store-info { min-width: 0; }
+  .seller-store-info > div { min-width: 0; }
+  .seller-store-info strong, .seller-store-info small { overflow-wrap: anywhere; }
+  .seller-nav { flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; max-width: 100%; overflow: visible; padding: 10px 12px; }
+  .seller-nav-item { width: auto; max-width: 100%; white-space: normal; }
+  .seller-sidebar-footer { display: flex; flex-wrap: wrap; padding: 10px 12px; }
+  .seller-sidebar-footer .seller-nav-item { flex: 1 1 auto; }
+  .seller-content, .seller-stat-card, .admin-review-card, .seller-order-card, .stat-tile { min-width: 0; }
+  .seller-main { min-width: 0; overflow-x: clip; padding: 22px 16px 48px; }
+  .seller-main-header h1 { font-size: 26px; overflow-wrap: anywhere; }
   .seller-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .seller-toolbar { flex-direction: column; }
+  .seller-toolbar .search-box { width: 100%; max-width: none; }
+  .seller-products-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .seller-table { min-width: 680px; }
+  .seller-order-top, .admin-order-heading { flex-wrap: wrap; }
+  .stat-tile small, .stat-tile strong, .seller-order-top strong, .seller-order-top small, .order-item-row span { overflow-wrap: anywhere; }
+  .admin-review-heading { flex-wrap: wrap; }
+  .admin-review-heading > div { min-width: 0; }
+  .admin-review-heading h3, .admin-review-heading span, .admin-review-card p { overflow-wrap: anywhere; }
+  .recent-product-item { min-width: 0; }
+  .recent-product-item strong, .recent-product-item span { overflow-wrap: anywhere; }
+  .image-upload-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 680px) {
   .seller-stats-grid { grid-template-columns: 1fr; }
@@ -1089,4 +1107,9 @@ body { background: #f8faff; }
   .detail-disclaimer { font-size: 12px; line-height: 1.5; text-align: left; }
   .detail-art, .detail-art[class*="tone-"] { height: min(78vw, 340px); }
   .detail-try-on { max-width: calc(100% - 20px); }
+  .notice-panel { position: fixed; top: 70px; right: 12px; left: 12px; width: auto; max-height: min(70dvh, 420px); overflow: auto; }
+  .notice-item span, .notice-panel p { overflow-wrap: anywhere; }
+  .toast { top: 76px; right: 12px; left: 12px; bottom: auto; min-width: 0; }
+  .order-next-steps { justify-content: stretch; }
+  .order-next-steps input, .order-next-steps .btn { width: 100%; }
 }

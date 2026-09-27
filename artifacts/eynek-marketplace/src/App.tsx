@@ -1011,7 +1011,10 @@ function Storefront() {
   const [toast, setToast] = useState('');
   const [mobileMenu, setMobileMenu] = useState(false);
   const closeMobileMenu = useCallback(() => setMobileMenu(false), []);
-  useEffect(() => { closeMobileMenu(); }, [location, closeMobileMenu]);
+  useEffect(() => {
+    closeMobileMenu();
+    window.scrollTo(0, 0);
+  }, [location, closeMobileMenu]);
   const cartCount = cartItems.length;
   const checkoutItems = useMemo(() => {
     const grouped = new Map<string, {
@@ -1096,11 +1099,21 @@ function Storefront() {
   );
 }
 
+function ScrollToTop() {
+  const [location] = useLocation();
+  useEffect(() => {
+    if (window.location.hash) return;
+    window.scrollTo(0, 0);
+  }, [location]);
+  return null;
+}
+
 function AppRoutes() {
   useClearQueriesOnUserChange();
   return (
     <TooltipProvider>
       <RoutedErrorBoundary>
+        <ScrollToTop />
         <Switch>
           <Route path="/sign-in" component={SignInPage} />
           <Route path="/sign-up" component={SignUpPage} />
