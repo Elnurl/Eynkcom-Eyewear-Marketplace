@@ -4,7 +4,6 @@ import { signOutAndGo, useAuthSession, useClearQueriesOnUserChange } from '@/lib
 import {
   ArrowRight,
   Bell,
-  Camera,
   Check,
   ChevronDown,
   ChevronRight,
@@ -30,6 +29,7 @@ import {
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { BrandLogo, BrandWord } from '@/components/brand-logo';
+import { FaceTryOn } from '@/components/face-try-on';
 import { HeaderSearch } from '@/components/header-search';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -434,7 +434,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
             <div className="feature-layout">
               <div className="feature-card feature-card--dark feature-card--virtual">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" loading="lazy" />
-                <div className="eyebrow">Virtual try-on</div><h3>Almazdan əvvəl üzündə yoxla.</h3><p>Bu interfeys gələcək VTO provayderinə qoşulmaq üçün hazırlanıb. Hazırda kamera və üz izləmə aktiv deyil.</p>
+                <div className="eyebrow">Virtual try-on</div><h3>Almazdan əvvəl üzündə yoxla.</h3><p>Kameranı aç və modeli üzündə gör. Bu ilkin önizləmədir; dəqiq 3D model sonra əlavə olunacaq.</p>
                 <button className="btn btn-secondary" disabled={!products[0]} onClick={() => products[0] && onTryOn(products[0])} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
               </div>
               <div className="feature-card feature-card--light feature-card--store">
@@ -640,7 +640,8 @@ function QuickView({ product, onClose, onAdd, onTryOn }: { product: Product; onC
 
 function VirtualTryOn({ products, product, onClose, onSelect, onAdd, onSave }: { products: Product[]; product: Product; onClose: () => void; onSelect: (product: Product) => void; onAdd: (product: Product, message?: string) => void; onSave: (id: number | string) => void }) {
   const options = products.slice(0, 6);
-  return <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Üzümdə yoxla"><div className="tryon-modal"><div className="tryon-top"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}>VTO inteqrasiya sərhədi</div><h2>Üzümdə yoxla</h2><p>Provayder qoşulana qədər məhsul önizləməsi</p></div><button className="icon-button close-light" onClick={onClose} aria-label="VTO pəncərəsini bağla" data-testid="button-close-tryon"><X size={20} /></button></div><div className="camera-stage"><div className="provider-state"><Camera size={16} /><span>Kamera icazəsi və VTO provayderi gözlənilir</span></div><div className="preview-product"><FrameVisual shape={product.shape} frameStyle={product.frameStyle} sunglasses={product.type === 'Gün eynəyi'} /><div className="preview-caption">{product.name} · məhsul çərçivəsi önizləməsi</div></div></div><div className="tryon-bottom"><p>Çərçivəni dəyiş</p><div className="frame-switcher">{options.map((option) => <button key={option.id} className={`frame-choice ${option.id === product.id ? 'active' : ''}`} onClick={() => onSelect(option)} aria-label={`${option.name} modelini önizlə`} data-testid={`button-tryon-frame-${option.id}`}><FrameVisual shape={option.shape} frameStyle={option.frameStyle} /><small>{option.name}</small></button>)}</div><div className="tryon-actions"><button className="btn btn-secondary" onClick={() => onSave(product.id)} data-testid="button-save-tryon"><Heart size={14} /> Yadda saxla</button><button className="btn btn-blue" disabled={product.previewOnly || !product.isAvailable} onClick={() => onAdd(product, 'Model səbətə əlavə edildi')} data-testid="button-add-cart-tryon"><ShoppingBag size={14} /> {product.previewOnly ? 'Nümunə model' : product.isAvailable ? 'Səbətə əlavə et' : 'Stokda yoxdur'}</button></div></div></div></div>;
+  const [cameraLive, setCameraLive] = useState(false);
+  return <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Üzümdə yoxla"><div className="tryon-modal"><div className="tryon-top"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}>Virtual önizləmə</div><h2>Üzümdə yoxla</h2><p>İlkin kamera önizləməsidir. Dəqiq 3D model sonra əlavə olunacaq.</p></div><button className="icon-button close-light" onClick={onClose} aria-label="VTO pəncərəsini bağla" data-testid="button-close-tryon"><X size={20} /></button></div><div className={`camera-stage ${cameraLive ? 'is-live' : ''}`}><FaceTryOn imageUrl={assetUrl(product.image)} productName={product.name} onLiveChange={setCameraLive} /></div><div className="tryon-bottom"><p>Çərçivəni dəyiş</p><div className="frame-switcher">{options.map((option) => <button key={option.id} className={`frame-choice ${option.id === product.id ? 'active' : ''}`} onClick={() => onSelect(option)} aria-label={`${option.name} modelini önizlə`} data-testid={`button-tryon-frame-${option.id}`}><FrameVisual shape={option.shape} frameStyle={option.frameStyle} /><small>{option.name}</small></button>)}</div><div className="tryon-actions"><button className="btn btn-secondary" onClick={() => onSave(product.id)} data-testid="button-save-tryon"><Heart size={14} /> Yadda saxla</button><button className="btn btn-blue" disabled={product.previewOnly || !product.isAvailable} onClick={() => onAdd(product, 'Model səbətə əlavə edildi')} data-testid="button-add-cart-tryon"><ShoppingBag size={14} /> {product.previewOnly ? 'Nümunə model' : product.isAvailable ? 'Səbətə əlavə et' : 'Stokda yoxdur'}</button></div></div></div></div>;
 }
 
 type SellerForm = { storeName: string; owner: string; phone: string; email: string; business: string; tax: string; address: string; instagram: string; website: string; categories: string };
