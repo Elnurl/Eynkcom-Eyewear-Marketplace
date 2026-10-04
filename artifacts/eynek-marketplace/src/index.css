@@ -163,9 +163,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .seller-banner p { margin: 0; color: #6f6b66; font-size: 13px; line-height: 1.5; }
 .seller-banner .btn { min-height: 40px; margin-top: 6px; border-color: #1c1c1c; border-radius: 10px; background: #1c1c1c; }
 .seller-banner .btn:hover { background: #111; }
-.seller-banner h2 .brand-word { display: inline-block; line-height: 0; vertical-align: baseline; transform: translateY(0.14em); }
-.seller-banner h2 .brand-word img { display: inline-block; height: 0.74em; }
-.banner-brand-word { margin-left: .18em; margin-right: 0; white-space: nowrap; }
 .seller-banner-mark { flex: none; color: #b7b3ac; }
 
 .collection-page, .directory-page, .account-page, .cart-page, .seller-page { padding: 53px 0 88px; }

@@ -475,7 +475,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
             <div className="seller-banner">
               <div className="seller-banner-copy">
                 <div className="seller-banner-kicker">Satıcılar üçün</div>
-                <h2>Mağazanı<span className="banner-brand-word"><BrandWord /></span>-də aç, daha çox alıcıya çat</h2>
+                <h2>Mağazanı EYNƏK-də aç, daha çox alıcıya&nbsp;çat</h2>
                 <p>Məhsullarını yerləşdir, sifarişlərini idarə et və mağazanı Bakı və Abşeronda tanıt.</p>
                 <Link href="/seller" className="btn" data-testid="link-home-seller">Satıcı ol <ArrowRight size={14} /></Link>
               </div>
