@@ -1149,20 +1149,22 @@ body { background: #f8faff; }
 .haven-home { background: #fff; color: #1c1c1a; }
 .haven-shell { width: min(1320px, calc(100% - 120px)); margin: 0 auto; }
 .haven-hero { position: relative; min-height: 610px; display: flex; align-items: stretch; background: #ececec; overflow: hidden; }
-.haven-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: right center; }
-.haven-hero-copy { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; min-height: 610px; padding-bottom: 28px; }
-.haven-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 22px; color: #3a3a38; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+.haven-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 44%; }
+.haven-hero-copy { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; min-height: 610px; }
+.haven-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 24px; color: #3a3a38; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
 .haven-kicker i { width: 6px; height: 6px; border-radius: 50%; background: #c6d94a; }
-.haven-hero h1 { margin: 0; max-width: 640px; color: #1c1c1a; font-family: Manrope, sans-serif; font-size: clamp(42px, 4.2vw, 58px); font-weight: 500; line-height: 1.14; letter-spacing: 0; }
+.haven-hero h1 { margin: 0; max-width: 600px; color: #1c1c1a; font-family: Manrope, sans-serif; font-size: 58px; font-weight: 500; line-height: 1.14; letter-spacing: 0; }
 .haven-lead { max-width: 460px; margin: 22px 0 28px; color: #5c5c58; font-size: 15px; font-weight: 400; line-height: 1.55; }
 .haven-hero-actions { display: flex; align-items: center; gap: 22px; }
-.haven-btn { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 0 18px; border: 0; border-radius: 2px; background: #1c1c1a; color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; }
+.haven-btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 16px; padding: 0 24px; border: 0; border-radius: 0; background: #1c1c1a; color: #fff; font-size: 12px; font-weight: 500; cursor: pointer; }
 .haven-btn:hover { background: #000; color: #fff; }
 .haven-btn--ghost { background: transparent; color: #1c1c1a; border: 1px solid #1c1c1a; }
 .haven-btn--ghost:hover { background: #1c1c1a; color: #fff; }
 .haven-text-btn { display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent; color: #1c1c1a; font-size: 14px; font-weight: 500; cursor: pointer; }
-.haven-hero-index { display: flex; align-items: center; gap: 12px; margin-top: auto; padding-top: 48px; color: #6d6d68; font-size: 12px; }
+.haven-hero-foot { position: absolute; z-index: 1; left: 0; right: 0; bottom: 22px; display: flex; align-items: center; justify-content: space-between; color: #6d6d68; font-size: 11px; letter-spacing: .04em; }
+.haven-hero-index { display: flex; align-items: center; gap: 12px; margin: 0; }
 .haven-hero-index i { width: 42px; height: 1px; background: #6d6d68; }
+.haven-hero-credit { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
 .haven-benefits { min-height: 70px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; gap: 18px; border-bottom: 1px solid #ecece8; color: #2a2a28; font-size: 13px; }
 .haven-benefits span { display: flex; align-items: center; gap: 8px; }
 .haven-block { padding: 54px 0 20px; }
@@ -1212,6 +1214,7 @@ body { background: #f8faff; }
   .haven-hero, .haven-hero-copy { min-height: 560px; }
   .haven-hero h1 { font-size: 40px; }
   .haven-hero-actions { flex-direction: column; align-items: flex-start; }
+  .haven-hero-credit { display: none; }
   .haven-grid { grid-template-columns: 1fr; }
   .haven-benefits { grid-template-columns: 1fr; }
 }

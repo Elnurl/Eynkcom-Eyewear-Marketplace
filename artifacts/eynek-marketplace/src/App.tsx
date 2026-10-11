@@ -488,7 +488,10 @@ function Home({ products, likedIds, onFavorite, onTryOn }: CommonProps) {
               <Link href="/collection" className="haven-btn" data-testid="link-hero-collection">Kolleksiyanı kəşf et <ArrowRight size={16} /></Link>
               <button className="haven-text-btn" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
             </div>
+          </div>
+          <div className="haven-shell haven-hero-foot">
             <div className="haven-hero-index"><span>01</span><i /><span>Öz üslubunu kəşf et</span></div>
+            <span className="haven-hero-credit">EYNƏK — Fərqli baxışlar üçün</span>
           </div>
         </section>
         <div className="haven-shell haven-benefits">
