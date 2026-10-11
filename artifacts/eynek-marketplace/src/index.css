@@ -1223,23 +1223,59 @@ body { background: #f8faff; }
 .haven-footer nav a:hover { color: #1c1c1a; }
 .haven-footer-bottom { display: flex; justify-content: space-between; gap: 16px; margin-top: 36px; padding-top: 16px; border-top: 1px solid #e4e3de; color: #8a8a84; font-size: 12px; }
 @media (max-width: 980px) {
-  .haven-shell { width: min(1320px, calc(100% - 40px)); }
-  .haven-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .haven-shell { width: min(1320px, calc(100% - 32px)); }
+  .haven-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
   .haven-mosaic-row, .haven-mosaic-row--flip { grid-template-columns: 1fr; }
-  .haven-benefits { grid-template-columns: 1fr 1fr; padding: 16px 0; }
+  .haven-benefits { grid-template-columns: 1fr 1fr; gap: 12px 16px; padding: 16px 0; font-size: 13px; }
+  .haven-heading { align-items: flex-end; }
+  .haven-heading h2, .haven-editorial h2, .haven-seller h2 { font-size: clamp(26px, 5vw, 32px); }
   .haven-editorial, .haven-seller-inner, .haven-footer-bottom { flex-direction: column; align-items: flex-start; }
-  .haven-footer-grid { grid-template-columns: 1fr 1fr; }
+  .haven-editorial .haven-btn, .haven-seller .haven-btn { width: auto; }
+  .haven-footer-grid { grid-template-columns: 1fr 1fr; gap: 28px 20px; }
   .haven-footer-brand { grid-column: 1 / -1; }
-  .haven-tile { min-height: 0; justify-content: flex-end; padding: 148px 22px 22px; }
+  .haven-footer .footer-signup { max-width: 420px; }
+  .haven-tile { min-height: 0; justify-content: flex-end; padding: 168px 20px 20px; }
+  .haven-tile h3, .haven-tile--store h3 { max-width: none; font-size: 26px; }
+  .haven-tile p { max-width: none; }
   .haven-tile--virtual, .haven-tile--store { padding-bottom: 74px; }
-  .haven-tile img, .haven-tile--virtual img { top: 0; right: 0; width: 100%; height: 132px; }
+  .haven-tile img, .haven-tile--virtual img { top: 0; right: 0; width: 100%; height: 150px; object-position: center; }
   .haven-tile::before, .haven-tile--dark::before, .haven-tile--virtual::before { display: none; }
+  .haven-try { max-width: calc(100% - 16px); font-size: 11px; padding: 0 8px; }
 }
 @media (max-width: 680px) {
-  .haven-hero, .haven-hero-copy { min-height: 560px; }
-  .haven-hero h1 { font-size: 40px; }
-  .haven-hero-actions { flex-direction: column; align-items: flex-start; }
+  .site-wordmark { font-size: 24px; }
+  .haven-shell { width: calc(100% - 28px); }
+  .haven-hero, .haven-hero-copy { min-height: 500px; }
+  .haven-hero-image { object-position: 76% 40%; }
+  .haven-hero h1 { font-size: 34px; max-width: 100%; }
+  .haven-lead { max-width: none; margin: 14px 0 18px; font-size: 14px; }
+  .haven-hero-actions { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 14px; }
   .haven-hero-credit { display: none; }
-  .haven-grid { grid-template-columns: 1fr; }
-  .haven-benefits { grid-template-columns: 1fr; }
+  .haven-hero-foot { bottom: 14px; }
+  .haven-benefits { grid-template-columns: 1fr 1fr; font-size: 12px; }
+  .haven-block { padding: 32px 0 8px; }
+  .haven-tabs { gap: 16px; }
+  .haven-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; }
+  .haven-card-flag { top: 8px; left: 8px; font-size: 9px; letter-spacing: .08em; }
+  .haven-heart { top: 4px; right: 2px; }
+  .haven-try { min-height: 28px; gap: 4px; font-size: 10px; }
+  .haven-card-copy { padding-top: 10px; }
+  .haven-card-copy h3 { font-size: 14px; }
+  .haven-card-copy p { font-size: 11px; gap: 6px; }
+  .haven-tile { padding: 156px 16px 16px; border-radius: 14px; }
+  .haven-tile img, .haven-tile--virtual img { height: 140px; }
+  .haven-tile h3 { font-size: 22px; }
+  .haven-tile-btn { left: 16px; bottom: 14px; }
+  .haven-editorial, .haven-seller-inner { padding: 28px 0; }
+  .haven-seller-inner { min-height: 0; }
+  .haven-footer { padding: 32px 0 20px; }
+  .haven-footer-grid { grid-template-columns: 1fr; gap: 22px; }
+  .haven-footer-brand .site-wordmark { font-size: 26px; }
+  .haven-footer .footer-signup, .haven-footer .footer-signup form { max-width: none; width: 100%; }
+  .haven-footer-bottom { gap: 6px; margin-top: 24px; }
+}
+@media (max-width: 360px) {
+  .haven-hero h1 { font-size: 30px; }
+  .haven-grid { gap: 16px 8px; }
+  .haven-try span, .haven-try { letter-spacing: 0; }
 }
