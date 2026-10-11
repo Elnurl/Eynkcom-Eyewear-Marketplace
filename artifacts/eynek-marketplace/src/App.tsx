@@ -30,7 +30,6 @@ import {
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { BrandLogo, BrandWord } from '@/components/brand-logo';
-import { FaceTryOn } from '@/components/face-try-on';
 import { HeaderSearch } from '@/components/header-search';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -130,6 +129,12 @@ function money(value: number) {
   return `${value.toFixed(0)} AZN`;
 }
 
+const TINT_TRY_ON_URL = 'https://tintvto.com/?q=Eb6iMswtR8R7';
+
+function openTintTryOn() {
+  window.open(TINT_TRY_ON_URL, '_blank', 'noopener,noreferrer');
+}
+
 function assetUrl(path: string) {
   if (path.startsWith('/objects/')) return `/api/storage${path}`;
   const sampleCutouts = new Set(['mimoza-02', 'sahil-11', 'nisan-07', 'xezer-air', 'luna-24', 'merdekan-03', 'iceriseher-09', 'caspian-sun']);
@@ -138,14 +143,6 @@ function assetUrl(path: string) {
   return `${import.meta.env.BASE_URL}${path}`;
 }
 
-function FrameVisual({ shape, frameStyle = 'clear', sunglasses = false }: { shape: Product['shape']; frameStyle?: string; sunglasses?: boolean }) {
-  return (
-    <div className={`frame-visual ${shape.toLowerCase()} ${frameStyle} ${sunglasses ? 'sunglass' : ''}`} aria-label={`${shape} çərçivə təsviri`}>
-      <span />
-      <span />
-    </div>
-  );
-}
 const categoryLinks = [
   { href: '/collection', label: 'Bütün eynəklər' },
   { href: '/collection?type=optical', label: 'Optik çərçivələr' },
@@ -383,7 +380,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
               <p className="hero-sub">Bəyəndiyini seç, almazdan əvvəl yoxla.</p>
               <div className="hero-actions">
                 <Link href="/collection" className="btn hero-cta" data-testid="link-hero-collection">Eynəkləri kəşf et <ArrowRight size={16} /></Link>
-                <button className="hero-preview-link" disabled={!products[0]} onClick={() => products[0] && onTryOn(products[0])} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
+                <button className="hero-preview-link" onClick={openTintTryOn} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
               </div>
               <div className="hero-note"><Info size={14} /> Təsdiqlənmiş satıcı kataloqu · virtual sınaq önizləmədir</div>
             </div>
@@ -435,8 +432,8 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
             <div className="feature-layout">
               <div className="feature-card feature-card--dark feature-card--virtual">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" loading="lazy" />
-                <div className="eyebrow">Virtual try-on</div><h3>Almazdan əvvəl üzündə yoxla.</h3><p>Kameranı aç və modeli üzündə gör. Bu ilkin önizləmədir; dəqiq 3D model sonra əlavə olunacaq.</p>
-                <button className="btn btn-secondary" disabled={!products[0]} onClick={() => products[0] && onTryOn(products[0])} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
+                <div className="eyebrow">Virtual try-on</div><h3>Almazdan əvvəl üzündə yoxla.</h3><p>Sınaq ayrı pəncərədə açılır.</p>
+                <button className="btn btn-secondary" onClick={openTintTryOn} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
               </div>
               <div className="feature-card feature-card--light feature-card--store">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" loading="lazy" />
@@ -661,12 +658,6 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
 
 function QuickView({ product, onClose, onAdd, onTryOn }: { product: Product; onClose: () => void; onAdd: (product: Product, message?: string) => void; onTryOn: (product: Product) => void }) {
   return <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Sürətli məhsul baxışı" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="tryon-modal quick-view-modal"><div className="tryon-top" style={{ borderBottom: '1px solid var(--line)', color: 'var(--navy)' }}><div><div className="eyebrow">{product.type}</div><h2>{product.name}</h2><p style={{ color: 'var(--muted)' }}>{product.vendor} · {product.location}</p></div><button className="icon-button" onClick={onClose} aria-label="Baxışı bağla" data-testid="button-close-quick-view"><X size={19} /></button></div><div className="quick-view-layout"><div className={`detail-art quick-view-art ${product.tone}`}><img className="detail-photo" src={product.image.startsWith('data:') || product.image.startsWith('http') ? product.image : assetUrl(product.image)} alt={`${product.name} məhsul fotosu`} /></div><div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div className="detail-price" style={{ marginTop: 0 }}>{money(product.price)}</div><p className="detail-copy">{product.description}</p><div className="spec-list" style={{ margin: '8px 0 17px' }}><div><dt>Forma</dt><dd>{product.shape}</dd></div><div><dt>Ölçü</dt><dd>{product.size}</dd></div><div><dt>Stok</dt><dd>{product.stock}</dd></div></div><button className="btn btn-full" disabled={!product.isAvailable} onClick={() => onAdd(product)} data-testid="button-add-cart-quick-view"><ShoppingBag size={14} /> {product.isAvailable ? 'Səbətə əlavə et' : 'Stokda yoxdur'}</button><button className="try-link" onClick={() => onTryOn(product)} data-testid="button-try-on-quick-view"><ScanFace size={14} /> Üzümdə yoxla</button></div></div></div></div>;
-}
-
-function VirtualTryOn({ products, product, onClose, onSelect, onAdd, onSave }: { products: Product[]; product: Product; onClose: () => void; onSelect: (product: Product) => void; onAdd: (product: Product, message?: string) => void; onSave: (id: number | string) => void }) {
-  const options = products.slice(0, 6);
-  const [cameraLive, setCameraLive] = useState(false);
-  return <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Üzümdə yoxla"><div className="tryon-modal"><div className="tryon-top"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}>Virtual önizləmə</div><h2>Üzümdə yoxla</h2><p>İlkin kamera önizləməsidir. Dəqiq 3D model sonra əlavə olunacaq.</p></div><button className="icon-button close-light" onClick={onClose} aria-label="VTO pəncərəsini bağla" data-testid="button-close-tryon"><X size={20} /></button></div><div className={`camera-stage ${cameraLive ? 'is-live' : ''}`}><FaceTryOn imageUrl={assetUrl(product.image)} productName={product.name} onLiveChange={setCameraLive} /></div><div className="tryon-bottom"><p>Çərçivəni dəyiş</p><div className="frame-switcher">{options.map((option) => <button key={option.id} className={`frame-choice ${option.id === product.id ? 'active' : ''}`} onClick={() => onSelect(option)} aria-label={`${option.name} modelini önizlə`} data-testid={`button-tryon-frame-${option.id}`}><FrameVisual shape={option.shape} frameStyle={option.frameStyle} /><small>{option.name}</small></button>)}</div><div className="tryon-actions"><button className="btn btn-secondary" onClick={() => onSave(product.id)} data-testid="button-save-tryon"><Heart size={14} /> Yadda saxla</button><button className="btn btn-blue" disabled={product.previewOnly || !product.isAvailable} onClick={() => onAdd(product, 'Model səbətə əlavə edildi')} data-testid="button-add-cart-tryon"><ShoppingBag size={14} /> {product.previewOnly ? 'Nümunə model' : product.isAvailable ? 'Səbətə əlavə et' : 'Stokda yoxdur'}</button></div></div></div></div>;
 }
 
 type SellerForm = { storeName: string; owner: string; phone: string; email: string; business: string; tax: string; address: string; instagram: string; website: string; categories: string };
@@ -1033,7 +1024,6 @@ function Storefront() {
     return [...current, ...Array.from({ length: Math.min(room, Math.max(1, quantity)) }, () => id)];
   });
   const [quickProduct, setQuickProduct] = useState<Product | null>(null);
-  const [tryOnProduct, setTryOnProduct] = useState<Product | null>(null);
   const [toast, setToast] = useState('');
   const [mobileMenu, setMobileMenu] = useState(false);
   const closeMobileMenu = useCallback(() => setMobileMenu(false), []);
@@ -1074,7 +1064,7 @@ function Storefront() {
   }, [cartItems]);
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id)) { next.delete(id); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
-  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); setTryOnProduct(null); showToast(message); };
+  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); showToast(message); };
   const buyNow = (product: Product, quantity = 1) => {
     if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; }
     addUnits(product, quantity);
@@ -1087,7 +1077,7 @@ function Storefront() {
     likedIds,
     onFavorite: toggleFavorite,
     onQuickView: (product) => setQuickProduct(product),
-    onTryOn: (product) => setTryOnProduct(product),
+    onTryOn: () => openTintTryOn(),
   };
   const catalogError = productsQuery.error || storesQuery.error;
   if (location === '/checkout') {
@@ -1113,13 +1103,12 @@ function Storefront() {
         <Route path="/qaytarma"><LegalPage slug="qaytarma" /></Route>
         <Route path="/satici-muqavilesi"><LegalPage slug="satici-muqavilesi" /></Route>
         <Route path="/vendor/:slug"><VendorPage {...common} /></Route>
-        <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={(product) => setTryOnProduct(product)} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
+        <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={() => openTintTryOn()} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
         <Route path="/"><Home {...common} /></Route>
         <Route component={NotFound} />
       </Switch>
-      <MobileBottomNav onTryOn={() => { const first = allProducts[0]; if (first) setTryOnProduct(first); }} />
-      {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={(product) => setTryOnProduct(product)} />}
-      {tryOnProduct && <VirtualTryOn products={allProducts} product={tryOnProduct} onClose={() => setTryOnProduct(null)} onSelect={setTryOnProduct} onAdd={addToCart} onSave={toggleFavorite} />}
+      <MobileBottomNav onTryOn={openTintTryOn} />
+      {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={() => openTintTryOn()} />}
       {toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}
     </div>
   );
