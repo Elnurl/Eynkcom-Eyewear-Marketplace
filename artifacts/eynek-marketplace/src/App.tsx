@@ -440,7 +440,6 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
                 <Link href="/collection" className="btn hero-cta" data-testid="link-hero-collection">Eynəkləri kəşf et <ArrowRight size={16} /></Link>
                 <button className="hero-preview-link" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
               </div>
-              <div className="hero-note"><Info size={14} /> Təsdiqlənmiş satıcı kataloqu · virtual sınaq önizləmədir</div>
             </div>
           </div>
         </section>
@@ -472,7 +471,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
         </section>
         <section className="section">
           <div className="container">
-            <div className="section-head"><div><div className="eyebrow">Kateqoriyalar</div><h2 className="section-title">Nə axtarırsan?</h2></div><p className="section-copy">Gündəlik optik çərçivələr və günəşli Bakı üçün gün eynəkləri.</p></div>
+            <div className="section-head"><div><div className="eyebrow">Kateqoriyalar</div><h2 className="section-title">Nə axtarırsan?</h2></div></div>
             <div className="feature-mosaic">
             <div className="feature-layout">
               <Link href="/collection?type=sunglasses" className="feature-card feature-card--dark feature-card--sunglasses" data-testid="link-category-sunglasses">
@@ -487,12 +486,12 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
             <div className="feature-layout feature-layout--flip">
               <div className="feature-card feature-card--dark feature-card--virtual">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" loading="lazy" />
-                <div className="eyebrow">Virtual try-on</div><h3>Almazdan əvvəl üzündə yoxla.</h3><p>Sınaq bu səhifədə açılır.</p>
+                <h3>Almazdan əvvəl üzündə yoxla.</h3>
                 <button className="btn btn-secondary" onClick={() => openTintTryOn()} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
               </div>
               <div className="feature-card feature-card--light feature-card--store">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" loading="lazy" />
-                <div className="eyebrow">Marketplace</div><h3>Optikaları bir-bir kəşf etmə.</h3><p>Mağazaları, satıcıları və təsdiqlənmiş məhsullarını bir yerdə gör.</p>
+                <h3>Optikaları bir-bir kəşf etmə.</h3><p>Mağazaları, satıcıları və təsdiqlənmiş məhsullarını bir yerdə gör.</p>
                 <Link className="btn" href="/stores" data-testid="link-feature-stores">Mağazalara bax <ArrowRight size={14} /></Link>
               </div>
             </div>
@@ -772,13 +771,13 @@ function SellerPage() {
 
 function WishlistPage({ products, likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
   const items = products.filter((product) => likedIds.has(product.id));
-  return <><main className="collection-page"><div className="container"><div className="collection-intro"><div><div className="eyebrow">Seçilmişlər</div><h1>Saxladığın<br />modellər.</h1></div><p>Qonaq seçilmişləri bu brauzerdə saxlanılır. Modelə bax, VTO önizləməsini aç və ya seçimini sil.</p></div><div className="product-grid wishlist-grid">{items.length ? items.map((product) => <ProductCard key={product.id} product={product} liked onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Heart size={22} /><h3>Hələ seçilmiş model yoxdur.</h3><p>Bəyəndiyin çərçivələrdə ürək işarəsinə toxun.</p><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-wishlist">Eynəklərə bax</Link></div>}</div></div></main><Footer /></>;
+  return <><main className="collection-page"><div className="container"><div className="collection-intro"><div><div className="eyebrow">Seçilmişlər</div><h1>Saxladığın<br />modellər.</h1></div></div><div className="product-grid wishlist-grid">{items.length ? items.map((product) => <ProductCard key={product.id} product={product} liked onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Heart size={22} /><h3>Hələ seçilmiş model yoxdur.</h3><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-wishlist">Eynəklərə bax</Link></div>}</div></div></main><Footer /></>;
 }
 
 function CartPage({ items, stores, onRemove, onCheckout }: { items: Product[]; stores: Vendor[]; onRemove: (id: number | string) => void; onCheckout: () => void }) {
   const total = items.reduce((sum, item) => sum + item.price, 0);
   const grouped = stores.map((vendor) => ({ vendor, items: items.filter((item) => item.vendorSlug === vendor.slug) })).filter((group) => group.items.length);
-  return <><main className="cart-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Səbət</div><h1>Sifarişin.</h1></div><p>Marketplace səbətində məhsullar satıcıya görə qruplaşdırılır.</p></div>{items.length ? <div className="cart-panel"><h2>{items.length} məhsul</h2>{grouped.map((group) => <div className="cart-items" key={group.vendor.slug}><div className="eyebrow">{group.vendor.name}</div>{group.items.map((item) => <div className="cart-row" key={`${item.id}-${group.vendor.slug}`}><span><strong>{item.name}</strong><small>{money(item.price)} · {item.size}</small></span><button className="icon-button" onClick={() => onRemove(item.id)} aria-label={`${item.name} sil`} data-testid={`button-remove-cart-${item.id}`}><Trash2 size={15} /></button></div>)}</div>)}<div className="cart-row"><strong>Cəmi</strong><strong>{money(total)}</strong></div><button className="btn" onClick={onCheckout} data-testid="button-checkout">Sifarişə keç <ArrowRight size={14} /></button></div> : <div className="empty-state"><ShoppingBag size={22} /><h3>Səbətin hələ boşdur.</h3><p>Məhsulları bir neçə satıcıdan seçib burada toplaya bilərsən.</p><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-cart">Eynəklərə bax</Link></div>}</div></main><Footer /></>;
+  return <><main className="cart-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Səbət</div><h1>Sifarişin.</h1></div></div>{items.length ? <div className="cart-panel"><h2>{items.length} məhsul</h2>{grouped.map((group) => <div className="cart-items" key={group.vendor.slug}><div className="eyebrow">{group.vendor.name}</div>{group.items.map((item) => <div className="cart-row" key={`${item.id}-${group.vendor.slug}`}><span><strong>{item.name}</strong><small>{money(item.price)} · {item.size}</small></span><button className="icon-button" onClick={() => onRemove(item.id)} aria-label={`${item.name} sil`} data-testid={`button-remove-cart-${item.id}`}><Trash2 size={15} /></button></div>)}</div>)}<div className="cart-row"><strong>Cəmi</strong><strong>{money(total)}</strong></div><button className="btn" onClick={onCheckout} data-testid="button-checkout">Sifarişə keç <ArrowRight size={14} /></button></div> : <div className="empty-state"><ShoppingBag size={22} /><h3>Səbətin hələ boşdur.</h3><p>Məhsulları bir neçə satıcıdan seçib burada toplaya bilərsən.</p><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-cart">Eynəklərə bax</Link></div>}</div></main><Footer /></>;
 }
 
 function AccountPage() {
