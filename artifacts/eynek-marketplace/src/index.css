@@ -736,9 +736,9 @@ body { background: #f8faff; }
 .detail-brand-image { width: 89px; }
 .detail-layout { grid-template-columns: minmax(0, 1.08fr) minmax(350px, .92fr); gap: 50px; align-items: start; }
 .detail-gallery { position: relative; }
-.detail-art, .detail-art[class*="tone-"] { height: 450px; border-radius: 28px; background: white; border: 1px solid #edf0f5; box-shadow: 0 14px 36px rgba(23,26,58,.035); }
+.detail-art, .detail-art[class*="tone-"] { height: 450px; border-radius: 28px; background: white; border: 1px solid #edf0f5; box-shadow: 0 14px 36px rgba(23,26,58,.035); touch-action: pan-y; }
 .detail-art::before { display: none; }
-.detail-photo { object-fit: contain; padding: 30px; }
+.detail-photo { object-fit: contain; padding: 30px; user-select: none; -webkit-user-drag: none; }
 .detail-gallery-arrow { position: absolute; top: 50%; z-index: 2; width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #e6e8ee; border-radius: 50%; background: #fff; color: #171717; box-shadow: 0 6px 16px rgba(17, 19, 23, .08); transform: translateY(-50%); }
 .detail-gallery-arrow--prev { left: 14px; }
 .detail-gallery-arrow--next { right: 14px; }

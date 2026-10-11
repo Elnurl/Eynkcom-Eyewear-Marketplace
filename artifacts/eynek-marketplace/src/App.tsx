@@ -566,6 +566,7 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
   const product = products.find((item) => String(item.id) === id);
   const [quantity, setQuantity] = useState(1);
   const [showSide, setShowSide] = useState(false);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     setQuantity(1);
     setShowSide(false);
@@ -596,8 +597,28 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
         </div>
         <div className="detail-layout">
           <div className="detail-gallery">
-            <div className="detail-art">
-              <img className="detail-photo" src={galleryImage.startsWith('data:') || galleryImage.startsWith('http') ? galleryImage : assetUrl(galleryImage)} alt={`${product.name} — ${showSide ? 'yan' : 'ön'} görünüş`} />
+            <div
+              className="detail-art"
+              onTouchStart={(event) => {
+                if (!hasSecondImage || (event.target as HTMLElement).closest('button')) {
+                  swipeStart.current = null;
+                  return;
+                }
+                const touch = event.changedTouches[0];
+                swipeStart.current = { x: touch.clientX, y: touch.clientY };
+              }}
+              onTouchEnd={(event) => {
+                const start = swipeStart.current;
+                swipeStart.current = null;
+                if (!start || !hasSecondImage) return;
+                const touch = event.changedTouches[0];
+                const dx = touch.clientX - start.x;
+                const dy = touch.clientY - start.y;
+                if (Math.abs(dx) < 48 || Math.abs(dx) <= Math.abs(dy)) return;
+                setShowSide((current) => !current);
+              }}
+            >
+              <img className="detail-photo" draggable={false} src={galleryImage.startsWith('data:') || galleryImage.startsWith('http') ? galleryImage : assetUrl(galleryImage)} alt={`${product.name} — ${showSide ? 'yan' : 'ön'} görünüş`} />
               {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--prev" onClick={() => setShowSide((current) => !current)} aria-label="Əvvəlki şəkil" data-testid="button-gallery-prev"><ChevronLeft size={18} /></button>}
               {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--next" onClick={() => setShowSide((current) => !current)} aria-label="Növbəti şəkil" data-testid="button-gallery-next"><ChevronRight size={18} /></button>}
               <button className="detail-try-on" onClick={() => onTryOn(product)} data-testid="button-try-on-detail"><ScanFace size={15} /> Virtual önizlə</button>
