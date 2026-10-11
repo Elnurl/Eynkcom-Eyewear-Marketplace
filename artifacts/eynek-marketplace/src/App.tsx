@@ -12,7 +12,6 @@ import {
   Glasses,
   Heart,
   Info,
-  Mail,
   MapPin,
   Menu,
   Package,
@@ -377,17 +376,12 @@ function NewsletterSignup() {
   };
 
   return (
-    <div className="newsletter">
-      <h2>Yeni modellər və təkliflər üçün abunə ol.</h2>
-      <form className="newsletter-form" onSubmit={(event) => void submit(event)}>
-        <label className="newsletter-field">
-          <Mail size={18} aria-hidden="true" />
-          <input type="email" name="email" autoComplete="email" placeholder="E-poçt ünvanın" value={email} onChange={(event) => setEmail(event.target.value)} aria-label="E-poçt ünvanın" data-testid="input-newsletter-email" required />
-        </label>
+    <div className="footer-signup">
+      <form onSubmit={(event) => void submit(event)}>
+        <input type="email" name="email" autoComplete="email" placeholder="E-poçt ünvanın" value={email} onChange={(event) => setEmail(event.target.value)} aria-label="E-poçt ünvanın" data-testid="input-newsletter-email" required />
         <button type="submit" disabled={status === 'sending'} data-testid="button-newsletter-submit">{status === 'sending' ? 'Gözlə...' : 'Abunə ol'}</button>
       </form>
-      <p className="newsletter-note">Abunə ol düyməsinə basmaqla <Link href="/qaydalar">Qaydalar</Link> və <Link href="/mexfilik">Məxfilik</Link> şərtlərini qəbul edirsən.</p>
-      {message && <p className={status === 'error' ? 'newsletter-status newsletter-status--error' : 'newsletter-status'} role="status" data-testid="status-newsletter">{message}</p>}
+      {message && <p className={status === 'error' ? 'footer-signup-status footer-signup-status--error' : 'footer-signup-status'} role="status" data-testid="status-newsletter">{message}</p>}
     </div>
   );
 }
@@ -395,11 +389,8 @@ function NewsletterSignup() {
 function Footer() {
   return (
     <footer className="footer">
-      <div className="container">
-        <NewsletterSignup />
-      </div>
       <div className="container footer-grid">
-        <div><div className="brand"><BrandLogo /></div><p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p></div>
+        <div><div className="brand"><BrandLogo /></div><p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p><NewsletterSignup /></div>
         <div><h3>Kəşf et</h3><Link href="/collection">Eynəklər</Link><Link href="/brands">Brendlər</Link><Link href="/stores">Mağazalar</Link></div>
         <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/destek">Dəstək</Link><a href="mailto:info@eynek.store">info@eynek.store</a><Link href="/qaydalar">Qaydalar</Link><Link href="/mexfilik">Məxfilik</Link><Link href="/qaytarma">Qaytarma</Link></div>
         <div><h3>Satıcılar üçün</h3><Link href="/seller"><BrandWord />-də sat</Link><Link href="/satici-muqavilesi">Satıcı müqaviləsi</Link><a href="mailto:sat@eynek.store">Bizimlə əlaqə</a></div>
