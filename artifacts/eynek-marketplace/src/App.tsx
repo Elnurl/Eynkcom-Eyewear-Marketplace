@@ -185,7 +185,7 @@ function CategoryMenu() {
   return (
     <div className="nav-category" ref={rootRef}>
       <button ref={triggerRef} type="button" className={`nav-category-trigger${location.startsWith('/collection') ? ' active' : ''}`} aria-expanded={open} aria-controls="nav-category-menu" onClick={() => setOpen((current) => !current)} data-testid="button-category-menu">
-        Kateqoriya <ChevronDown size={15} strokeWidth={2.4} className="nav-category-chevron" />
+        Kolleksiya <ChevronDown size={14} strokeWidth={1.8} className="nav-category-chevron" />
       </button>
       {open && (
         <div className="nav-category-menu" id="nav-category-menu" data-testid="menu-category">
@@ -316,10 +316,10 @@ function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: 
       <header className="topbar">
         <div className="container nav">
           <button className="icon-button mobile-menu" onClick={onMenu} aria-label="Menyunu aç" aria-expanded={menuOpen} aria-controls="mobile-drawer" data-testid="button-menu"><Menu size={19} /></button>
-          <Link href="/" className="brand" data-testid="link-brand"><BrandLogo /></Link>
+          <Link href="/" className="brand site-wordmark" data-testid="link-brand">EYNƏK</Link>
           <nav className="nav-links" aria-label="Əsas menyu">
             <CategoryMenu />
-            <Link href="/brands" className={location.startsWith('/brands') ? 'active' : ''} data-testid="link-brands">Brendlər</Link>
+            <Link href="/#kateqoriyalar" data-testid="link-categories">Kateqoriyalar</Link>
             <Link href="/stores" className={location.startsWith('/stores') ? 'active' : ''} data-testid="link-stores">Mağazalar</Link>
           </nav>
           {/* On phones the search collapses to an icon inside this group; desktop CSS lays the group out in one row. */}
@@ -388,14 +388,27 @@ function NewsletterSignup() {
 
 function Footer() {
   return (
-    <footer className="footer">
-      <div className="container footer-grid">
-        <div><div className="brand"><BrandLogo /></div><p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p><NewsletterSignup /></div>
-        <div><h3>Kəşf et</h3><Link href="/collection">Eynəklər</Link><Link href="/brands">Brendlər</Link><Link href="/stores">Mağazalar</Link></div>
-        <div><h3>Müştəri üçün</h3><Link href="/wishlist">Seçilmişlər</Link><Link href="/account">Hesab</Link><Link href="/destek">Dəstək</Link><a href="mailto:info@eynek.store">info@eynek.store</a><Link href="/qaydalar">Qaydalar</Link><Link href="/mexfilik">Məxfilik</Link><Link href="/qaytarma">Qaytarma</Link></div>
-        <div><h3>Satıcılar üçün</h3><Link href="/seller"><BrandWord />-də sat</Link><Link href="/satici-muqavilesi">Satıcı müqaviləsi</Link><a href="mailto:sat@eynek.store">Bizimlə əlaqə</a></div>
+    <footer className="haven-footer">
+      <div className="haven-shell haven-footer-top">
+        <Link href="/" className="site-wordmark">EYNƏK</Link>
+        <nav className="haven-footer-links" aria-label="Alt menyu">
+          <Link href="/collection">Kolleksiya</Link>
+          <Link href="/collection?type=sunglasses">Gün eynəkləri & optik çərçivələr</Link>
+          <Link href="/stores">Mağazalar</Link>
+          <Link href="/seller">Satıcı ol</Link>
+        </nav>
+        <NewsletterSignup />
       </div>
-      <div className="container footer-bottom"><span>© {new Date().getFullYear()} <BrandWord /></span><span>Bakı • Azərbaycan</span></div>
+      <div className="haven-shell haven-footer-bottom">
+        <span>© {new Date().getFullYear()} EYNƏK. Bütün hüquqlar qorunur.</span>
+        <span className="haven-footer-meta">
+          <Link href="/qaydalar">Qaydalar</Link>
+          <Link href="/mexfilik">Məxfilik</Link>
+          <Link href="/qaytarma">Qaytarma</Link>
+          <Link href="/destek">Dəstək</Link>
+        </span>
+        <span>Fərqli baxışlar. Bir ünvan.</span>
+      </div>
     </footer>
   );
 }
@@ -424,116 +437,128 @@ function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product
 
 type CommonProps = { products: Product[]; stores: Vendor[]; likedIds: Set<number | string>; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void };
 
-function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: CommonProps) {
-  const featured = products.slice(0, 4);
+function frameSwatch(color: string) {
+  const known: Record<string, string> = {
+    Qara: '#1c1c1c',
+    Gümüş: '#c5c8ce',
+    Kəhrəba: '#d28a3a',
+    Qızılı: '#c4a15a',
+    Şaftalı: '#e4b39a',
+    Zeytun: '#6d7348',
+    Qrafit: '#5e636a',
+    Tısbağa: '#8b5a34',
+  };
+  return known[color] ?? '#1c1c1c';
+}
+
+function HavenCard({ product, liked, onFavorite, onTryOn, editorPick }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onTryOn: (product: Product) => void; editorPick?: boolean }) {
+  const photoSrc = (path: string) => (path.startsWith('data:') || path.startsWith('http') ? path : assetUrl(path));
+  return (
+    <article className="haven-card" data-testid={`card-product-${product.id}`}>
+      <div className="haven-card-photo">
+        <span className="haven-card-flag">{editorPick ? 'Redaktorun seçimi' : 'Seçilən model'}</span>
+        <button className={`haven-heart ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} sevimlilər`} data-testid={`button-favorite-${product.id}`}><Heart size={18} strokeWidth={1.6} fill={liked ? 'currentColor' : 'none'} /></button>
+        <Link href={`/product/${product.id}`} className="haven-card-link" aria-label={`${product.name} modelinə bax`} data-testid={`link-product-image-${product.id}`}>
+          <img src={photoSrc(product.image)} alt={`${product.name} — ${product.color} eynək`} />
+        </Link>
+        <button type="button" className="haven-try" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}><ScanFace size={14} /> Üzündə yoxla <ArrowRight size={14} /></button>
+      </div>
+      <div className="haven-card-copy">
+        <span>{product.brand || 'EYNƏK'}</span>
+        <Link href={`/product/${product.id}`} data-testid={`link-product-${product.id}`}><h3>{product.name}</h3></Link>
+        <p><i style={{ background: frameSwatch(product.color) }} />{product.type} · {product.color}</p>
+      </div>
+    </article>
+  );
+}
+
+function Home({ products, likedIds, onFavorite, onTryOn }: CommonProps) {
+  const [tab, setTab] = useState<'all' | 'sun' | 'optical'>('all');
+  const featured = products.filter((product) => tab === 'sun' ? product.type === 'Gün eynəyi' : tab === 'optical' ? product.type === 'Optik çərçivə' : true).slice(0, 4);
   return (
     <>
-      <main className="home-page">
-        <section className="hero">
-          <div className="container hero-panel">
-            <img className="hero-background hero-background--desktop" src={`${import.meta.env.BASE_URL}hero-eyewear.webp`} alt="" aria-hidden="true" />
-            <img className="hero-background hero-background--mobile" src={`${import.meta.env.BASE_URL}hero-eyewear-mobile.webp`} alt="" aria-hidden="true" />
-            <div className="hero-content">
-              <h1>Sənə yaraşan çərçivəni tap.</h1>
-              <p className="hero-sub">Bəyəndiyini seç, almazdan əvvəl yoxla.</p>
-              <div className="hero-actions">
-                <Link href="/collection" className="btn hero-cta" data-testid="link-hero-collection">Eynəkləri kəşf et <ArrowRight size={16} /></Link>
-                <button className="hero-preview-link" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
-              </div>
+      <main className="haven-home">
+        <section className="haven-hero">
+          <img className="haven-hero-image" src={`${import.meta.env.BASE_URL}eynek-campaign.jpg`} alt="Qara gün eynəyində EYNƏK kolleksiyasının müasir üslubu" />
+          <div className="haven-shell haven-hero-copy">
+            <p className="haven-kicker"><i /> Yeni baxış. Eyni sən.</p>
+            <h1>Sənə yaraşan<br />çərçivəni tap.</h1>
+            <p className="haven-lead">Bir aksesuardan daha çox. Sənin baxışın, sənin üslubun.<br />Bəyəndiyini seç, almazdan əvvəl yoxla.</p>
+            <div className="haven-hero-actions">
+              <Link href="/collection" className="haven-btn" data-testid="link-hero-collection">Kolleksiyanı kəşf et <ArrowRight size={16} /></Link>
+              <button className="haven-text-btn" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
             </div>
+            <div className="haven-hero-index"><span>01</span><i /><span>Öz üslubunu kəşf et</span></div>
           </div>
         </section>
-        <section className="section home-discover">
-          <div className="container">
-            <div className="section-head">
-              <div><div className="home-overline">Sənin üçün seçildi</div><h2 className="section-title">Eynəkləri kəşf et</h2></div>
-              <Link href="/collection" className="home-count" data-testid="link-view-all">{products.length} model <ArrowRight size={14} /></Link>
+        <div className="haven-shell haven-benefits">
+          <span><ShieldCheck size={16} strokeWidth={1.6} /> Diqqətlə seçilmiş modellər</span>
+          <span><ScanFace size={16} strokeWidth={1.6} /> Almazdan əvvəl üzündə yoxla</span>
+          <span><Glasses size={16} strokeWidth={1.6} /> Hər üzə uyğun bir çərçivə</span>
+          <span><Store size={16} strokeWidth={1.6} /> Yerli mağazalar, bir ünvan</span>
+        </div>
+        <section className="haven-shell haven-block">
+          <div className="haven-heading">
+            <div>
+              <p>Sənin üçün seçildi</p>
+              <h2>Baxışını dəyiş.</h2>
             </div>
-            <div className="home-filter-pills" aria-label="Kateqoriyalar">
-              <Link href="/collection" className="selected">Hamısı</Link>
-              <Link href="/collection?type=sunglasses">Gün eynəyi</Link>
-              <Link href="/collection?type=optical">Optik çərçivə</Link>
-              <Link href="/brands">Brendlər</Link>
-            </div>
-            {featured.length ? (
-              <div className="product-grid">
-                {featured.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />)}
-              </div>
-            ) : (
-              <div className="empty-state">
-                <Package size={22} />
-                <h3>Kataloq hazırlanır.</h3>
-                <p>Satıcılar məhsullarını təsdiqə göndərdikcə modellər burada görünəcək.</p>
-                <Link href="/collection" className="btn btn-secondary">Kataloqa bax <ArrowRight size={14} /></Link>
-              </div>
-            )}
+            <Link href="/collection" data-testid="link-view-all">{products.length} model</Link>
           </div>
+          <div className="haven-tabs" role="tablist" aria-label="Kolleksiya">
+            <button type="button" role="tab" aria-selected={tab === 'all'} className={tab === 'all' ? 'is-on' : ''} onClick={() => setTab('all')}>Hamısı</button>
+            <button type="button" role="tab" aria-selected={tab === 'sun'} className={tab === 'sun' ? 'is-on' : ''} onClick={() => setTab('sun')}>Gün eynəyi</button>
+            <button type="button" role="tab" aria-selected={tab === 'optical'} className={tab === 'optical' ? 'is-on' : ''} onClick={() => setTab('optical')}>Optik çərçivə</button>
+          </div>
+          {featured.length ? (
+            <div className="haven-grid">
+              {featured.map((product, index) => <HavenCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onTryOn={onTryOn} editorPick={index === 2} />)}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <Package size={22} />
+              <h3>Kataloq hazırlanır.</h3>
+              <p>Satıcılar məhsullarını təsdiqə göndərdikcə modellər burada görünəcək.</p>
+              <Link href="/collection" className="haven-btn">Kataloqa bax <ArrowRight size={14} /></Link>
+            </div>
+          )}
         </section>
-        <section className="section">
-          <div className="container">
-            <div className="section-head"><div><div className="eyebrow">Kateqoriyalar</div><h2 className="section-title">Nə axtarırsan?</h2></div></div>
-            <div className="feature-mosaic">
-            <div className="feature-layout">
-              <Link href="/collection?type=sunglasses" className="feature-card feature-card--dark feature-card--sunglasses" data-testid="link-category-sunglasses">
-                <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/sunglasses.webp`} alt="" loading="lazy" />
-                <div className="eyebrow">Kateqoriya 01</div><h3>Gün eynəkləri</h3><p>Formanı, ölçünü və satıcını müqayisə et.</p>
-              </Link>
-              <Link href="/collection?type=optical" className="feature-card feature-card--light feature-card--optical" data-testid="link-category-optical">
-                <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/optical-frames.webp`} alt="" loading="lazy" />
-                <div className="eyebrow">Kateqoriya 02</div><h3>Optik çərçivələr</h3><p>Gündəlik istifadə üçün modelləri kəşf et.</p>
-              </Link>
-            </div>
-            <div className="feature-layout feature-layout--flip">
-              <div className="feature-card feature-card--dark feature-card--virtual">
-                <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" loading="lazy" />
-                <h3>Almazdan əvvəl üzündə yoxla.</h3>
-                <button className="btn btn-secondary" onClick={() => openTintTryOn()} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
-              </div>
-              <div className="feature-card feature-card--light feature-card--store">
-                <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" loading="lazy" />
-                <h3>Optikaları bir-bir kəşf etmə.</h3><p>Mağazaları, satıcıları və təsdiqlənmiş məhsullarını bir yerdə gör.</p>
-                <Link className="btn" href="/stores" data-testid="link-feature-stores">Mağazalara bax <ArrowRight size={14} /></Link>
-              </div>
-            </div>
+        <section className="haven-shell haven-block" id="kateqoriyalar">
+          <div className="haven-heading">
+            <div>
+              <p>Üslubuna uyğun</p>
+              <h2>Hər baxışın bir hekayəsi var.</h2>
             </div>
           </div>
-        </section>
-        <section className="section" id="stores">
-          <div className="container">
-            <div className="section-head">
-              <div><div className="eyebrow">Satıcılar</div><h2 className="section-title">Mağazalarla tanış ol.</h2></div>
-              <Link href="/stores" className="text-link" data-testid="link-home-stores">Bütün mağazalar <ArrowRight size={14} /></Link>
-            </div>
-            {stores.length ? (
-              <div className="store-grid">
-                {stores.map((vendor) => (
-                  <Link href={`/vendor/${vendor.slug}`} className="store-card" key={vendor.slug} data-testid={`card-home-store-${vendor.slug}`}>
-                    <span className="store-mark">{vendor.initials}</span>
-                    <span><h3>{vendor.name}</h3><p>{vendor.description}</p><span className="store-meta"><span>{vendor.location}</span><span>{vendor.count} model</span></span></span>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state">
-                <Store size={22} />
-                <h3>Hələ təsdiqlənmiş mağaza yoxdur.</h3>
-                <p>Satıcı müraciətləri təsdiqləndikdən sonra mağazalar burada görünəcək.</p>
-                <Link href="/seller" className="btn btn-secondary"><BrandWord />-də sat <ArrowRight size={14} /></Link>
-              </div>
-            )}
+          <div className="haven-cats">
+            <Link href="/collection?type=sunglasses" className="haven-cat" data-testid="link-category-sunglasses">
+              <img src={`${import.meta.env.BASE_URL}haven-sunglasses.webp`} alt="Gün eynəkləri kolleksiyası" />
+              <span>Kateqoriya 01</span>
+              <strong>Gün eynəkləri <ArrowRight size={16} /></strong>
+            </Link>
+            <Link href="/collection?type=optical" className="haven-cat" data-testid="link-category-optical">
+              <img src={`${import.meta.env.BASE_URL}haven-optical.webp`} alt="Optik çərçivələr kolleksiyası" />
+              <span>Kateqoriya 02</span>
+              <strong>Optik çərçivələr <ArrowRight size={16} /></strong>
+            </Link>
           </div>
         </section>
-        <section className="section" style={{ paddingTop: 0 }}>
-          <div className="container">
-            <div className="seller-banner">
-              <div className="seller-banner-copy">
-                <div className="seller-banner-kicker">Satıcılar üçün</div>
-                <h2>Mağazanı<span className="banner-brand-word"><BrandWord /></span>-də aç, daha çox alıcıya çat</h2>
-                <p>Məhsullarını yerləşdir, sifarişlərini idarə et və mağazanı Bakı və Abşeronda tanıt.</p>
-                <Link href="/seller" className="btn" data-testid="link-home-seller">Satıcı ol <ArrowRight size={14} /></Link>
-              </div>
-              <Store className="seller-banner-mark" size={78} strokeWidth={1.35} aria-hidden="true" />
+        <section className="haven-shell haven-editorial">
+          <div>
+            <p>Yaxınında, bir yerdə</p>
+            <h2>Yeni eynəyin. Tanıdığın mağazadan.</h2>
+            <span>Optikaları, satıcıları və onların modellərini bir yerdə kəşf et.</span>
+          </div>
+          <Link href="/stores" className="haven-btn haven-btn--ghost" data-testid="link-feature-stores">Mağazalara bax</Link>
+        </section>
+        <section className="haven-seller">
+          <div className="haven-shell haven-seller-inner">
+            <div>
+              <p>Satıcılar üçün</p>
+              <h2>Mağazanı EYNƏK-də aç.</h2>
+              <span>Məhsullarını daha çox alıcı ilə tanış et. Birlikdə daha çoxuna çataq.</span>
             </div>
+            <Link href="/seller" className="haven-btn" data-testid="link-home-seller">Bizə qoşul</Link>
           </div>
         </section>
       </main>
