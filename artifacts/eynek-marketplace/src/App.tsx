@@ -548,7 +548,7 @@ function Home({ products, likedIds, onFavorite, onTryOn }: CommonProps) {
               </div>
           <div className="haven-mosaic">
             <div className="haven-mosaic-row">
-              <Link href="/collection?type=sunglasses" className="haven-tile haven-tile--wide haven-tile--dark" data-testid="link-category-sunglasses">
+              <Link href="/collection?type=sunglasses" className="haven-tile haven-tile--wide haven-tile--dark haven-tile--sun" data-testid="link-category-sunglasses">
                 <img src={`${import.meta.env.BASE_URL}haven-sunglasses.webp`} alt="" />
                 <span>Kateqoriya 01</span>
                 <h3>Gün eynəkləri</h3>
