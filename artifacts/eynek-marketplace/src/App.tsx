@@ -131,8 +131,17 @@ function money(value: number) {
 
 const TINT_TRY_ON_URL = 'https://tintvto.com/?q=Eb6iMswtR8R7';
 
-function openTintTryOn() {
-  window.open(TINT_TRY_ON_URL, '_blank', 'noopener,noreferrer');
+function openTintTryOn(variantId?: number | string) {
+  const widget = document.querySelector('tint-vto') as (HTMLElement & { open?: () => void }) | null;
+  if (widget?.open) {
+    if (variantId != null && String(variantId) !== '') widget.setAttribute('variant-id', String(variantId));
+    widget.open();
+    return;
+  }
+  const url = variantId != null && String(variantId) !== ''
+    ? `https://tintvto.com/?customer_product_skus=${encodeURIComponent(String(variantId))}`
+    : TINT_TRY_ON_URL;
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function assetUrl(path: string) {
@@ -380,7 +389,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
               <p className="hero-sub">Bəyəndiyini seç, almazdan əvvəl yoxla.</p>
               <div className="hero-actions">
                 <Link href="/collection" className="btn hero-cta" data-testid="link-hero-collection">Eynəkləri kəşf et <ArrowRight size={16} /></Link>
-                <button className="hero-preview-link" onClick={openTintTryOn} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
+                <button className="hero-preview-link" onClick={() => openTintTryOn(products[0]?.id)} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
               </div>
               <div className="hero-note"><Info size={14} /> Təsdiqlənmiş satıcı kataloqu · virtual sınaq önizləmədir</div>
             </div>
@@ -432,8 +441,8 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
             <div className="feature-layout">
               <div className="feature-card feature-card--dark feature-card--virtual">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" loading="lazy" />
-                <div className="eyebrow">Virtual try-on</div><h3>Almazdan əvvəl üzündə yoxla.</h3><p>Sınaq ayrı pəncərədə açılır.</p>
-                <button className="btn btn-secondary" onClick={openTintTryOn} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
+                <div className="eyebrow">Virtual try-on</div><h3>Almazdan əvvəl üzündə yoxla.</h3><p>Sınaq bu səhifədə açılır.</p>
+                <button className="btn btn-secondary" onClick={() => openTintTryOn(products[0]?.id)} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
               </div>
               <div className="feature-card feature-card--light feature-card--store">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" loading="lazy" />
@@ -1077,7 +1086,7 @@ function Storefront() {
     likedIds,
     onFavorite: toggleFavorite,
     onQuickView: (product) => setQuickProduct(product),
-    onTryOn: () => openTintTryOn(),
+    onTryOn: (product) => openTintTryOn(product.id),
   };
   const catalogError = productsQuery.error || storesQuery.error;
   if (location === '/checkout') {
@@ -1103,12 +1112,12 @@ function Storefront() {
         <Route path="/qaytarma"><LegalPage slug="qaytarma" /></Route>
         <Route path="/satici-muqavilesi"><LegalPage slug="satici-muqavilesi" /></Route>
         <Route path="/vendor/:slug"><VendorPage {...common} /></Route>
-        <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={() => openTintTryOn()} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
+        <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={(product) => openTintTryOn(product.id)} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
         <Route path="/"><Home {...common} /></Route>
         <Route component={NotFound} />
       </Switch>
       <MobileBottomNav onTryOn={openTintTryOn} />
-      {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={() => openTintTryOn()} />}
+      {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={(product) => openTintTryOn(product.id)} />}
       {toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}
     </div>
   );

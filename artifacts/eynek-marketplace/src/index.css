@@ -421,6 +421,7 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .product-cell-img img { width: 100%; height: 100%; object-fit: cover; }
 .product-cell strong { display: block; font-size: 13px; color: var(--navy); margin-bottom: 2px; }
 .product-cell span { font-size: 11px; color: var(--muted); }
+.product-tint-id { display: block; max-width: 240px; overflow-wrap: anywhere; }
 .stock-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 4px; }
 .stock-badge.good { background: #EEF5ED; color: #284B31; }
 .stock-badge.low { background: #FFF4E5; color: #8A5A19; }

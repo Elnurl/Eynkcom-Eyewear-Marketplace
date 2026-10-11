@@ -304,6 +304,7 @@ export default function SellerPanel() {
                             <div>
                               <strong>{product.name}</strong>
                               <span>{product.color}</span>
+                              <span className="product-tint-id">TINT kodu: {product.id}</span>
                             </div>
                           </div>
                         </td>
@@ -576,8 +577,8 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
         
         <form onSubmit={handleSubmit} className="seller-modal-body">
           <div className="auglio-instructions">
-            <h3>VTO Şəkil Tələbləri (Auglio)</h3>
-            <p>Bu şəkillər Auglio virtual try-on (VTO) emalı üçün hazırlanır.</p>
+            <h3>VTO şəkil tələbləri</h3>
+            <p>Bu şəkillər virtual sınaq üçün hazırlanır. Məhsul yadda saxlanandan sonra siyahıdakı TINT kodunu TINT panelində Merchant Variant ID xanasına yaz.</p>
             <ul>
               <li><strong>Ön görünüş:</strong> Tam düz (0°), tam çərçivə görünməlidir.</li>
               <li><strong>Yan görünüş:</strong> Tam yan (90°), sol və ya sağ tərəf, təmiz kəsim.</li>
