@@ -810,6 +810,7 @@ body { background: #f8faff; }
 .home-page .hero-note { margin-top: 10px; }
 .hero-panel { position: relative; isolation: isolate; overflow: hidden; background: #f6f5f0; color: #142232; }
 .hero-background { position: absolute; z-index: -2; top: 0; right: 0; height: 100%; width: auto; max-width: none; pointer-events: none; }
+.hero-background--desktop { top: 50%; height: 80%; transform: translateY(-50%); }
 .hero-background--mobile { display: none; }
 .hero-panel::before { content: ''; position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(90deg, #f6f5f0 0%, rgba(246,245,240,.97) 35%, rgba(246,245,240,.15) 75%, transparent 100%); }
 .hero-kicker { border-color: #bfc2c3; }
@@ -897,7 +898,7 @@ body { background: #f8faff; }
   .home-page .hero { padding-top: 12px; }
   .hero-panel { min-height: 0; flex-direction: column; align-items: stretch; gap: 12px; padding: 28px 22px 0; border-radius: 24px; }
   .hero-content { order: 1; width: 100%; }
-  .hero-background { position: relative; z-index: 0; order: 2; top: auto; right: auto; bottom: auto; display: block; width: calc(100% + 44px); height: auto; margin: 0 -22px; }
+  .hero-background { position: relative; z-index: 0; order: 2; top: auto; right: auto; bottom: auto; display: block; width: calc(100% + 44px); height: auto; margin: 0 -22px; transform: none; }
   .hero-background--desktop { display: none; }
   .hero-background--mobile { display: block; }
   .hero-panel::before { display: none; }
