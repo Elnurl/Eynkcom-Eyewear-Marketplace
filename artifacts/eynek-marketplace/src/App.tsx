@@ -389,24 +389,37 @@ function NewsletterSignup() {
 function Footer() {
   return (
     <footer className="haven-footer">
-      <div className="haven-shell haven-footer-top">
-        <Link href="/" className="site-wordmark">EYNƏK</Link>
-        <nav className="haven-footer-links" aria-label="Alt menyu">
-          <Link href="/collection">Kolleksiya</Link>
-          <Link href="/collection?type=sunglasses">Gün eynəkləri & optik çərçivələr</Link>
+      <div className="haven-shell haven-footer-grid">
+        <div className="haven-footer-brand">
+          <Link href="/" className="site-wordmark">EYNƏK</Link>
+          <p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p>
+          <NewsletterSignup />
+        </div>
+        <nav aria-label="Kəşf et">
+          <h3>Kəşf et</h3>
+          <Link href="/collection">Eynəklər</Link>
+          <Link href="/brands">Brendlər</Link>
           <Link href="/stores">Mağazalar</Link>
-          <Link href="/seller">Satıcı ol</Link>
         </nav>
-        <NewsletterSignup />
-      </div>
-      <div className="haven-shell haven-footer-bottom">
-        <span>© {new Date().getFullYear()} EYNƏK. Bütün hüquqlar qorunur.</span>
-        <span className="haven-footer-meta">
+        <nav aria-label="Müştəri üçün">
+          <h3>Müştəri üçün</h3>
+          <Link href="/wishlist">Seçilmişlər</Link>
+          <Link href="/account">Hesab</Link>
+          <Link href="/destek">Dəstək</Link>
+          <a href="mailto:info@eynek.store">info@eynek.store</a>
           <Link href="/qaydalar">Qaydalar</Link>
           <Link href="/mexfilik">Məxfilik</Link>
           <Link href="/qaytarma">Qaytarma</Link>
-          <Link href="/destek">Dəstək</Link>
-        </span>
+        </nav>
+        <nav aria-label="Satıcılar üçün">
+          <h3>Satıcılar üçün</h3>
+          <Link href="/seller">EYNƏK-də sat</Link>
+          <Link href="/satici-muqavilesi">Satıcı müqaviləsi</Link>
+          <a href="mailto:sat@eynek.store">Bizimlə əlaqə</a>
+        </nav>
+      </div>
+      <div className="haven-shell haven-footer-bottom">
+        <span>© {new Date().getFullYear()} EYNƏK. Bütün hüquqlar qorunur.</span>
         <span>Fərqli baxışlar. Bir ünvan.</span>
       </div>
     </footer>
@@ -487,8 +500,8 @@ function Home({ products, likedIds, onFavorite, onTryOn }: CommonProps) {
             <div className="haven-hero-actions">
               <Link href="/collection" className="haven-btn" data-testid="link-hero-collection">Kolleksiyanı kəşf et <ArrowRight size={16} /></Link>
               <button className="haven-text-btn" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
+              </div>
             </div>
-          </div>
           <div className="haven-shell haven-hero-foot">
             <div className="haven-hero-index"><span>01</span><i /><span>Öz üslubunu kəşf et</span></div>
             <span className="haven-hero-credit">EYNƏK — Fərqli baxışlar üçün</span>
@@ -499,13 +512,13 @@ function Home({ products, likedIds, onFavorite, onTryOn }: CommonProps) {
           <span><ScanFace size={16} strokeWidth={1.6} /> Almazdan əvvəl üzündə yoxla</span>
           <span><Glasses size={16} strokeWidth={1.6} /> Hər üzə uyğun bir çərçivə</span>
           <span><Store size={16} strokeWidth={1.6} /> Yerli mağazalar, bir ünvan</span>
-        </div>
+            </div>
         <section className="haven-shell haven-block">
           <div className="haven-heading">
             <div>
               <p>Sənin üçün seçildi</p>
               <h2>Baxışını dəyiş.</h2>
-            </div>
+          </div>
             <Link href="/collection" data-testid="link-view-all">{products.length} model</Link>
           </div>
           <div className="haven-tabs" role="tablist" aria-label="Kolleksiya">
@@ -531,19 +544,36 @@ function Home({ products, likedIds, onFavorite, onTryOn }: CommonProps) {
             <div>
               <p>Üslubuna uyğun</p>
               <h2>Hər baxışın bir hekayəsi var.</h2>
+              </div>
+              </div>
+          <div className="haven-mosaic">
+            <div className="haven-mosaic-row">
+              <Link href="/collection?type=sunglasses" className="haven-tile haven-tile--wide haven-tile--dark" data-testid="link-category-sunglasses">
+                <img src={`${import.meta.env.BASE_URL}haven-sunglasses.webp`} alt="" />
+                <span>Kateqoriya 01</span>
+                <h3>Gün eynəkləri</h3>
+                <p>Formanı, ölçünü və satıcını müqayisə et.</p>
+              </Link>
+              <Link href="/collection?type=optical" className="haven-tile haven-tile--light" data-testid="link-category-optical">
+                <img src={`${import.meta.env.BASE_URL}haven-optical.webp`} alt="" />
+                <span>Kateqoriya 02</span>
+                <h3>Optik çərçivələr</h3>
+                <p>Gündəlik istifadə üçün modelləri kəşf et.</p>
+              </Link>
             </div>
-          </div>
-          <div className="haven-cats">
-            <Link href="/collection?type=sunglasses" className="haven-cat" data-testid="link-category-sunglasses">
-              <img src={`${import.meta.env.BASE_URL}haven-sunglasses.webp`} alt="Gün eynəkləri kolleksiyası" />
-              <span>Kateqoriya 01</span>
-              <strong>Gün eynəkləri <ArrowRight size={16} /></strong>
-            </Link>
-            <Link href="/collection?type=optical" className="haven-cat" data-testid="link-category-optical">
-              <img src={`${import.meta.env.BASE_URL}haven-optical.webp`} alt="Optik çərçivələr kolleksiyası" />
-              <span>Kateqoriya 02</span>
-              <strong>Optik çərçivələr <ArrowRight size={16} /></strong>
-            </Link>
+            <div className="haven-mosaic-row haven-mosaic-row--flip">
+              <div className="haven-tile haven-tile--dark haven-tile--virtual">
+                <img src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" />
+                <h3>Almazdan əvvəl üzündə yoxla.</h3>
+                <button type="button" className="haven-tile-btn" onClick={() => openTintTryOn()} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
+              </div>
+              <div className="haven-tile haven-tile--wide haven-tile--light haven-tile--store">
+                <img src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" />
+                <h3>Optikaları bir-bir kəşf etmə.</h3>
+                <p>Mağazaları, satıcıları və təsdiqlənmiş məhsullarını bir yerdə gör.</p>
+                <Link className="haven-tile-btn haven-tile-btn--solid" href="/stores" data-testid="link-feature-stores">Mağazalara bax <ArrowRight size={14} /></Link>
+              </div>
+            </div>
           </div>
         </section>
         <section className="haven-shell haven-editorial">
@@ -552,7 +582,7 @@ function Home({ products, likedIds, onFavorite, onTryOn }: CommonProps) {
             <h2>Yeni eynəyin. Tanıdığın mağazadan.</h2>
             <span>Optikaları, satıcıları və onların modellərini bir yerdə kəşf et.</span>
           </div>
-          <Link href="/stores" className="haven-btn haven-btn--ghost" data-testid="link-feature-stores">Mağazalara bax</Link>
+          <Link href="/stores" className="haven-btn haven-btn--ghost" data-testid="link-editorial-stores">Mağazalara bax</Link>
         </section>
         <section className="haven-seller">
           <div className="haven-shell haven-seller-inner">
