@@ -6,6 +6,7 @@ import {
   Bell,
   Check,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   CircleHelp,
   Glasses,
@@ -570,6 +571,7 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
     setShowSide(false);
   }, [id]);
   if (!product) return <NotFound />;
+  const hasSecondImage = Boolean(product.sideImage && product.sideImage !== product.image);
   const galleryImage = showSide && product.sideImage ? product.sideImage : product.image;
   const related = products.filter((item) => item.id !== product.id).slice(0, 3);
   const sizeLetter = product.size.slice(0, 1).toUpperCase();
@@ -596,9 +598,11 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
           <div className="detail-gallery">
             <div className="detail-art">
               <img className="detail-photo" src={galleryImage.startsWith('data:') || galleryImage.startsWith('http') ? galleryImage : assetUrl(galleryImage)} alt={`${product.name} — ${showSide ? 'yan' : 'ön'} görünüş`} />
+              {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--prev" onClick={() => setShowSide((current) => !current)} aria-label="Əvvəlki şəkil" data-testid="button-gallery-prev"><ChevronLeft size={18} /></button>}
+              {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--next" onClick={() => setShowSide((current) => !current)} aria-label="Növbəti şəkil" data-testid="button-gallery-next"><ChevronRight size={18} /></button>}
               <button className="detail-try-on" onClick={() => onTryOn(product)} data-testid="button-try-on-detail"><ScanFace size={15} /> Virtual önizlə</button>
             </div>
-            {product.sideImage && product.sideImage !== product.image && <div className="detail-gallery-dots" aria-label="Şəkil görünüşü"><button className={!showSide ? 'active' : ''} onClick={() => setShowSide(false)} aria-label="Ön görünüş" /><button className={showSide ? 'active' : ''} onClick={() => setShowSide(true)} aria-label="Yan görünüş" /></div>}
+            {hasSecondImage && <div className="detail-gallery-dots" aria-label="Şəkil görünüşü"><button className={!showSide ? 'active' : ''} onClick={() => setShowSide(false)} aria-label="Ön görünüş" /><button className={showSide ? 'active' : ''} onClick={() => setShowSide(true)} aria-label="Yan görünüş" /></div>}
           </div>
           <div className="detail-info">
             <div className="detail-heading">
