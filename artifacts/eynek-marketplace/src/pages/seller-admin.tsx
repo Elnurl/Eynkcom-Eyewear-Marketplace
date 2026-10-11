@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { AlertCircle, Check, ClipboardList, LogOut, ShieldCheck, Users } from 'lucide-react';
+import { AlertCircle, Check, ClipboardList, LogOut, Mail, ShieldCheck, Users } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getGetAdminAccessQueryKey,
@@ -76,6 +76,7 @@ export default function SellerAdminPage() {
   const [applicationNotes, setApplicationNotes] = useState<Record<string, string>>({});
   const [productNotes, setProductNotes] = useState<Record<string, string>>({});
   const [actionError, setActionError] = useState('');
+  const [subscribers, setSubscribers] = useState<Array<{ id: string; email: string; createdAt: string }>>([]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -87,6 +88,16 @@ export default function SellerAdminPage() {
     if (status === 403) setLocation('/account');
     if (status === 401) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-admin')}`);
   }, [adminAccess.error, isLoaded, isSignedIn, setLocation]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    void fetch('/api/admin/newsletter', { credentials: 'include' })
+      .then(async (response) => (response.ok ? response.json() : []))
+      .then((rows: Array<{ id: string; email: string; createdAt: string }>) => {
+        if (Array.isArray(rows)) setSubscribers(rows);
+      })
+      .catch(() => undefined);
+  }, [isAdmin]);
 
   if (!isLoaded || !isSignedIn) return null;
   if (!isAdmin) {
@@ -146,6 +157,7 @@ export default function SellerAdminPage() {
           <a className="seller-nav-item active" href="#applications"><ShieldCheck size={18} /> Satıcı müraciətləri</a>
           <a className="seller-nav-item" href="#products"><Check size={18} /> Məhsul yoxlaması</a>
           <a className="seller-nav-item" href="#users"><Users size={18} /> İstifadəçilər <span className="nav-count">{users.data?.length ?? 0}</span></a>
+          <a className="seller-nav-item" href="#newsletter"><Mail size={18} /> Abunələr <span className="nav-count">{subscribers.length}</span></a>
           <Link className="seller-nav-item" href="/seller-admin/orders"><ClipboardList size={18} /> Sifarişlər</Link>
         </nav>
         <div className="seller-sidebar-footer">
@@ -313,6 +325,21 @@ export default function SellerAdminPage() {
                 ))}
               </div>
             ) : <div className="empty-state-mini">İstifadəçi hesabı tapılmadı.</div>}
+          </section>
+
+          <section id="newsletter" className="seller-panel-section">
+            <h2>Abunələr {`(${subscribers.length})`}</h2>
+            {subscribers.length ? (
+              <div className="admin-review-list">
+                {subscribers.map((subscriber) => (
+                  <article className="admin-review-card" key={subscriber.id}>
+                    <div className="admin-review-heading">
+                      <div><h3>{subscriber.email}</h3><span>{reviewDate(subscriber.createdAt)}</span></div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : <div className="empty-state-mini">Hələ abunə yoxdur.</div>}
           </section>
         </div>
       </main>

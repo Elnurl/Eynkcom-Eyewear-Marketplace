@@ -7,6 +7,7 @@ import sellerApplicationsRouter from "./seller-applications";
 import ordersRouter from "./orders";
 import accountProfileRouter from "./account-profile";
 import adminRouter from "./admin";
+import newsletterRouter from "./newsletter";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(sellerApplicationsRouter);
 router.use(ordersRouter);
 router.use(accountProfileRouter);
 router.use(adminRouter);
+router.use(newsletterRouter);
 
 export default router;

@@ -12,6 +12,7 @@ import {
   Glasses,
   Heart,
   Info,
+  Mail,
   MapPin,
   Menu,
   Package,
@@ -339,9 +340,64 @@ function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: 
   );
 }
 
+function NewsletterSignup() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    const value = email.trim();
+    if (!/^\S+@\S+\.\S+$/.test(value)) {
+      setStatus('error');
+      setMessage('Düzgün e-poçt ünvanı yazın.');
+      return;
+    }
+    setStatus('sending');
+    setMessage('');
+    try {
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: value }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: string } | null;
+        setStatus('error');
+        setMessage(body?.error || 'İndi qeyd alınmadı. Bir az sonra yenidən yoxla.');
+        return;
+      }
+      setStatus('done');
+      setMessage('Ünvanın qeyd olundu.');
+      setEmail('');
+    } catch {
+      setStatus('error');
+      setMessage('İndi qeyd alınmadı. Bir az sonra yenidən yoxla.');
+    }
+  };
+
+  return (
+    <div className="newsletter">
+      <h2>Yeni modellər və təkliflər üçün abunə ol.</h2>
+      <form className="newsletter-form" onSubmit={(event) => void submit(event)}>
+        <label className="newsletter-field">
+          <Mail size={18} aria-hidden="true" />
+          <input type="email" name="email" autoComplete="email" placeholder="E-poçt ünvanın" value={email} onChange={(event) => setEmail(event.target.value)} aria-label="E-poçt ünvanın" data-testid="input-newsletter-email" required />
+        </label>
+        <button type="submit" disabled={status === 'sending'} data-testid="button-newsletter-submit">{status === 'sending' ? 'Gözlə...' : 'Abunə ol'}</button>
+      </form>
+      <p className="newsletter-note">Abunə ol düyməsinə basmaqla <Link href="/qaydalar">Qaydalar</Link> və <Link href="/mexfilik">Məxfilik</Link> şərtlərini qəbul edirsən.</p>
+      {message && <p className={status === 'error' ? 'newsletter-status newsletter-status--error' : 'newsletter-status'} role="status" data-testid="status-newsletter">{message}</p>}
+    </div>
+  );
+}
+
 function Footer() {
   return (
     <footer className="footer">
+      <div className="container">
+        <NewsletterSignup />
+      </div>
       <div className="container footer-grid">
         <div><div className="brand"><BrandLogo /></div><p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p></div>
         <div><h3>Kəşf et</h3><Link href="/collection">Eynəklər</Link><Link href="/brands">Brendlər</Link><Link href="/stores">Mağazalar</Link></div>
