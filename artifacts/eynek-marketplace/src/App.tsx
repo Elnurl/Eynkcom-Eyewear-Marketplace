@@ -424,6 +424,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
         <section className="section">
           <div className="container">
             <div className="section-head"><div><div className="eyebrow">Kateqoriyalar</div><h2 className="section-title">Nə axtarırsan?</h2></div><p className="section-copy">Gündəlik optik çərçivələr və günəşli Bakı üçün gün eynəkləri.</p></div>
+            <div className="feature-mosaic">
             <div className="feature-layout">
               <Link href="/collection?type=sunglasses" className="feature-card feature-card--dark feature-card--sunglasses" data-testid="link-category-sunglasses">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/sunglasses.webp`} alt="" loading="lazy" />
@@ -434,11 +435,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
                 <div className="eyebrow">Kateqoriya 02</div><h3>Optik çərçivələr</h3><p>Gündəlik istifadə üçün modelləri kəşf et.</p>
               </Link>
             </div>
-          </div>
-        </section>
-        <section className="section" style={{ paddingTop: 0 }}>
-          <div className="container">
-            <div className="feature-layout">
+            <div className="feature-layout feature-layout--flip">
               <div className="feature-card feature-card--dark feature-card--virtual">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" loading="lazy" />
                 <div className="eyebrow">Virtual try-on</div><h3>Almazdan əvvəl üzündə yoxla.</h3><p>Sınaq bu səhifədə açılır.</p>
@@ -449,6 +446,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
                 <div className="eyebrow">Marketplace</div><h3>Optikaları bir-bir kəşf etmə.</h3><p>Mağazaları, satıcıları və təsdiqlənmiş məhsullarını bir yerdə gör.</p>
                 <Link className="btn" href="/stores" data-testid="link-feature-stores">Mağazalara bax <ArrowRight size={14} /></Link>
               </div>
+            </div>
             </div>
           </div>
         </section>
