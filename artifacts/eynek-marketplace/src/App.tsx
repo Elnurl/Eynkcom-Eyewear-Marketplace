@@ -410,13 +410,14 @@ function Footer() {
 }
 
 function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void }) {
-  const [hovered, setHovered] = useState(false);
-  const displayImage = hovered && product.sideImage ? product.sideImage : product.image;
+  const photoSrc = (path: string) => (path.startsWith('data:') || path.startsWith('http') ? path : assetUrl(path));
+  const hasSide = Boolean(product.sideImage && product.sideImage !== product.image);
   return (
-    <article className="product-card" data-testid={`card-product-${product.id}`} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+    <article className="product-card" data-testid={`card-product-${product.id}`}>
       <div className={`product-image ${product.tone}`}>
         <Link href={`/product/${product.id}`} className="product-image-link" aria-label={`${product.name} məhsul səhifəsini aç`} data-testid={`link-product-image-${product.id}`}>
-          <img className={`product-photo ${hovered && product.sideImage ? 'side-view' : ''}`} src={displayImage.startsWith('data:') || displayImage.startsWith('http') ? displayImage : assetUrl(displayImage)} alt={`${product.name} — ${product.color} eynək modeli ${hovered && product.sideImage ? 'yan görünüş' : 'ön görünüş'}`} loading="lazy" />
+          <img className="product-photo" src={photoSrc(product.image)} alt={`${product.name} — ${product.color} eynək modeli, ön görünüş`} loading="lazy" />
+          {hasSide && product.sideImage && <img className="product-photo side-view" src={photoSrc(product.sideImage)} alt={`${product.name} — ${product.color} eynək modeli, yan görünüş`} loading="lazy" />}
         </Link>
         <button className={`heart-button ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} seçilmişlərə əlavə et`} data-testid={`button-favorite-${product.id}`}><Heart size={18} strokeWidth={1.8} fill={liked ? 'currentColor' : 'none'} /></button>
         <button type="button" className="product-badge" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}><span className="badge-light" aria-hidden="true" />3D YOXLA</button>
@@ -424,6 +425,7 @@ function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product
       <div className="product-info">
         <span className="product-label">{product.brand || product.type}</span>
         <Link href={`/product/${product.id}`} data-testid={`link-product-${product.id}`}><h3 className="product-name">{product.name}</h3></Link>
+        {!product.previewOnly && product.price > 0 && <span className="product-price">{money(product.price)}</span>}
       </div>
     </article>
   );
