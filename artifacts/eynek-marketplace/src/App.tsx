@@ -134,7 +134,7 @@ const TINT_TRY_ON_URL = 'https://tintvto.com/?q=Eb6iMswtR8R7';
 function openTintTryOn(variantId?: number | string) {
   const widget = document.querySelector('tint-vto') as (HTMLElement & { open?: () => void }) | null;
   if (widget?.open) {
-    if (variantId != null && String(variantId) !== '') widget.setAttribute('variant-id', String(variantId));
+    widget.setAttribute('variant-id', variantId != null && String(variantId) !== '' ? String(variantId) : '');
     widget.open();
     return;
   }
@@ -389,7 +389,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
               <p className="hero-sub">Bəyəndiyini seç, almazdan əvvəl yoxla.</p>
               <div className="hero-actions">
                 <Link href="/collection" className="btn hero-cta" data-testid="link-hero-collection">Eynəkləri kəşf et <ArrowRight size={16} /></Link>
-                <button className="hero-preview-link" onClick={() => openTintTryOn(products[0]?.id)} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
+                <button className="hero-preview-link" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
               </div>
               <div className="hero-note"><Info size={14} /> Təsdiqlənmiş satıcı kataloqu · virtual sınaq önizləmədir</div>
             </div>
@@ -442,7 +442,7 @@ function Home({ products, stores, onQuickView, likedIds, onFavorite, onTryOn }: 
               <div className="feature-card feature-card--dark feature-card--virtual">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" loading="lazy" />
                 <div className="eyebrow">Virtual try-on</div><h3>Almazdan əvvəl üzündə yoxla.</h3><p>Sınaq bu səhifədə açılır.</p>
-                <button className="btn btn-secondary" onClick={() => openTintTryOn(products[0]?.id)} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
+                <button className="btn btn-secondary" onClick={() => openTintTryOn()} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
               </div>
               <div className="feature-card feature-card--light feature-card--store">
                 <img className="feature-card-photo" src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" loading="lazy" />
