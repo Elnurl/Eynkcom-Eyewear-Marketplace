@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AlertCircle, Check, ClipboardList, LogOut, Mail, ShieldCheck, Users } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 import { BrandLogo } from '@/components/brand-logo';
 
 type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'needs_changes';
+type AdminSection = 'applications' | 'products' | 'users' | 'newsletter';
 type ProductStatus = 'approved' | 'rejected' | 'needs_changes';
 
 const applicationStatusLabel: Record<ApplicationStatus, string> = {
@@ -77,6 +78,26 @@ export default function SellerAdminPage() {
   const [productNotes, setProductNotes] = useState<Record<string, string>>({});
   const [actionError, setActionError] = useState('');
   const [subscribers, setSubscribers] = useState<Array<{ id: string; email: string; createdAt: string }>>([]);
+  const [section, setSection] = useState<AdminSection>('applications');
+  const mainRef = useRef<HTMLElement>(null);
+
+  const openSection = (id: AdminSection) => {
+    setSection(id);
+    const node = document.getElementById(id);
+    const main = mainRef.current;
+    if (!node) return;
+    if (main && main.scrollHeight > main.clientHeight + 1) {
+      const top = node.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop;
+      main.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
+      return;
+    }
+    node.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const id = window.location.hash.replace('#', '');
+    if (id === 'applications' || id === 'products' || id === 'users' || id === 'newsletter') openSection(id);
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -154,10 +175,10 @@ export default function SellerAdminPage() {
           <div><strong>İdarəetmə</strong><small>{user?.email}</small></div>
         </div>
         <nav className="seller-nav">
-          <a className="seller-nav-item active" href="#applications"><ShieldCheck size={18} /> Satıcı müraciətləri</a>
-          <a className="seller-nav-item" href="#products"><Check size={18} /> Məhsul yoxlaması</a>
-          <a className="seller-nav-item" href="#users"><Users size={18} /> İstifadəçilər <span className="nav-count">{users.data?.length ?? 0}</span></a>
-          <a className="seller-nav-item" href="#newsletter"><Mail size={18} /> Abunələr <span className="nav-count">{subscribers.length}</span></a>
+          <button type="button" className={`seller-nav-item ${section === 'applications' ? 'active' : ''}`} onClick={() => openSection('applications')}><ShieldCheck size={18} /> Satıcı müraciətləri</button>
+          <button type="button" className={`seller-nav-item ${section === 'products' ? 'active' : ''}`} onClick={() => openSection('products')}><Check size={18} /> Məhsul yoxlaması</button>
+          <button type="button" className={`seller-nav-item ${section === 'users' ? 'active' : ''}`} onClick={() => openSection('users')}><Users size={18} /> İstifadəçilər <span className="nav-count">{users.data?.length ?? 0}</span></button>
+          <button type="button" className={`seller-nav-item ${section === 'newsletter' ? 'active' : ''}`} onClick={() => openSection('newsletter')}><Mail size={18} /> Abunələr <span className="nav-count">{subscribers.length}</span></button>
           <Link className="seller-nav-item" href="/seller-admin/orders"><ClipboardList size={18} /> Sifarişlər</Link>
         </nav>
         <div className="seller-sidebar-footer">
@@ -166,7 +187,7 @@ export default function SellerAdminPage() {
         </div>
       </aside>
 
-      <main className="seller-main">
+      <main className="seller-main" ref={mainRef}>
         <div className="seller-content">
           <header className="seller-main-header">
             <h1>Marketplace yoxlaması</h1>
