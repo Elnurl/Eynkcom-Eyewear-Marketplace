@@ -1383,6 +1383,9 @@ components:
           type: number
         lineTotalAzN:
           type: number
+        productImage:
+          type: string
+          nullable: true
     SellerOrderSummary:
       type: object
       required: [id, sellerName, status, items, productSubtotalAzN, deliveryFeeAzN, sellerEarningsAzN, commissionAzN, trackingCode, settlementStatus, refundedAzN, productRefundedAzN]

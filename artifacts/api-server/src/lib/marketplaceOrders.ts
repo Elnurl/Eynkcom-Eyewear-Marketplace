@@ -8,16 +8,28 @@ import {
   marketplaceReturnRequestsTable,
   marketplaceSettlementLedgerTable,
   marketplaceSellerOrdersTable,
+  sellerProductsTable,
   sellerStoresTable,
 } from "@workspace/db";
 
 const toAzN = (qepik: number | null) =>
   qepik === null ? null : Number((qepik / 100).toFixed(2));
 
+async function productImageById(productIds: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(productIds)];
+  if (!unique.length) return new Map();
+  const rows = await db
+    .select({ id: sellerProductsTable.id, frontImage: sellerProductsTable.frontImage })
+    .from(sellerProductsTable)
+    .where(inArray(sellerProductsTable.id, unique));
+  return new Map(rows.map((row) => [row.id, row.frontImage]));
+}
+
 function summarizeSellerOrder(
   sellerOrder: typeof marketplaceSellerOrdersTable.$inferSelect,
   storeName: string,
   items: (typeof marketplaceOrderItemsTable.$inferSelect)[],
+  imageByProductId: Map<string, string>,
   settlement?: typeof marketplaceSettlementLedgerTable.$inferSelect,
 ) {
   return {
@@ -27,6 +39,7 @@ function summarizeSellerOrder(
     items: items.map((item) => ({
       productId: item.productId,
       productName: item.productName,
+      productImage: imageByProductId.get(item.productId) ?? null,
       quantity: item.quantity,
       unitPriceAzN: toAzN(item.unitPriceQepik)!,
       lineTotalAzN: toAzN(item.lineTotalQepik)!,
@@ -95,6 +108,7 @@ async function getSellerGroups(orderId: string) {
     settlements.map((settlement) => [settlement.sellerOrderId, settlement]),
   );
   const returnsBySellerOrder = new Map(returns.map((row) => [row.sellerOrderId, row]));
+  const imageByProductId = await productImageById(items.map((item) => item.productId));
 
   return rows.map(({ sellerOrder, store }) => ({
     sellerOrder,
@@ -104,6 +118,7 @@ async function getSellerGroups(orderId: string) {
         sellerOrder,
         store.name,
         itemsBySellerOrder.get(sellerOrder.id) ?? [],
+        imageByProductId,
         settlementsBySellerOrder.get(sellerOrder.id),
       ),
       ...(returnsBySellerOrder.get(sellerOrder.id)
@@ -242,11 +257,13 @@ export async function listSellerOrders(sellerId: string) {
     settlements.map((settlement) => [settlement.sellerOrderId, settlement]),
   );
   const returnsBySellerOrder = new Map(returns.map((row) => [row.sellerOrderId, row]));
+  const imageByProductId = await productImageById(items.map((item) => item.productId));
   return rows.map(({ sellerOrder, store, order }) => ({
     ...summarizeSellerOrder(
       sellerOrder,
       store.name,
       itemsBySellerOrder.get(sellerOrder.id) ?? [],
+      imageByProductId,
       settlementsBySellerOrder.get(sellerOrder.id),
     ),
     ...(returnsBySellerOrder.get(sellerOrder.id)

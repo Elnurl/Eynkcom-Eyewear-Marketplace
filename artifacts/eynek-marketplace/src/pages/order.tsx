@@ -11,7 +11,7 @@ import {
 } from '@workspace/api-client-react';
 import type { BuyerOrder, BuyerSellerOrderSummary } from '@workspace/api-client-react';
 import { BrandLogo } from '@/components/brand-logo';
-import { LoadingCard, QueryError, StatePill, dateLabel, fulfillmentLabel, money, orderStatusLabel, paymentStatusLabel, returnStatusLabel, sellerStatusLabel } from './order-ui';
+import { LoadingCard, OrderItemRow, QueryError, StatePill, dateLabel, fulfillmentLabel, money, orderStatusLabel, paymentStatusLabel, returnStatusLabel, sellerStatusLabel } from './order-ui';
 import './order-pages.css';
 
 function initialToken(orderId: string) {
@@ -127,7 +127,7 @@ export default function OrderPage() {
             <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Mağaza sifarişləri</h2><p>Sifarişinizdəki mağazalar və məhsullar. Qaytarma sorğusu birbaşa mağazaya yox, EYNƏK-ə gedir.</p></div><Store size={19} color="#5b719a" /></div>            <div className="seller-summary">{order.data.sellerOrders.map((seller) => {
               return <article key={seller.id} className="seller-order-card commerce-card" data-testid={`card-buyer-seller-order-${seller.id}`}>
                 <div className="seller-order-top"><div><strong>{seller.sellerName}</strong><small>{seller.items.length} məhsul</small></div><StatePill status={seller.status} label={sellerStatusLabel(seller.status, (order.data as BuyerOrder).fulfillmentMethod)} /></div>
-                <div className="order-items">{seller.items.map((item) => <div className="order-item-row" key={item.productId}><span><strong>{item.productName}</strong> · {item.quantity} ədəd</span><span>{money(item.lineTotalAzN)}</span></div>)}</div>
+                <div className="order-items">{seller.items.map((item) => <OrderItemRow key={item.productId} item={item} />)}</div>
                 {seller.trackingCode && <span className="tracking-badge">İzləmə kodu: {seller.trackingCode}</span>}
                 {seller.returnRequest ? (
                   <div className="return-box" data-testid={`status-return-request-${seller.id}`}>

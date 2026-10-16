@@ -566,6 +566,7 @@ export interface OrderLine {
   quantity: number;
   unitPriceAzN: number;
   lineTotalAzN: number;
+  productImage?: string | null;
 }
 
 export type SellerOrderSummarySettlementStatus = typeof SellerOrderSummarySettlementStatus[keyof typeof SellerOrderSummarySettlementStatus];

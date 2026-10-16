@@ -97,7 +97,8 @@ export const CreateGuestOrderResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -162,7 +163,8 @@ export const GetGuestOrderResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -215,7 +217,8 @@ export const ListAccountOrdersResponseItem = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -285,7 +288,8 @@ export const DecideGuestOrderRevisionResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -364,7 +368,8 @@ export const CreateOrderReturnRequestResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -435,7 +440,8 @@ export const UpdateOrderReturnRequestResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -480,7 +486,8 @@ export const ListSellerOrdersResponseItem = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -557,7 +564,8 @@ export const UpdateSellerOrderResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -647,7 +655,8 @@ export const ListAdminOrdersResponseItem = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -730,7 +739,8 @@ export const RecordOrderRefundResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),
@@ -803,7 +813,8 @@ export const RecordOrderSettlementResponse = zod.object({
   "productName": zod.string(),
   "quantity": zod.number().int(),
   "unitPriceAzN": zod.number(),
-  "lineTotalAzN": zod.number()
+  "lineTotalAzN": zod.number(),
+  "productImage": zod.string().nullish()
 })),
   "productSubtotalAzN": zod.number(),
   "deliveryFeeAzN": zod.number().nullable(),

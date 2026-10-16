@@ -283,9 +283,13 @@
 .seller-order-top strong { color: #1b232e; font-size: 15px; }
 .seller-order-top small { display: block; margin-top: 5px; color: #7b8490; font-size: 10px; }
 .order-items { display: grid; gap: 10px; padding: 16px 0; }
-.order-item-row { display: flex; justify-content: space-between; gap: 12px; color: #69747f; font-size: 11px; }
+.order-item-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #69747f; font-size: 11px; }
+.order-item-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.order-item-main > span { min-width: 0; }
+.order-item-thumb { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 8px; object-fit: contain; background: #fff; border: 1px solid #e8ebf0; padding: 3px; }
+.order-item-thumb--empty { background: #eef1f4; }
 .order-item-row strong { color: #2a333e; font-size: 11px; font-weight: 700; }
-.order-item-row span:last-child { color: #252d37; font-weight: 800; white-space: nowrap; }
+.order-item-row > span:last-child { color: #252d37; font-weight: 800; white-space: nowrap; }
 .order-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 12px; border-top: 1px solid #edf0f4; padding-top: 15px; }
 .order-meta-grid small { display: block; color: #87909c; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
 .order-meta-grid strong { display: block; margin-top: 4px; color: #26313e; font-size: 12px; }

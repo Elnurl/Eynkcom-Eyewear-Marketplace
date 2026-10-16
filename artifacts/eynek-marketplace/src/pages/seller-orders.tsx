@@ -11,7 +11,7 @@ import {
 import type { SellerOrder, SellerOrderUpdate } from '@workspace/api-client-react';
 import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 import { BrandLogo } from '@/components/brand-logo';
-import { LoadingCard, QueryError, StatePill, dateLabel, fulfillmentLabel, money, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
+import { LoadingCard, OrderItemRow, QueryError, StatePill, dateLabel, fulfillmentLabel, money, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
 import './order-pages.css';
 
 type Draft = { status: SellerOrderUpdateStatus; deliveryFeeAzN: string; trackingCode: string; collectedAtDelivery: boolean };
@@ -123,7 +123,7 @@ export default function SellerOrdersPage() {
                 return <article className="commerce-card seller-order-card" key={order.id} data-testid={`card-seller-order-${order.id}`}>
                   <div className="seller-order-top"><div><strong>{order.orderNumber}</strong><small>{order.customerName} · {dateLabel(order.updatedAt)}</small></div><StatePill status={order.status} label={sellerStatusLabel(order.status, order.fulfillmentMethod)} /></div>
                   <div style={{ display: 'grid', gap: 5, padding: '15px 0 3px', color: '#707b87', fontSize: 11 }}><span><strong style={{ color: '#2b3540' }}>Üsul:</strong> {fulfillmentLabel(order.fulfillmentMethod)}</span><span><strong style={{ color: '#2b3540' }}>{order.fulfillmentMethod === 'store_pickup' ? 'Götürmə:' : 'Çatdırılma:'}</strong> {order.deliveryArea}, {order.deliveryAddress}</span><span><strong style={{ color: '#2b3540' }}>Ödəniş:</strong> {paymentStatusLabel(order.paymentStatus, order.fulfillmentMethod)}</span></div>
-                  <div className="order-items">{order.items.map((item) => <div className="order-item-row" key={item.productId}><span><strong>{item.productName}</strong> · {item.quantity} ədəd</span><span>{money(item.lineTotalAzN)}</span></div>)}</div>
+                  <div className="order-items">{order.items.map((item) => <OrderItemRow key={item.productId} item={item} />)}</div>
                   {order.returnRequest && <div className="return-box" data-testid={`status-seller-return-${order.id}`}><strong>Qaytarma sorğusu · {returnStatusLabel(order.returnRequest.status)}</strong><p>{order.returnRequest.reason}</p><small>Alıcı sorğunu EYNƏK-ə göndərib. Mağaza satıcı olaraq qalır; geri ödənişi platforma ayrıca qeyd edir.</small></div>}
                   <div className="order-meta-grid"><div><small>Məhsullar</small><strong>{money(order.productSubtotalAzN)}</strong></div><div><small>Çatdırılma</small><strong>{money(order.deliveryFeeAzN)}</strong></div><div><small>Komissiya</small><strong>{money(order.commissionAzN)}</strong></div><div><small>Qazanc</small><strong>{money(order.sellerEarningsAzN)}</strong></div><div><small>Hesablaşma</small><strong>{settlementStatusLabel(order.settlementStatus)}</strong></div></div>
                   {order.settlementReference ? <small>Hesablaşma istinadı: {order.settlementReference}</small> : null}

@@ -1,5 +1,29 @@
 import { AlertCircle, CheckCircle2, Clock3 } from 'lucide-react';
-import type { AdminOrder, BuyerOrder, FulfillmentMethod, OrderStatus, PaymentStatus, ReturnRequestStatus, SellerOrderStatus } from '@workspace/api-client-react';
+import type { AdminOrder, BuyerOrder, FulfillmentMethod, OrderLine, OrderStatus, PaymentStatus, ReturnRequestStatus, SellerOrderStatus } from '@workspace/api-client-react';
+
+const sampleCutouts = new Set(['mimoza-02', 'sahil-11', 'nisan-07', 'xezer-air', 'luna-24', 'merdekan-03', 'iceriseher-09', 'caspian-sun']);
+
+export function orderProductImageUrl(image: string | null | undefined): string | null {
+  if (!image) return null;
+  if (image.startsWith('data:') || image.startsWith('http')) return image;
+  if (image.startsWith('/objects/')) return `/api/storage${image}`;
+  const sampleName = /^product-images\/([a-z0-9-]+)\.jpg$/.exec(image)?.[1];
+  if (sampleName && sampleCutouts.has(sampleName)) return `${import.meta.env.BASE_URL}product-images/${sampleName}-cutout.png`;
+  return `${import.meta.env.BASE_URL}${image}`;
+}
+
+export function OrderItemRow({ item }: { item: OrderLine }) {
+  const src = orderProductImageUrl(item.productImage);
+  return (
+    <div className="order-item-row">
+      <div className="order-item-main">
+        {src ? <img className="order-item-thumb" src={src} alt="" /> : <span className="order-item-thumb order-item-thumb--empty" aria-hidden />}
+        <span><strong>{item.productName}</strong> · {item.quantity} ədəd</span>
+      </div>
+      <span>{money(item.lineTotalAzN)}</span>
+    </div>
+  );
+}
 
 export function money(value: number | null | undefined) {
   return value === null || value === undefined ? '—' : `${value.toFixed(2)} AZN`;
