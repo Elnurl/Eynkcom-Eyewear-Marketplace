@@ -40,7 +40,15 @@ const productStatusLabel: Record<ProductStatus | 'pending', string> = {
 const accountTypeLabel = { admin: 'Marketplace admin', seller: 'Satıcı', buyer: 'Alıcı' } as const;
 
 function reviewDate(value: Date | string) {
-  return new Intl.DateTimeFormat('az-AZ', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('az-AZ', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date);
+}
+
+function sectionFromLocation(): AdminSection {
+  const id = window.location.hash.replace('#', '');
+  if (id === 'products' || id === 'users' || id === 'newsletter' || id === 'applications') return id;
+  return 'applications';
 }
 
 function errorMessage(error: unknown): string {
@@ -78,26 +86,15 @@ export default function SellerAdminPage() {
   const [productNotes, setProductNotes] = useState<Record<string, string>>({});
   const [actionError, setActionError] = useState('');
   const [subscribers, setSubscribers] = useState<Array<{ id: string; email: string; createdAt: string }>>([]);
-  const [section, setSection] = useState<AdminSection>('applications');
+  const [section, setSection] = useState<AdminSection>(sectionFromLocation);
   const mainRef = useRef<HTMLElement>(null);
 
   const openSection = (id: AdminSection) => {
     setSection(id);
-    const node = document.getElementById(id);
-    const main = mainRef.current;
-    if (!node) return;
-    if (main && main.scrollHeight > main.clientHeight + 1) {
-      const top = node.getBoundingClientRect().top - main.getBoundingClientRect().top + main.scrollTop;
-      main.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
-      return;
-    }
-    node.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+    const nextHash = `#${id}`;
+    if (window.location.hash !== nextHash) window.history.replaceState(null, '', nextHash);
   };
-
-  useEffect(() => {
-    const id = window.location.hash.replace('#', '');
-    if (id === 'applications' || id === 'products' || id === 'users' || id === 'newsletter') openSection(id);
-  }, [isAdmin]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -197,9 +194,9 @@ export default function SellerAdminPage() {
             <div className="google-index-note" role="alert"><AlertCircle size={16} />{actionError || errorMessage(adminError)}</div>
           )}
 
-          <section id="applications" className="seller-panel-section">
+          {section === 'applications' && <section id="applications" className="seller-panel-section">
             <h2>Satıcı müraciətləri {applications.data ? `(${applications.data.length})` : ''}</h2>
-            {applications.isLoading ? <div className="empty-state-mini">Müraciətlər yüklənir...</div> : (() => {
+            {applications.isLoading && !applications.data ? <div className="empty-state-mini">Müraciətlər yüklənir...</div> : (() => {
               const openApplications = applications.data?.filter((application) => application.status === 'pending' || application.status === 'needs_changes') ?? [];
               const decidedApplications = [...(applications.data?.filter((application) => application.status === 'approved' || application.status === 'rejected') ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
               if (!applications.data?.length) return <div className="empty-state-mini">Yoxlanacaq satıcı müraciəti yoxdur.</div>;
@@ -251,7 +248,7 @@ export default function SellerAdminPage() {
                       <h3 className="admin-log-title">Qərar jurnalı</h3>
                       {decidedApplications.map((application) => (
                         <article className="admin-log-row" key={application.id}>
-                          <time dateTime={new Date(application.updatedAt).toISOString()}>{reviewDate(application.updatedAt)}</time>
+                          <time dateTime={reviewDate(application.updatedAt)}>{reviewDate(application.updatedAt)}</time>
                           <div>
                             <strong>{application.storeName}</strong>
                             <span>{application.ownerName} · {application.email}</span>
@@ -281,11 +278,11 @@ export default function SellerAdminPage() {
                 </>
               );
             })()}
-          </section>
+          </section>}
 
-          <section id="products" className="seller-panel-section">
+          {section === 'products' && <section id="products" className="seller-panel-section">
             <h2>Məhsul yoxlaması {products.data ? `(${products.data.length})` : ''}</h2>
-            {products.isLoading ? <div className="empty-state-mini">Məhsullar yüklənir...</div> : (() => {
+            {products.isLoading && !products.data ? <div className="empty-state-mini">Məhsullar yüklənir...</div> : (() => {
               const openProducts = products.data?.filter((product) => product.approvalStatus === 'pending' || product.approvalStatus === 'needs_changes') ?? [];
               const decidedProducts = [...(products.data?.filter((product) => product.approvalStatus === 'approved' || product.approvalStatus === 'rejected') ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
               if (!products.data?.length) return <div className="empty-state-mini">Yoxlanacaq məhsul yoxdur.</div>;
@@ -328,7 +325,7 @@ export default function SellerAdminPage() {
                       <h3 className="admin-log-title">Qərar jurnalı</h3>
                       {decidedProducts.map((product) => (
                         <article className="admin-log-row" key={product.id}>
-                          <time dateTime={new Date(product.updatedAt).toISOString()}>{reviewDate(product.updatedAt)}</time>
+                          <time dateTime={reviewDate(product.updatedAt)}>{reviewDate(product.updatedAt)}</time>
                           <div>
                             <strong>{product.name}</strong>
                             <span>{product.brand || 'Brendsiz'} · {product.price} AZN</span>
@@ -342,9 +339,9 @@ export default function SellerAdminPage() {
                 </>
               );
             })()}
-          </section>
+          </section>}
 
-          <section id="users" className="seller-panel-section">
+          {section === 'users' && <section id="users" className="seller-panel-section">
             <h2>İstifadəçilər {users.data ? `(${users.data.length})` : ''}</h2>
             {users.isLoading ? <div className="empty-state-mini">İstifadəçilər yüklənir...</div> : users.data?.length ? (
               <div className="admin-review-list">
@@ -362,9 +359,9 @@ export default function SellerAdminPage() {
                 ))}
               </div>
             ) : <div className="empty-state-mini">İstifadəçi hesabı tapılmadı.</div>}
-          </section>
+          </section>}
 
-          <section id="newsletter" className="seller-panel-section">
+          {section === 'newsletter' && <section id="newsletter" className="seller-panel-section">
             <h2>Abunələr {`(${subscribers.length})`}</h2>
             {subscribers.length ? (
               <div className="admin-review-list">
@@ -377,7 +374,7 @@ export default function SellerAdminPage() {
                 ))}
               </div>
             ) : <div className="empty-state-mini">Hələ abunə yoxdur.</div>}
-          </section>
+          </section>}
         </div>
       </main>
     </div>
