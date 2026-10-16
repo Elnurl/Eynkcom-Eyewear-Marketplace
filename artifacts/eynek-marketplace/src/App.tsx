@@ -154,6 +154,11 @@ function assetUrl(path: string) {
   return `${import.meta.env.BASE_URL}${path}`;
 }
 
+function productImageSrc(image: string) {
+  if (image.startsWith('data:') || image.startsWith('http')) return image;
+  return assetUrl(image);
+}
+
 function productHoverImage(product: Product): { src: string; kind: 'worn' | 'side' } | null {
   if (product.wornImage) return { src: product.wornImage, kind: 'worn' };
   if (product.sideImage && product.sideImage !== product.image) return { src: product.sideImage, kind: 'side' };
@@ -848,7 +853,15 @@ function WishlistPage({ products, likedIds, onFavorite, onQuickView, onTryOn }: 
 function CartPage({ items, stores, onRemove, onCheckout }: { items: Product[]; stores: Vendor[]; onRemove: (id: number | string) => void; onCheckout: () => void }) {
   const total = items.reduce((sum, item) => sum + item.price, 0);
   const grouped = stores.map((vendor) => ({ vendor, items: items.filter((item) => item.vendorSlug === vendor.slug) })).filter((group) => group.items.length);
-  return <><main className="cart-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Səbət</div><h1>Sifarişin.</h1></div></div>{items.length ? <div className="cart-panel"><h2>{items.length} məhsul</h2>{grouped.map((group) => <div className="cart-items" key={group.vendor.slug}><div className="eyebrow">{group.vendor.name}</div>{group.items.map((item) => <div className="cart-row" key={`${item.id}-${group.vendor.slug}`}><span><strong>{item.name}</strong><small>{money(item.price)} · {item.size}</small></span><button className="icon-button" onClick={() => onRemove(item.id)} aria-label={`${item.name} sil`} data-testid={`button-remove-cart-${item.id}`}><Trash2 size={15} /></button></div>)}</div>)}<div className="cart-row"><strong>Cəmi</strong><strong>{money(total)}</strong></div><button className="btn" onClick={onCheckout} data-testid="button-checkout">Sifarişə keç <ArrowRight size={14} /></button></div> : <div className="empty-state"><ShoppingBag size={22} /><h3>Səbətin hələ boşdur.</h3><p>Məhsulları bir neçə satıcıdan seçib burada toplaya bilərsən.</p><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-cart">Eynəklərə bax</Link></div>}</div></main><Footer /></>;
+  return <><main className="cart-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Səbət</div><h1>Sifarişin.</h1></div></div>{items.length ? <div className="cart-panel"><h2>{items.length} məhsul</h2>{grouped.map((group) => <div className="cart-items" key={group.vendor.slug}><div className="eyebrow">{group.vendor.name}</div>{group.items.map((item, itemIndex) => (
+                <div className="cart-row" key={`${item.id}-${group.vendor.slug}-${itemIndex}`}>
+                  <div className="cart-row-main">
+                    <img className="cart-row-thumb" src={productImageSrc(item.image)} alt="" />
+                    <span><strong>{item.name}</strong><small>{money(item.price)} · {item.size}</small></span>
+                  </div>
+                  <button className="icon-button" onClick={() => onRemove(item.id)} aria-label={`${item.name} sil`} data-testid={`button-remove-cart-${item.id}`}><Trash2 size={15} /></button>
+                </div>
+              ))}</div>)}<div className="cart-row"><strong>Cəmi</strong><strong>{money(total)}</strong></div><button className="btn" onClick={onCheckout} data-testid="button-checkout">Sifarişə keç <ArrowRight size={14} /></button></div> : <div className="empty-state"><ShoppingBag size={22} /><h3>Səbətin hələ boşdur.</h3><p>Məhsulları bir neçə satıcıdan seçib burada toplaya bilərsən.</p><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-cart">Eynəklərə bax</Link></div>}</div></main><Footer /></>;
 }
 
 function AccountPage() {

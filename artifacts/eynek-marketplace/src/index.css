@@ -608,6 +608,8 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .wishlist-grid { margin-top: 30px; }
 .cart-items { display: grid; gap: 12px; margin-top: 21px; }
 .cart-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
+.cart-row-main { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.cart-row-thumb { width: 72px; height: 72px; object-fit: contain; border-radius: 8px; background: #f5f6f8; border: 1px solid var(--line); flex-shrink: 0; }
 .cart-row small { display: block; margin-top: 4px; color: var(--muted); }
 
 .toast { position: fixed; z-index: 70; right: 22px; bottom: 22px; display: flex; align-items: center; gap: 10px; min-width: 245px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); box-shadow: 0 9px 25px rgba(23,26,58,.1); font-size: 11px; animation: toast-in .25s ease both; }
