@@ -197,85 +197,75 @@ export default function SellerAdminPage() {
           {section === 'applications' && <section id="applications" className="seller-panel-section">
             <h2>Satıcı müraciətləri {applications.data ? `(${applications.data.length})` : ''}</h2>
             {applications.isLoading && !applications.data ? <div className="empty-state-mini">Müraciətlər yüklənir...</div> : (() => {
-              const openApplications = applications.data?.filter((application) => application.status === 'pending' || application.status === 'needs_changes') ?? [];
-              const decidedApplications = [...(applications.data?.filter((application) => application.status === 'approved' || application.status === 'rejected') ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-              if (!applications.data?.length) return <div className="empty-state-mini">Yoxlanacaq satıcı müraciəti yoxdur.</div>;
+              const rows = [...(applications.data ?? [])].sort((a, b) => {
+                const open = (status: string) => status === 'pending' || status === 'needs_changes' ? 0 : 1;
+                const byStatus = open(a.status) - open(b.status);
+                if (byStatus !== 0) return byStatus;
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+              });
+              if (!rows.length) return <div className="empty-state-mini">Yoxlanacaq satıcı müraciəti yoxdur.</div>;
               return (
-                <>
-                  {openApplications.length ? (
-                    <div className="admin-review-list">
-                      {openApplications.map((application) => (
-                        <article className="admin-review-card" key={application.id}>
-                          <div className="admin-review-heading">
-                            <div><h3>{application.storeName}</h3><span>{application.ownerName} · {application.email} · {application.phone}</span></div>
-                            <span className={`status-badge ${application.status === 'needs_changes' ? 'pending' : 'draft'}`}>{applicationStatusLabel[application.status]}</span>
-                          </div>
-                          <p>{application.business}</p>
-                          <div className="admin-review-details">
-                            <span><strong>Ünvan:</strong> {application.address}</span>
-                            <span><strong>Kateqoriyalar:</strong> {application.categories}</span>
-                            {application.tax && <span><strong>VÖEN:</strong> {application.tax}</span>}
-                            {application.instagram && <span><strong>Instagram:</strong> {application.instagram}</span>}
-                            {application.website && <span><strong>Veb:</strong> {application.website}</span>}
-                          </div>
-                          <textarea
-                            aria-label={`${application.storeName} üçün baxış qeydi`}
-                            placeholder="Satıcıya göstəriləcək qeyd"
-                            value={applicationNotes[application.id] ?? application.reviewNotes ?? ''}
-                            onChange={(event) => setApplicationNotes((notes) => ({ ...notes, [application.id]: event.target.value }))}
-                          />
-                          <div className="admin-review-actions">
-                            {(['approved', 'needs_changes', 'rejected'] as ApplicationStatus[]).map((status) => (
-                              <button
-                                key={status}
-                                className={status === 'approved' ? 'btn btn-blue' : 'btn btn-secondary'}
-                                disabled={reviewApplication.isPending}
-                                onClick={() => saveApplicationStatus(application.id, status)}
-                              >
-                                {applicationStatusLabel[status]}
-                              </button>
-                            ))}
-                          </div>
-                          {application.status === 'pending' && (
+                <div className="admin-review-list" data-testid="log-seller-applications">
+                  {rows.map((application, index) => {
+                    const open = application.status === 'pending' || application.status === 'needs_changes';
+                    return (
+                      <article className="admin-review-card" key={`${application.id}-${index}`}>
+                        <div className="admin-review-heading">
+                          <div><h3>{application.storeName}</h3><span>{application.ownerName} · {application.email} · {application.phone}</span></div>
+                          <span className={`status-badge ${open ? 'pending' : application.status === 'approved' ? 'active' : 'draft'}`}>{applicationStatusLabel[application.status] ?? application.status}</span>
+                        </div>
+                        <p>{reviewDate(application.createdAt)} · {application.business}</p>
+                        <div className="admin-review-details">
+                          <span><strong>Ünvan:</strong> {application.address}</span>
+                          <span><strong>Kateqoriyalar:</strong> {application.categories}</span>
+                          {application.tax && <span><strong>VÖEN:</strong> {application.tax}</span>}
+                          {application.instagram && <span><strong>Instagram:</strong> {application.instagram}</span>}
+                          {application.website && <span><strong>Veb:</strong> {application.website}</span>}
+                          {application.reviewNotes && <span><strong>Qeyd:</strong> {application.reviewNotes}</span>}
+                        </div>
+                        {open && (
+                          <>
+                            <textarea
+                              aria-label={`${application.storeName} üçün baxış qeydi`}
+                              placeholder="Satıcıya göstəriləcək qeyd"
+                              value={applicationNotes[application.id] ?? application.reviewNotes ?? ''}
+                              onChange={(event) => setApplicationNotes((notes) => ({ ...notes, [application.id]: event.target.value }))}
+                            />
+                            <div className="admin-review-actions">
+                              {(['approved', 'needs_changes', 'rejected'] as ApplicationStatus[]).map((status) => (
+                                <button
+                                  key={status}
+                                  className={status === 'approved' ? 'btn btn-blue' : 'btn btn-secondary'}
+                                  disabled={reviewApplication.isPending}
+                                  onClick={() => saveApplicationStatus(application.id, status)}
+                                >
+                                  {applicationStatusLabel[status]}
+                                </button>
+                              ))}
+                            </div>
                             <small className="field-help">Təsdiqdən əvvəl müraciətdəki e-poçtla hesab yaradılmalı və ən azı bir dəfə daxil olunmalıdır.</small>
-                          )}
-                        </article>
-                      ))}
-                    </div>
-                  ) : <div className="empty-state-mini">Açıq müraciət yoxdur.</div>}
-                  {decidedApplications.length > 0 && (
-                    <div className="admin-log" data-testid="log-seller-applications">
-                      <h3 className="admin-log-title">Qərar jurnalı</h3>
-                      {decidedApplications.map((application) => (
-                        <article className="admin-log-row" key={application.id}>
-                          <time dateTime={reviewDate(application.updatedAt)}>{reviewDate(application.updatedAt)}</time>
-                          <div>
-                            <strong>{application.storeName}</strong>
-                            <span>{application.ownerName} · {application.email}</span>
-                            {application.reviewNotes && <p>Qeyd: {application.reviewNotes}</p>}
+                          </>
+                        )}
+                        {application.status === 'approved' && (
+                          <div className="admin-review-actions">
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              disabled={reviewApplication.isPending}
+                              onClick={() => {
+                                if (window.confirm(`${application.storeName} mağazası siyahıdan silinsin?`)) {
+                                  void saveApplicationStatus(application.id, 'rejected');
+                                }
+                              }}
+                            >
+                              Mağazanı sil
+                            </button>
                           </div>
-                          <div className="admin-log-actions">
-                            {application.status === 'approved' && (
-                              <button
-                                type="button"
-                                className="btn btn-secondary"
-                                disabled={reviewApplication.isPending}
-                                onClick={() => {
-                                  if (window.confirm(`${application.storeName} mağazası siyahıdan silinsin?`)) {
-                                    void saveApplicationStatus(application.id, 'rejected');
-                                  }
-                                }}
-                              >
-                                Mağazanı sil
-                              </button>
-                            )}
-                            <span className={`status-badge ${application.status === 'approved' ? 'active' : 'draft'}`}>{applicationStatusLabel[application.status]}</span>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
               );
             })()}
           </section>}
