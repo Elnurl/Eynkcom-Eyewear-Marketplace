@@ -236,7 +236,23 @@ export default function SellerAdminPage() {
                             <span>{application.ownerName} · {application.email}</span>
                             {application.reviewNotes && <p>Qeyd: {application.reviewNotes}</p>}
                           </div>
-                          <span className={`status-badge ${application.status === 'approved' ? 'active' : 'draft'}`}>{applicationStatusLabel[application.status]}</span>
+                          <div className="admin-log-actions">
+                            {application.status === 'approved' && (
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                disabled={reviewApplication.isPending}
+                                onClick={() => {
+                                  if (window.confirm(`${application.storeName} mağazası siyahıdan silinsin?`)) {
+                                    void saveApplicationStatus(application.id, 'rejected');
+                                  }
+                                }}
+                              >
+                                Mağazanı sil
+                              </button>
+                            )}
+                            <span className={`status-badge ${application.status === 'approved' ? 'active' : 'draft'}`}>{applicationStatusLabel[application.status]}</span>
+                          </div>
                         </article>
                       ))}
                     </div>
