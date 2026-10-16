@@ -64,7 +64,7 @@ export default function SellerAdminPage() {
   });
   const isAdmin = adminAccess.data?.authorized === true;
   const applications = useListAdminSellerApplications(undefined, {
-    query: { queryKey: getListAdminSellerApplicationsQueryKey(), enabled: isAdmin, retry: false },
+    query: { queryKey: getListAdminSellerApplicationsQueryKey(), enabled: isAdmin, retry: false, refetchOnMount: 'always', refetchOnWindowFocus: true },
   });
   const products = useListAdminProducts(undefined, {
     query: { queryKey: getListAdminProductsQueryKey(), enabled: isAdmin, retry: false },
