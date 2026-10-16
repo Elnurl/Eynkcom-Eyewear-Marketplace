@@ -22,11 +22,20 @@ import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 
+function asIso(value: Date | string) {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? new Date(0).toISOString() : date.toISOString();
+}
+
 function serializeApplication(application: typeof sellerApplicationsTable.$inferSelect) {
   return {
     ...application,
-    createdAt: application.createdAt.toISOString(),
-    updatedAt: application.updatedAt.toISOString(),
+    tax: application.tax ?? "",
+    instagram: application.instagram ?? "",
+    website: application.website ?? "",
+    reviewNotes: application.reviewNotes ?? null,
+    createdAt: asIso(application.createdAt),
+    updatedAt: asIso(application.updatedAt),
   };
 }
 
@@ -83,16 +92,21 @@ router.get("/admin/seller-applications", requireAuth, async (req, res): Promise<
     res.status(400).json({ error: "Müraciət filtri düzgün deyil." });
     return;
   }
+  await db.delete(sellerApplicationsTable).where(eq(sellerApplicationsTable.status, "rejected"));
   const applications = await db
     .select()
     .from(sellerApplicationsTable)
-    .where(
-      query.data.status
-        ? eq(sellerApplicationsTable.status, query.data.status)
-        : undefined,
-    )
+    .where(query.data.status ? eq(sellerApplicationsTable.status, query.data.status) : undefined)
     .orderBy(desc(sellerApplicationsTable.createdAt));
-  res.json(ListAdminSellerApplicationsResponse.parse(applications.map(serializeApplication)));
+  const visible = applications.filter((application) => application.status !== "rejected");
+  const serialized = visible.map(serializeApplication);
+  const parsed = ListAdminSellerApplicationsResponse.safeParse(serialized);
+  if (!parsed.success) {
+    req.log.error({ issues: parsed.error.issues }, "Seller application list failed validation");
+    res.json(serialized);
+    return;
+  }
+  res.json(parsed.data);
 });
 
 router.patch("/admin/seller-applications/:id", requireAuth, async (req, res): Promise<void> => {
@@ -152,6 +166,19 @@ router.patch("/admin/seller-applications/:id", requireAuth, async (req, res): Pr
         .update(sellerStoresTable)
         .set({ status: "inactive", updatedAt: new Date() })
         .where(eq(sellerStoresTable.ownerEmail, email));
+    }
+
+    if (body.data.status === "rejected") {
+      await tx.delete(sellerApplicationsTable).where(eq(sellerApplicationsTable.id, application.id));
+      return {
+        kind: "saved" as const,
+        application: {
+          ...application,
+          status: "rejected" as const,
+          reviewNotes: body.data.reviewNotes ?? null,
+          updatedAt: new Date(),
+        },
+      };
     }
 
     const [saved] = await tx

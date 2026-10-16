@@ -51,6 +51,7 @@ import './account.css';
 import {
   getGetSellerStoreQueryKey,
   getListAccountOrdersQueryKey,
+  getListAdminSellerApplicationsQueryKey,
   getListMySellerApplicationsQueryKey,
   useCreateSellerApplication,
   useGetSellerStore,
@@ -819,8 +820,10 @@ function SellerPage() {
       });
       setSent(true);
       if (userEmail) await queryClient.invalidateQueries({ queryKey: getListMySellerApplicationsQueryKey() });
-    } catch {
-      setSubmitError('Müraciət göndərilmədi. Məlumatları yoxlayıb yenidən cəhd edin.');
+      await queryClient.invalidateQueries({ queryKey: getListAdminSellerApplicationsQueryKey() });
+    } catch (error) {
+      const apiError = error && typeof error === 'object' && 'data' in error ? (error as { data?: { error?: string } }).data?.error : undefined;
+      setSubmitError(apiError || 'Müraciət göndərilmədi. Məlumatları yoxlayıb yenidən cəhd edin.');
     }
   };
   const field = (key: keyof SellerForm, label: string, required = false, type = 'text') => <div className="field"><label htmlFor={`seller-${key}`}>{label}{required ? ' *' : ''}</label><input id={`seller-${key}`} type={type} value={form[key]} onChange={(event) => update(key, event.target.value)} aria-invalid={Boolean(errors[key])} data-testid={`input-seller-${key}`} />{errors[key] && <span className="field-error">{errors[key]}</span>}</div>;

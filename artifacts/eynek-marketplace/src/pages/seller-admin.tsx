@@ -72,7 +72,7 @@ export default function SellerAdminPage() {
   });
   const isAdmin = adminAccess.data?.authorized === true;
   const applications = useListAdminSellerApplications(undefined, {
-    query: { queryKey: getListAdminSellerApplicationsQueryKey(), enabled: isAdmin, retry: false, refetchOnMount: 'always', refetchOnWindowFocus: true },
+    query: { queryKey: getListAdminSellerApplicationsQueryKey(), enabled: isAdmin, retry: false, refetchOnMount: 'always', refetchOnWindowFocus: true, refetchInterval: 15000 },
   });
   const products = useListAdminProducts(undefined, {
     query: { queryKey: getListAdminProductsQueryKey(), enabled: isAdmin, retry: false },
@@ -195,9 +195,9 @@ export default function SellerAdminPage() {
           )}
 
           {section === 'applications' && <section id="applications" className="seller-panel-section">
-            <h2>Satıcı müraciətləri {applications.data ? `(${applications.data.length})` : ''}</h2>
+            <h2>Satıcı müraciətləri {applications.data ? `(${applications.data.filter((application) => application.status !== 'rejected').length})` : ''}</h2>
             {applications.isLoading && !applications.data ? <div className="empty-state-mini">Müraciətlər yüklənir...</div> : (() => {
-              const rows = [...(applications.data ?? [])].sort((a, b) => {
+              const rows = (applications.data ?? []).filter((application) => application.status !== 'rejected').sort((a, b) => {
                 const open = (status: string) => status === 'pending' || status === 'needs_changes' ? 0 : 1;
                 const byStatus = open(a.status) - open(b.status);
                 if (byStatus !== 0) return byStatus;
@@ -237,9 +237,12 @@ export default function SellerAdminPage() {
                                   key={status}
                                   className={status === 'approved' ? 'btn btn-blue' : 'btn btn-secondary'}
                                   disabled={reviewApplication.isPending}
-                                  onClick={() => saveApplicationStatus(application.id, status)}
+                                  onClick={() => {
+                                    if (status === 'rejected' && !window.confirm(`${application.storeName} müraciəti silinsin?`)) return;
+                                    void saveApplicationStatus(application.id, status);
+                                  }}
                                 >
-                                  {applicationStatusLabel[status]}
+                                  {status === 'rejected' ? 'Sil' : applicationStatusLabel[status]}
                                 </button>
                               ))}
                             </div>
