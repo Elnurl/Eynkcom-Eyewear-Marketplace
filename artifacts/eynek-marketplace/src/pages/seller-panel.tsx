@@ -621,7 +621,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
             {/* Image Upload Section */}
             <div className="field full">
               <label>Məhsul şəkilləri (Ön və Yan)</label>
-              
+              <span className="field-help">Ön: ağ fonlu məhsul foto. Yan: eyni çərçivənin yan görünüşü (model portreti deyil).</span>
               <div className="image-upload-grid">
                 {/* Front Image */}
                 <div className="image-upload-field">

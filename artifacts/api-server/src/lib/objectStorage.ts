@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { createReadStream, promises as fs } from "node:fs";
+import path from "node:path";
 import type { Readable } from "node:stream";
 import {
   DeleteObjectCommand,
@@ -76,6 +78,32 @@ function isMissing(error: unknown): boolean {
     && (error.name === "NotFound" || error.name === "NoSuchKey" || error.$metadata.httpStatusCode === 404);
 }
 
+function localRoot(): string {
+  return process.env.PRODUCT_UPLOAD_DIR?.trim() || path.join(process.cwd(), ".product-uploads");
+}
+
+function localFilePath(objectPath: string): string {
+  return path.join(localRoot(), keyFor(objectPath));
+}
+
+async function writeLocalUpload(body: Buffer, contentType: string): Promise<{ objectPath: string }> {
+  const key = `uploads/${randomUUID()}`;
+  const objectPath = `/objects/${key}`;
+  const dir = path.join(localRoot(), "uploads");
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(localFilePath(objectPath), body);
+  await fs.writeFile(`${localFilePath(objectPath)}.meta`, contentType, "utf8");
+  return { objectPath };
+}
+
+async function readLocalMeta(objectPath: string): Promise<string> {
+  try {
+    return (await fs.readFile(`${localFilePath(objectPath)}.meta`, "utf8")).trim() || "application/octet-stream";
+  } catch {
+    return "application/octet-stream";
+  }
+}
+
 export class ObjectStorageService {
   /** Presigned PUT; the browser must send exactly this Content-Type. */
   async createUpload(contentType: string): Promise<{ uploadURL: string; objectPath: string }> {
@@ -90,6 +118,7 @@ export class ObjectStorageService {
 
   /** Server-side PUT — avoids browser CORS to the bucket endpoint. */
   async putNewUpload(body: Buffer, contentType: string): Promise<{ objectPath: string }> {
+    if (!isObjectStorageConfigured()) return writeLocalUpload(body, contentType);
     const key = `uploads/${randomUUID()}`;
     await client().send(new PutObjectCommand({
       Bucket: bucket(),
@@ -101,6 +130,14 @@ export class ObjectStorageService {
   }
 
   async stat(objectPath: string): Promise<{ size: number; contentType: string }> {
+    if (!isObjectStorageConfigured()) {
+      try {
+        const file = await fs.stat(localFilePath(objectPath));
+        return { size: file.size, contentType: await readLocalMeta(objectPath) };
+      } catch {
+        throw new ObjectNotFoundError();
+      }
+    }
     try {
       const head = await client().send(new HeadObjectCommand({ Bucket: bucket(), Key: keyFor(objectPath) }));
       return { size: Number(head.ContentLength ?? 0), contentType: head.ContentType ?? "" };
@@ -111,6 +148,20 @@ export class ObjectStorageService {
   }
 
   async readHeader(objectPath: string, bytes: number): Promise<Buffer> {
+    if (!isObjectStorageConfigured()) {
+      try {
+        const handle = await fs.open(localFilePath(objectPath), "r");
+        try {
+          const buffer = Buffer.alloc(bytes);
+          const { bytesRead } = await handle.read(buffer, 0, bytes, 0);
+          return buffer.subarray(0, bytesRead);
+        } finally {
+          await handle.close();
+        }
+      } catch {
+        throw new ObjectNotFoundError();
+      }
+    }
     try {
       const object = await client().send(new GetObjectCommand({
         Bucket: bucket(),
@@ -126,6 +177,18 @@ export class ObjectStorageService {
   }
 
   async open(objectPath: string): Promise<StoredObject> {
+    if (!isObjectStorageConfigured()) {
+      try {
+        const file = await fs.stat(localFilePath(objectPath));
+        return {
+          body: createReadStream(localFilePath(objectPath)),
+          contentType: await readLocalMeta(objectPath),
+          contentLength: file.size,
+        };
+      } catch {
+        throw new ObjectNotFoundError();
+      }
+    }
     try {
       const object = await client().send(new GetObjectCommand({ Bucket: bucket(), Key: keyFor(objectPath) }));
       if (!object.Body) throw new ObjectNotFoundError();
@@ -141,6 +204,15 @@ export class ObjectStorageService {
   }
 
   async delete(objectPath: string): Promise<void> {
+    if (!isObjectStorageConfigured()) {
+      try {
+        await fs.unlink(localFilePath(objectPath));
+        await fs.unlink(`${localFilePath(objectPath)}.meta`);
+      } catch {
+        throw new ObjectNotFoundError();
+      }
+      return;
+    }
     await client().send(new DeleteObjectCommand({ Bucket: bucket(), Key: keyFor(objectPath) }));
   }
 }

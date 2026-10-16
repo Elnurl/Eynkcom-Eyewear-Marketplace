@@ -49,10 +49,6 @@ router.post(
   async (req: Request, res: Response): Promise<void> => {
     const store = await approvedStore(req, res);
     if (!store) return;
-    if (!isObjectStorageConfigured()) {
-      res.status(503).json({ error: "Şəkil anbarı hələ qurulmayıb. S3/R2 açarlarını Render-də əlavə edin." });
-      return;
-    }
     const contentType = imageContentType(req.headers["content-type"]);
     if (!contentType) {
       res.status(400).json({ error: "Yalnız JPG və ya PNG qəbul olunur." });
@@ -105,7 +101,7 @@ router.post(
     }
 
     if (!isObjectStorageConfigured()) {
-      res.status(503).json({ error: "Şəkil anbarı hələ qurulmayıb. S3/R2 açarlarını Render-də əlavə edin." });
+      res.status(503).json({ error: "Presigned yükləmə yalnız S3/R2 ilə işləyir. Satıcı panelində birbaşa yükləmə istifadə edin." });
       return;
     }
 

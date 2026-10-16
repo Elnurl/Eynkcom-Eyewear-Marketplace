@@ -47,6 +47,7 @@ Thumbs.db
 # Tool caches
 .cache/
 .local/
+.product-uploads/
 
 # Secrets
 .env
