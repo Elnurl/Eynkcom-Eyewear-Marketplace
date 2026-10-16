@@ -57,6 +57,14 @@ function bucket(): string {
   return requiredEnv("S3_BUCKET");
 }
 
+export function isObjectStorageConfigured(): boolean {
+  return Boolean(
+    process.env.S3_ACCESS_KEY_ID?.trim()
+    && process.env.S3_SECRET_ACCESS_KEY?.trim()
+    && process.env.S3_BUCKET?.trim(),
+  );
+}
+
 function keyFor(objectPath: string): string {
   const match = OBJECT_PATH.exec(objectPath);
   if (!match) throw new ObjectNotFoundError();
@@ -78,6 +86,18 @@ export class ObjectStorageService {
       { expiresIn: 15 * 60 },
     );
     return { uploadURL, objectPath: `/objects/${key}` };
+  }
+
+  /** Server-side PUT — avoids browser CORS to the bucket endpoint. */
+  async putNewUpload(body: Buffer, contentType: string): Promise<{ objectPath: string }> {
+    const key = `uploads/${randomUUID()}`;
+    await client().send(new PutObjectCommand({
+      Bucket: bucket(),
+      Key: key,
+      ContentType: contentType,
+      Body: body,
+    }));
+    return { objectPath: `/objects/${key}` };
   }
 
   async stat(objectPath: string): Promise<{ size: number; contentType: string }> {

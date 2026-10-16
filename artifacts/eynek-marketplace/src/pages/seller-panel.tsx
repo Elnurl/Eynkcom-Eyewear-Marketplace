@@ -1,6 +1,6 @@
 import { useState, useRef, FormEvent, useMemo, ChangeEvent, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
-import { completeUpload, discardUpload, requestUploadUrl } from '@workspace/api-client-react';
+import { discardUpload } from '@workspace/api-client-react';
 import { useAuthSession } from '@/lib/auth-client';
 import { 
   LogOut, Plus, Search, MoreVertical, Edit2, Trash2, 
@@ -9,6 +9,30 @@ import {
 } from 'lucide-react';
 import { useSellerWorkspace, type SellerProduct, type SellerProductInput } from '@/hooks/use-seller-workspace';
 import { BrandLogo } from '@/components/brand-logo';
+
+function imageUploadContentType(file: File): 'image/jpeg' | 'image/png' | null {
+  const type = file.type.toLowerCase();
+  if (type === 'image/png') return 'image/png';
+  if (type === 'image/jpeg' || type === 'image/jpg') return 'image/jpeg';
+  return null;
+}
+
+async function uploadProductImage(file: File): Promise<string> {
+  const contentType = imageUploadContentType(file);
+  if (!contentType) throw new Error('Yalnız JPG və ya PNG qəbul olunur.');
+  const response = await fetch('/api/storage/uploads/direct', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': contentType },
+    body: file,
+  });
+  const payload = await response.json().catch(() => ({})) as { error?: string; objectPath?: string };
+  if (!response.ok) {
+    throw new Error(payload.error || 'Şəkil yüklənmədi. Yenidən cəhd edin.');
+  }
+  if (!payload.objectPath) throw new Error('Şəkil yüklənmədi. Yenidən cəhd edin.');
+  return payload.objectPath;
+}
 
 function sellerImageUrl(image: string) {
   if (image.startsWith('data:') || image.startsWith('http')) return image;
@@ -454,8 +478,8 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
 
   const validateImage = (file: File): Promise<{valid: boolean, error: string}> => {
     return new Promise((resolve) => {
-      if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-        resolve({valid: false, error: 'Yalnız JPG, JPEG və PNG formatları dəstəklənir.'});
+      if (!imageUploadContentType(file)) {
+        resolve({valid: false, error: 'Yalnız JPG və PNG qəbul olunur (WebP/HEIC yox).'});
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
@@ -496,29 +520,16 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
         setIsImageUploading(true);
         let uploadedPath: string | undefined;
         try {
-          const upload = await requestUploadUrl({
-            name: file.name,
-            size: file.size,
-            contentType: file.type as 'image/jpeg' | 'image/png',
-          });
-          uploadedPath = upload.objectPath;
-          const uploadResponse = await fetch(upload.uploadURL, {
-            method: 'PUT',
-            headers: { 'Content-Type': file.type },
-            body: file,
-          });
-          if (!uploadResponse.ok) throw new Error('Storage upload failed');
-
-          const completed = await completeUpload({ objectPath: upload.objectPath });
-          pendingUploads.current.add(completed.objectPath);
-          setFormData(prev => ({ ...prev, [type]: completed.objectPath }));
+          uploadedPath = await uploadProductImage(file);
+          pendingUploads.current.add(uploadedPath);
+          setFormData(prev => ({ ...prev, [type]: uploadedPath! }));
           if (type === 'frontImage') setFrontImageError('');
           else setSideImageError('');
-        } catch {
+        } catch (error) {
           if (uploadedPath) {
             try { await discardUpload({ objectPath: uploadedPath }); } catch { /* The upload may not exist yet. */ }
           }
-          const message = 'Şəkil yüklənmədi. Yenidən cəhd edin.';
+          const message = error instanceof Error ? error.message : 'Şəkil yüklənmədi. Yenidən cəhd edin.';
           if (type === 'frontImage') setFrontImageError(message);
           else setSideImageError(message);
         } finally {

@@ -6,14 +6,28 @@ import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
-import { Router, type IRouter, type Request, type Response } from "express";
-import { ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
+import express, { Router, type IRouter, type Request, type Response } from "express";
+import { isObjectStorageConfigured, ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { isPublishedImage, removeUnusedImage } from "../lib/productImages";
 import { requireUserEmail } from "./access";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 const storage = new ObjectStorageService();
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+function imageContentType(header: string | undefined): "image/jpeg" | "image/png" | null {
+  const value = header?.split(";")[0]?.trim().toLowerCase();
+  if (value === "image/jpeg" || value === "image/jpg") return "image/jpeg";
+  if (value === "image/png") return "image/png";
+  return null;
+}
+
+function matchesImageMagic(contentType: "image/jpeg" | "image/png", header: Buffer): boolean {
+  const isJpeg = header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
+  const isPng = header.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  return contentType === "image/jpeg" ? isJpeg : isPng;
+}
 
 async function approvedStore(req: Request, res: Response) {
   const email = requireUserEmail(req, res);
@@ -26,6 +40,58 @@ async function approvedStore(req: Request, res: Response) {
 }
 
 router.post(
+  "/storage/uploads/direct",
+  requireAuth,
+  express.raw({
+    limit: MAX_IMAGE_BYTES,
+    type: (req) => imageContentType(req.headers["content-type"] ?? undefined) !== null,
+  }),
+  async (req: Request, res: Response): Promise<void> => {
+    const store = await approvedStore(req, res);
+    if (!store) return;
+    if (!isObjectStorageConfigured()) {
+      res.status(503).json({ error: "Şəkil anbarı hələ qurulmayıb. S3/R2 açarlarını Render-də əlavə edin." });
+      return;
+    }
+    const contentType = imageContentType(req.headers["content-type"]);
+    if (!contentType) {
+      res.status(400).json({ error: "Yalnız JPG və ya PNG qəbul olunur." });
+      return;
+    }
+    const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    if (!body.length) {
+      res.status(400).json({ error: "Şəkil faylı boşdur." });
+      return;
+    }
+    if (body.length > MAX_IMAGE_BYTES) {
+      res.status(413).json({ error: "Şəklin ölçüsü maksimum 10 MB ola bilər." });
+      return;
+    }
+    if (!matchesImageMagic(contentType, body.subarray(0, 8))) {
+      res.status(400).json({ error: "Fayl JPG və ya PNG şəkli deyil." });
+      return;
+    }
+    try {
+      const { objectPath } = await storage.putNewUpload(body, contentType);
+      await db.insert(productImageUploadsTable).values({
+        objectPath,
+        sellerId: store.id,
+        ownerId: req.dbUser!.id,
+        contentType,
+        size: body.length,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        finalizedAt: new Date(),
+      });
+      req.log.info({ objectPath, owner: req.dbUser!.id }, "Product image uploaded via API");
+      res.json({ objectPath });
+    } catch (error) {
+      req.log.error({ err: error }, "Direct product image upload failed");
+      res.status(500).json({ error: "Şəkil yüklənmədi. Yenidən cəhd edin." });
+    }
+  },
+);
+
+router.post(
   "/storage/uploads/request-url",
   requireAuth,
   async (req: Request, res: Response): Promise<void> => {
@@ -35,6 +101,11 @@ router.post(
     const parsed = RequestUploadUrlBody.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "Şəkil metadata-sı düzgün deyil." });
+      return;
+    }
+
+    if (!isObjectStorageConfigured()) {
+      res.status(503).json({ error: "Şəkil anbarı hələ qurulmayıb. S3/R2 açarlarını Render-də əlavə edin." });
       return;
     }
 
