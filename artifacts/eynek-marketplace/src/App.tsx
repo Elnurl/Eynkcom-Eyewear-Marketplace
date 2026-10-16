@@ -154,6 +154,12 @@ function assetUrl(path: string) {
   return `${import.meta.env.BASE_URL}${path}`;
 }
 
+function productHoverImage(product: Product): { src: string; kind: 'worn' | 'side' } | null {
+  if (product.wornImage) return { src: product.wornImage, kind: 'worn' };
+  if (product.sideImage && product.sideImage !== product.image) return { src: product.sideImage, kind: 'side' };
+  return null;
+}
+
 const categoryLinks = [
   { href: '/collection', label: 'Bütün eynəklər' },
   { href: '/collection?type=optical', label: 'Optik çərçivələr' },
@@ -430,15 +436,14 @@ function Footer() {
 
 function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void }) {
   const photoSrc = (path: string) => (path.startsWith('data:') || path.startsWith('http') ? path : assetUrl(path));
-  const hasSide = Boolean(product.sideImage && product.sideImage !== product.image);
-  const hasWorn = Boolean(product.wornImage);
+  const hover = productHoverImage(product);
   return (
     <article className="product-card" data-testid={`card-product-${product.id}`}>
       <div className={`product-image ${product.tone}`}>
         <Link href={`/product/${product.id}`} className="product-image-link" aria-label={`${product.name} məhsul səhifəsini aç`} data-testid={`link-product-image-${product.id}`}>
           <img className="product-photo" src={photoSrc(product.image)} alt={`${product.name} — ${product.color} eynək modeli, ön görünüş`} loading="lazy" />
-          {hasWorn && product.wornImage && <img className="product-photo on-model" src={photoSrc(product.wornImage)} alt={`${product.name} modelin üzündə`} loading="lazy" />}
-          {!hasWorn && hasSide && product.sideImage && <img className="product-photo side-view" src={photoSrc(product.sideImage)} alt={`${product.name} — ${product.color} eynək modeli, yan görünüş`} loading="lazy" />}
+          {hover?.kind === 'worn' && <img className="product-photo on-model" src={photoSrc(hover.src)} alt={`${product.name} modelin üzündə`} loading="lazy" />}
+          {hover?.kind === 'side' && <img className="product-photo side-view" src={photoSrc(hover.src)} alt={`${product.name} — ${product.color} eynək modeli, yan görünüş`} loading="lazy" />}
         </Link>
         <button className={`heart-button ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} seçilmişlərə əlavə et`} data-testid={`button-favorite-${product.id}`}><Heart size={18} strokeWidth={1.8} fill={liked ? 'currentColor' : 'none'} /></button>
         <button type="button" className="product-badge" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}><span className="badge-light" aria-hidden="true" />3D YOXLA</button>
@@ -470,6 +475,7 @@ function frameSwatch(color: string) {
 
 function HavenCard({ product, liked, onFavorite, onTryOn, editorPick }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onTryOn: (product: Product) => void; editorPick?: boolean }) {
   const photoSrc = (path: string) => (path.startsWith('data:') || path.startsWith('http') ? path : assetUrl(path));
+  const hover = productHoverImage(product);
   return (
     <article className="haven-card" data-testid={`card-product-${product.id}`}>
       <div className="haven-card-photo">
@@ -477,7 +483,8 @@ function HavenCard({ product, liked, onFavorite, onTryOn, editorPick }: { produc
         <button className={`haven-heart ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} sevimlilər`} data-testid={`button-favorite-${product.id}`}><Heart size={18} strokeWidth={1.6} fill={liked ? 'currentColor' : 'none'} /></button>
         <Link href={`/product/${product.id}`} className="haven-card-link" aria-label={`${product.name} modelinə bax`} data-testid={`link-product-image-${product.id}`}>
           <img className="haven-card-cutout" src={photoSrc(product.image)} alt={`${product.name} — ${product.color} eynək`} />
-          {product.wornImage && <img className="haven-card-worn" src={photoSrc(product.wornImage)} alt={`${product.name} modelin üzündə`} loading="lazy" />}
+          {hover?.kind === 'worn' && <img className="haven-card-worn" src={photoSrc(hover.src)} alt={`${product.name} modelin üzündə`} loading="lazy" />}
+          {hover?.kind === 'side' && <img className="haven-card-side" src={photoSrc(hover.src)} alt={`${product.name} — ikinci görünüş`} loading="lazy" />}
         </Link>
         <button type="button" className="haven-try" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}><ScanFace size={14} /> Üzündə yoxla <ArrowRight size={14} /></button>
       </div>
