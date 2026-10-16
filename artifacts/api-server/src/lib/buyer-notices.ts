@@ -1,3 +1,5 @@
+import type { EmailDetailRow } from "./email";
+
 export type BuyerNotice =
   | { kind: "placed" }
   | { kind: "confirmed"; storeName: string }
@@ -6,6 +8,12 @@ export type BuyerNotice =
   | { kind: "delivered"; storeName: string; pickup: boolean };
 
 const mobilePrefixes = new Set(["10", "50", "51", "55", "60", "70", "77", "99"]);
+
+const payOnReceive: EmailDetailRow = {
+  label: "Ödəniş",
+  value: "Məhsulu alanda",
+  hint: "Kuryerdə və ya mağazadan götürəndə.",
+};
 
 /** Azerbaijan mobile numbers as Sinch expects them: 994XXXXXXXXX. */
 export function normalizeAzMobile(raw: string): string | null {
@@ -17,25 +25,60 @@ export function normalizeAzMobile(raw: string): string | null {
   return `994${local}`;
 }
 
-export function buyerNotice(orderNumber: string, notice: BuyerNotice): { subject: string; sms: string; intro: string } {
+export type BuyerNoticeCopy = {
+  subject: string;
+  sms: string;
+  intro: string;
+  badge: string;
+  headline: string;
+  body: string;
+  details: EmailDetailRow[];
+  accent: "success" | "warning" | "neutral";
+};
+
+function orderDetails(orderNumber: string, statusLabel: string, payment?: EmailDetailRow): EmailDetailRow[] {
+  const rows: EmailDetailRow[] = [
+    { label: "Sifariş nömrəsi", value: orderNumber },
+    { label: "Vəziyyət", value: statusLabel },
+  ];
+  if (payment) rows.push(payment);
+  return rows;
+}
+
+export function buyerNotice(orderNumber: string, notice: BuyerNotice): BuyerNoticeCopy {
   switch (notice.kind) {
     case "placed":
       return {
         subject: `EYNƏK — sifariş ${orderNumber} qəbul olundu`,
         sms: `EYNƏK: Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiqini gözləyir. Ödəniş qapıdadır.`,
         intro: `Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiq edənə qədər hazırlanmır. Ödəniş məhsulu alanda edilir: kuryerdə və ya mağazadan götürəndə.`,
+        badge: "Sifariş qəbul olundu",
+        headline: "Sifarişin qəbul olundu.",
+        body: "Mağaza təsdiq edənə qədər sifariş hazırlanmır. Vəziyyəti istənilən vaxt yoxlaya bilərsən.",
+        details: orderDetails(orderNumber, "Mağazanın təsdiqini gözləyir", payOnReceive),
+        accent: "success",
       };
     case "confirmed":
       return {
         subject: `EYNƏK — ${notice.storeName} sifarişi təsdiqlədi`,
         sms: `EYNƏK: ${notice.storeName} sifariş ${orderNumber} təsdiqlədi.`,
         intro: `${notice.storeName} sifariş ${orderNumber} üçün öz hissəsini təsdiqlədi.`,
+        badge: "Mağaza təsdiqi",
+        headline: "Mağaza sifarişi təsdiqlədi.",
+        body: `${notice.storeName} sifariş ${orderNumber} üzrə öz hissəsini təsdiqlədi. Hazırlıq mərhələsi davam edir.`,
+        details: orderDetails(orderNumber, `${notice.storeName} təsdiqlədi`, payOnReceive),
+        accent: "success",
       };
     case "declined":
       return {
         subject: `EYNƏK — ${notice.storeName} sifarişi qəbul etmədi`,
         sms: `EYNƏK: ${notice.storeName} sifariş ${orderNumber} qəbul etmədi. Qalan hissəni saytda təsdiqlə.`,
         intro: `${notice.storeName} sifariş ${orderNumber} üçün öz hissəsini qəbul etmədi. Başqa mağaza qalıbsa, davam etmək üçün sifariş səhifəsində təsdiq lazımdır.`,
+        badge: "Diqqət tələb olunur",
+        headline: "Mağaza sifarişi qəbul etmədi.",
+        body: `${notice.storeName} sifariş ${orderNumber} üzrə öz hissəsini qəbul etmədi. Davam etmək üçün sifariş səhifəsində qalan mağazaları yoxla.`,
+        details: orderDetails(orderNumber, `${notice.storeName} qəbul etmədi`),
+        accent: "warning",
       };
     case "out_for_delivery":
       return notice.pickup
@@ -43,11 +86,25 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): { subject
             subject: `EYNƏK — sifariş ${orderNumber} götürməyə hazırdır`,
             sms: `EYNƏK: Sifariş ${orderNumber} ${notice.storeName} mağazasından götürməyə hazırdır.`,
             intro: `Sifariş ${orderNumber} ${notice.storeName} mağazasında götürməyə hazırdır. Ödəniş mağazada edilir.`,
+            badge: "Götürməyə hazırdır",
+            headline: "Sifariş mağazada gözləyir.",
+            body: `${notice.storeName} sifariş ${orderNumber} üçün məhsulu hazırladı. Mağazadan götürə bilərsən; ödəniş orada edilir.`,
+            details: orderDetails(orderNumber, `${notice.storeName} — götürməyə hazır`, {
+              label: "Ödəniş",
+              value: "Mağazada",
+              hint: "Məhsulu götürəndə.",
+            }),
+            accent: "success",
           }
         : {
             subject: `EYNƏK — sifariş ${orderNumber} yoldadır`,
             sms: `EYNƏK: Sifariş ${orderNumber} çatdırılmaya verildi. Ödəniş qapıdadır.`,
             intro: `${notice.storeName} sifariş ${orderNumber} üçün məhsulu çatdırılmaya verdi. Ödəniş kuryerə, qapıda edilir.`,
+            badge: "Çatdırılma yoldadır",
+            headline: "Sifariş yola çıxdı.",
+            body: `${notice.storeName} sifariş ${orderNumber} üçün məhsulu kuryerə təhvil verdi. Ödəniş qapıda edilir.`,
+            details: orderDetails(orderNumber, "Kuryerə verildi", payOnReceive),
+            accent: "success",
           };
     case "delivered":
       return notice.pickup
@@ -55,11 +112,21 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): { subject
             subject: `EYNƏK — sifariş ${orderNumber} təhvil verildi`,
             sms: `EYNƏK: Sifariş ${orderNumber} ${notice.storeName} mağazasından təhvil verildi.`,
             intro: `Sifariş ${orderNumber} ${notice.storeName} mağazasından təhvil verildi.`,
+            badge: "Təhvil verildi",
+            headline: "Sifariş tamamlandı.",
+            body: `${notice.storeName} sifariş ${orderNumber} mağazadan təhvil verildi. EYNƏK-də alış-verişin üçün təşəkkür edirik.`,
+            details: orderDetails(orderNumber, "Mağazadan təhvil verildi"),
+            accent: "success",
           }
         : {
             subject: `EYNƏK — sifariş ${orderNumber} çatdırıldı`,
             sms: `EYNƏK: Sifariş ${orderNumber} çatdırıldı.`,
             intro: `${notice.storeName} sifariş ${orderNumber} üçün məhsulu çatdırdı.`,
+            badge: "Çatdırıldı",
+            headline: "Sifariş çatdırıldı.",
+            body: `${notice.storeName} sifariş ${orderNumber} üzrə çatdırılmanı tamamladı. EYNƏK-də alış-verişin üçün təşəkkür edirik.`,
+            details: orderDetails(orderNumber, "Çatdırıldı"),
+            accent: "success",
           };
   }
 }

@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, Clock3 } from 'lucide-react';
-import type { AdminOrder, BuyerOrder, FulfillmentMethod, OrderLine, OrderStatus, PaymentStatus, ReturnRequestStatus, SellerOrderStatus } from '@workspace/api-client-react';
+import type { AdminOrder, BuyerOrder, FulfillmentMethod, OrderLine, OrderStatus, OrderTimelineEvent, PaymentStatus, ReturnRequestStatus, SellerOrderStatus } from '@workspace/api-client-react';
 
 const sampleCutouts = new Set(['mimoza-02', 'sahil-11', 'nisan-07', 'xezer-air', 'luna-24', 'merdekan-03', 'iceriseher-09', 'caspian-sun']);
 
@@ -120,6 +120,29 @@ export function statusTone(status: string) {
 
 export function StatePill({ status, label }: { status: string; label: string }) {
   return <span className={`state-pill ${statusTone(status)}`} data-testid={`status-${status}`}>{label}</span>;
+}
+
+function timelineStepClass(index: number, total: number, orderStatus: OrderStatus): string {
+  const finished = orderStatus === 'delivered' || orderStatus === 'cancelled';
+  if (index < total - 1) return 'timeline-row--done';
+  return finished ? 'timeline-row--done' : 'timeline-row--current';
+}
+
+export function OrderTimeline({ events, orderStatus }: { events: OrderTimelineEvent[]; orderStatus: OrderStatus }) {
+  return (
+    <div className="timeline">
+      {events.map((event, index) => (
+        <div
+          className={`timeline-row ${timelineStepClass(index, events.length, orderStatus)}`}
+          key={`${event.createdAt}-${index}`}
+          data-testid={`timeline-event-${index}`}
+        >
+          <div><strong>{event.label}</strong></div>
+          <time dateTime={new Date(event.createdAt).toISOString()}>{dateLabel(String(event.createdAt))}</time>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function QueryError({ message = 'Məlumat yüklənmədi.', onRetry }: { message?: string; onRetry?: () => void }) {

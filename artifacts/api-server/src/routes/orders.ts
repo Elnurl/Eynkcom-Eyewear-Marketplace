@@ -453,6 +453,7 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
     email: saved.customerEmail,
     phone: saved.customerPhone,
     orderNumber: saved.orderNumber,
+    orderId: saved.id,
     notice: { kind: "placed" },
   });
   res.status(201).json(CreateGuestOrderResponse.parse(saved));
@@ -869,7 +870,13 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
       kind: "updated" as const,
       orderId: parent.id,
       notice: notice
-        ? { email: parent.customerEmail, phone: parent.customerPhone, orderNumber: parent.orderNumber, notice }
+        ? {
+            email: parent.customerEmail,
+            phone: parent.customerPhone,
+            orderNumber: parent.orderNumber,
+            orderId: parent.id,
+            notice,
+          }
         : null,
     };
   });

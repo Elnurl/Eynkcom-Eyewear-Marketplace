@@ -62,7 +62,9 @@ export const auth = betterAuth({
       void sendEmail(actionEmail({
         to: user.email,
         subject: "EYNƏK — şifrəni yenilə",
-        intro: "Hesabının şifrəsini yeniləmək üçün sorğu aldıq.",
+        badge: "Hesab təhlükəsizliyi",
+        headline: "Şifrəni yenilə.",
+        intro: "Hesabının şifrəsini yeniləmək üçün sorğu aldıq. Aşağıdakı düymə ilə yeni şifrə təyin edə bilərsən.",
         action: "Yeni şifrə təyin et",
         url,
         outro: "Bu sorğunu sən göndərməmisənsə, bu məktubu nəzərə alma. Link 1 saat etibarlıdır.",
@@ -77,7 +79,9 @@ export const auth = betterAuth({
       void sendEmail(actionEmail({
         to: user.email,
         subject: "EYNƏK — e-poçtunu təsdiqlə",
-        intro: "EYNƏK hesabını aktivləşdirmək üçün e-poçt ünvanını təsdiqlə.",
+        badge: "Hesab aktivləşdirmə",
+        headline: "E-poçtunu təsdiqlə.",
+        intro: "EYNƏK hesabını aktivləşdirmək üçün e-poçt ünvanını təsdiqlə. Təsdiqdən sonra sifarişlərin və seçimlərin hesabında saxlanılacaq.",
         action: "E-poçtu təsdiqlə",
         url,
         outro: "Hesab yaratmamısansa, bu məktubu nəzərə alma.",

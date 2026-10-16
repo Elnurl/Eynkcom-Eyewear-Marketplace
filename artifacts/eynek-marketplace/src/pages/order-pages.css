@@ -270,9 +270,13 @@
 .state-pill.is-red { background: #fff0ef; color: #a34c47; }
 
 .timeline { position: relative; display: grid; gap: 0; margin-top: 23px; padding-left: 18px; }
-.timeline::before { content: ''; position: absolute; top: 5px; bottom: 7px; left: 4px; width: 1px; background: #dce2eb; }
+.timeline::before { content: ''; position: absolute; top: 5px; bottom: 7px; left: 4px; width: 2px; background: #dce2eb; border-radius: 1px; }
 .timeline-row { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 18px; min-height: 68px; padding: 0 0 19px 20px; }
-.timeline-row::before { content: ''; position: absolute; top: 4px; left: -18px; width: 9px; height: 9px; border: 3px solid #f8faff; border-radius: 50%; background: #5b719a; box-shadow: 0 0 0 1px #8fa0bb; }
+.timeline-row::before { content: ''; position: absolute; z-index: 1; top: 4px; left: -18px; width: 9px; height: 9px; border: 3px solid #f8faff; border-radius: 50%; background: #8fa0bb; box-shadow: 0 0 0 1px #b8c3d4; transition: background .25s ease, box-shadow .25s ease; }
+.timeline-row--done::before,
+.timeline-row--current::before { background: #2f9d58; box-shadow: 0 0 0 1px #2f9d58; }
+.timeline-row--current::before { box-shadow: 0 0 0 1px #2f9d58, 0 0 0 4px rgba(47, 157, 88, .22); }
+.timeline-row--done::after { content: ''; position: absolute; z-index: 0; left: -14px; top: 13px; bottom: 0; width: 2px; background: #2f9d58; border-radius: 1px; }
 .timeline-row strong { color: #26313e; font-size: 12px; }
 .timeline-row time { color: #86909b; font-size: 10px; white-space: nowrap; }
 .timeline-row p { margin: 5px 0 0; color: #7d8793; font-size: 10px; }
