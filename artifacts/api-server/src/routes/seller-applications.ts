@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Router, type IRouter } from "express";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { desc, eq, lt, sql } from "drizzle-orm";
 import {
   CreateSellerApplicationBody,
   CreateSellerApplicationResponse,
@@ -91,6 +91,15 @@ router.get("/admin/seller-applications", requireAuth, async (req, res): Promise<
   if (!query.success) {
     res.status(400).json({ error: "Müraciət filtri düzgün deyil." });
     return;
+  }
+  const staleApplications = await db
+    .select({ email: sellerApplicationsTable.email })
+    .from(sellerApplicationsTable)
+    .where(lt(sellerApplicationsTable.createdAt, new Date("2026-10-16T19:20:00.000Z")));
+  const staleEmails = [...new Set(staleApplications.map((row) => row.email.trim().toLocaleLowerCase("en-US")).filter(Boolean))];
+  await db.delete(sellerApplicationsTable).where(lt(sellerApplicationsTable.createdAt, new Date("2026-10-16T19:20:00.000Z")));
+  if (staleEmails.length) {
+    await db.delete(sellerStoresTable).where(sql`lower(${sellerStoresTable.ownerEmail}) in (${sql.join(staleEmails.map((email) => sql`${email}`), sql`, `)})`);
   }
   await db.delete(sellerApplicationsTable).where(eq(sellerApplicationsTable.status, "rejected"));
   const applications = await db

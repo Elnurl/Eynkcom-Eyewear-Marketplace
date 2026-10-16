@@ -205,11 +205,11 @@ export default function SellerAdminPage() {
               });
               if (!rows.length) return <div className="empty-state-mini">Yoxlanacaq satıcı müraciəti yoxdur.</div>;
               return (
-                <div className="admin-review-list" data-testid="log-seller-applications">
+                <div className="admin-review-list" data-testid="log-seller-applications" style={{ display: 'grid', gap: 14 }}>
                   {rows.map((application, index) => {
                     const open = application.status === 'pending' || application.status === 'needs_changes';
                     return (
-                      <article className="admin-review-card" key={`${application.id}-${index}`}>
+                      <article className="admin-review-card" key={`${application.id}-${index}`} style={{ display: 'grid', gap: 14, padding: 20, background: '#fff', color: '#171A3A', border: '1px solid #E6E6E2', borderRadius: 12 }}>
                         <div className="admin-review-heading">
                           <div><h3>{application.storeName}</h3><span>{application.ownerName} · {application.email} · {application.phone}</span></div>
                           <span className={`status-badge ${open ? 'pending' : application.status === 'approved' ? 'active' : 'draft'}`}>{applicationStatusLabel[application.status] ?? application.status}</span>
