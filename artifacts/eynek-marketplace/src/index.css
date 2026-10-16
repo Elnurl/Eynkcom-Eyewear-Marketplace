@@ -206,9 +206,14 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .product-photo { width: 100%; height: 100%; display: block; object-fit: contain; padding: 28px 22px 54px; transition: transform .35s ease, opacity .25s ease; }
 .product-image-link { position: absolute; inset: 0; display: block; cursor: pointer; }
 .product-image-link:focus-visible { outline: 2px solid var(--navy); outline-offset: -4px; border-radius: inherit; }
-.product-photo.side-view { position: absolute; inset: 0; opacity: 0; }
-.product-card:hover:has(.product-photo.side-view) .product-photo:not(.side-view) { opacity: 0; }
-.product-card:hover .product-photo.side-view { opacity: 1; }
+.product-photo.side-view, .product-photo.on-model { position: absolute; inset: 0; opacity: 0; }
+.product-photo.on-model { object-fit: cover; padding: 0; object-position: center 28%; }
+@media (hover: hover) {
+  .product-card:hover:has(.product-photo.side-view) .product-photo:not(.side-view) { opacity: 0; }
+  .product-card:hover .product-photo.side-view { opacity: 1; }
+  .product-card:hover:has(.product-photo.on-model) .product-photo:not(.on-model) { opacity: 0; }
+  .product-card:hover .product-photo.on-model { opacity: 1; }
+}
 .frame-visual { position: absolute; left: 50%; top: 115px; transform: translateX(-50%) rotate(-8deg); display: flex; gap: 9px; align-items: center; }
 .frame-visual span { display: block; width: 76px; height: 56px; border: 7px solid var(--navy); }
 .frame-visual span:first-child { border-radius: 54% 46% 44% 51%; }
@@ -724,6 +729,7 @@ body { background: #f8faff; }
 .collection-page .product-image, .vendor-page .product-image, .directory-page .product-image, .account-page .product-image { border: 1px solid #eef0f5; border-radius: 16px; background: white; }
 .collection-page .product-image[class*="tone-"], .vendor-page .product-image[class*="tone-"], .directory-page .product-image[class*="tone-"], .account-page .product-image[class*="tone-"] { background: white; }
 .collection-page .product-photo, .vendor-page .product-photo, .directory-page .product-photo, .account-page .product-photo { object-fit: contain; padding: 15px; }
+.collection-page .product-photo.on-model, .vendor-page .product-photo.on-model, .directory-page .product-photo.on-model, .account-page .product-photo.on-model { object-fit: cover; padding: 0; object-position: center 28%; }
 .collection-page .product-badge, .vendor-page .product-badge, .directory-page .product-badge, .account-page .product-badge { top: auto; bottom: 10px; left: 10px; display: flex; align-items: center; gap: 6px; background: #111214; color: white; }
 .collection-page .product-info, .vendor-page .product-info, .directory-page .product-info, .account-page .product-info { padding-top: 12px; }
 .collection-page .product-name, .vendor-page .product-name, .directory-page .product-name, .account-page .product-name { color: #14171b; font-weight: 700; }
@@ -1178,11 +1184,16 @@ body { background: #f8faff; }
 .haven-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 .haven-card-photo { position: relative; aspect-ratio: 1 / 1.05; background: #f3f3f1; }
 .haven-card-link { position: absolute; inset: 0; display: grid; place-items: center; }
-.haven-card-link img { width: 78%; height: 58%; object-fit: contain; }
+.haven-card-link img { width: 78%; height: 58%; object-fit: contain; transition: opacity .4s ease; }
+.haven-card-link img.haven-card-worn { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; opacity: 0; }
+@media (hover: hover) {
+  .haven-card:hover .haven-card-cutout { opacity: 0; }
+  .haven-card:hover .haven-card-worn { opacity: 1; }
+}
 .haven-card-flag { position: absolute; z-index: 1; top: 14px; left: 14px; }
 .haven-heart { position: absolute; z-index: 1; top: 10px; right: 10px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; color: #1c1c1a; cursor: pointer; }
 .haven-heart.liked { color: #1c1c1a; }
-.haven-try { position: absolute; z-index: 1; left: 50%; bottom: 16px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 0; background: #fff; color: #1c1c1a; font-size: 12px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.haven-try { position: absolute; z-index: 1; left: 50%; bottom: 16px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 0; background: #fff; color: #1c1c1a; font-size: 12px; font-weight: 500; white-space: nowrap; cursor: pointer; box-shadow: 0 6px 16px rgba(28,28,26,.14); }
 .haven-card-copy { padding: 14px 2px 8px; }
 .haven-card-copy h3 { margin: 0 0 4px; color: #1c1c1a; font-size: 16px; font-weight: 600; }
 .haven-card-copy p { display: flex; align-items: center; gap: 8px; margin: 0; color: #6e6e6a; font-size: 13px; }
