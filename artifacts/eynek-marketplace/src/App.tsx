@@ -526,16 +526,13 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
         <section className="haven-hero">
           <img className="haven-hero-image" src={`${import.meta.env.BASE_URL}eynek-campaign.jpg`} alt="Qara gün eynəyində EYNƏK kolleksiyasının müasir üslubu" />
           <div className="haven-shell haven-hero-copy">
-            <p className="haven-kicker"><i /> Yeni baxış. Eyni sən.</p>
             <h1>Sənə yaraşan<br />çərçivəni tap.</h1>
-            <p className="haven-lead">Bir aksesuardan daha çox. Sənin baxışın, sənin üslubun.<br />Bəyəndiyini seç, almazdan əvvəl yoxla.</p>
             <div className="haven-hero-actions">
               <Link href="/collection" className="haven-btn" data-testid="link-hero-collection">Kolleksiyanı kəşf et <ArrowRight size={16} /></Link>
               <button className="haven-text-btn" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
               </div>
             </div>
           <div className="haven-shell haven-hero-foot">
-            <div className="haven-hero-index"><span>01</span><i /><span>Öz üslubunu kəşf et</span></div>
             <span className="haven-hero-credit">EYNƏK — Fərqli baxışlar üçün</span>
           </div>
         </section>
@@ -546,11 +543,7 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
           <span><Store size={16} strokeWidth={1.6} /> Yerli mağazalar, bir ünvan</span>
             </div>
         <section className="haven-shell haven-block">
-          <div className="haven-heading">
-            <div>
-              <p>Sənin üçün seçildi</p>
-              <h2>Baxışını dəyiş.</h2>
-          </div>
+          <div className="haven-heading haven-heading--end">
             <Link href="/collection" data-testid="link-view-all">{products.length} model</Link>
           </div>
           <div className="haven-tabs" role="tablist" aria-label="Kolleksiya">
@@ -607,14 +600,6 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
               </div>
             </div>
           </div>
-        </section>
-        <section className="haven-shell haven-editorial">
-          <div>
-            <p>Yaxınında, bir yerdə</p>
-            <h2>Yeni eynəyin. Tanıdığın mağazadan.</h2>
-            <span>Optikaları, satıcıları və onların modellərini bir yerdə kəşf et.</span>
-          </div>
-          <Link href="/stores" className="haven-btn haven-btn--ghost" data-testid="link-editorial-stores">Mağazalara bax</Link>
         </section>
         <section className="haven-seller">
           <div className="haven-shell haven-seller-inner">
