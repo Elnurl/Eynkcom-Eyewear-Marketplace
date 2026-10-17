@@ -482,6 +482,7 @@ export const OrderStatus = {
   awaiting_buyer_approval: 'awaiting_buyer_approval',
   confirmed: 'confirmed',
   preparing: 'preparing',
+  cancellation_requested: 'cancellation_requested',
   out_for_delivery: 'out_for_delivery',
   partially_delivered: 'partially_delivered',
   delivered: 'delivered',
@@ -497,6 +498,7 @@ export const SellerOrderStatus = {
   declined: 'declined',
   paused: 'paused',
   preparing: 'preparing',
+  cancellation_requested: 'cancellation_requested',
   out_for_delivery: 'out_for_delivery',
   delivered: 'delivered',
   cancelled: 'cancelled',
@@ -558,6 +560,11 @@ export interface GuestOrderInput {
 
 export interface BuyerOrderDecision {
   approve: boolean;
+}
+
+export interface BuyerCancellationRequest {
+  /** @maxLength 500 */
+  note?: string;
 }
 
 export interface OrderLine {
@@ -734,6 +741,8 @@ export const SellerOrderUpdateStatus = {
   preparing: 'preparing',
   out_for_delivery: 'out_for_delivery',
   delivered: 'delivered',
+  cancelled: 'cancelled',
+  pending_confirmation: 'pending_confirmation',
 } as const;
 
 export interface SellerOrderUpdate {

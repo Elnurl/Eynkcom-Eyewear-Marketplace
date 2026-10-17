@@ -141,7 +141,15 @@ export default function SellerOrdersPage() {
                   {order.returnRequest && <div className="return-box" data-testid={`status-seller-return-${order.id}`}><strong>Qaytarma sorğusu · {returnStatusLabel(order.returnRequest.status)}</strong><p>{order.returnRequest.reason}</p><small>Alıcı sorğunu EYNƏK-ə göndərib. Mağaza satıcı olaraq qalır; geri ödənişi platforma ayrıca qeyd edir.</small></div>}
                   <div className="order-meta-grid"><div><small>Məhsullar</small><strong>{money(order.productSubtotalAzN)}</strong></div><div><small>Çatdırılma</small><strong>{money(order.deliveryFeeAzN)}</strong></div><div><small>Komissiya</small><strong>{money(order.commissionAzN)}</strong></div><div><small>Qazanc</small><strong>{money(order.sellerEarningsAzN)}</strong></div><div><small>Hesablaşma</small><strong>{settlementStatusLabel(order.settlementStatus)}</strong></div></div>
                   {order.settlementReference ? <small>Hesablaşma istinadı: {order.settlementReference}</small> : null}
-                  {order.status === 'pending_confirmation' ? (
+                  {order.status === 'cancellation_requested' ? (
+                    <div className="seller-cancel-request" data-testid={`cancellation-request-${order.id}`}>
+                      <p><strong>Alıcı ləğv sorğusu göndərib.</strong> Təsdiqləsən, sifariş ləğv olunacaq və stok geri qayıdacaq.</p>
+                      <div className="order-next-steps">
+                        <button className="btn btn-blue" type="button" disabled={updateOrder.isPending} onClick={() => void save(order, SellerOrderUpdateStatus.cancelled)} data-testid={`button-approve-cancellation-${order.id}`}>Ləğvi təsdiqlə</button>
+                        <button className="btn btn-secondary" type="button" disabled={updateOrder.isPending} onClick={() => void save(order, SellerOrderUpdateStatus.confirmed)} data-testid={`button-reject-cancellation-${order.id}`}>Sorğunu rədd et</button>
+                      </div>
+                    </div>
+                  ) : order.status === 'pending_confirmation' ? (
                     <div className="order-actions">
                       <div className="commerce-field"><label htmlFor={`status-${order.id}`}>Qərar</label><select id={`status-${order.id}`} data-testid={`select-seller-order-status-${order.id}`} value={draft.status} onChange={(event) => setDraft(order.id, { status: event.target.value as SellerOrderUpdateStatus })}>{statusesFor(order).map((status) => <option value={status} key={status}>{sellerStatusLabel(status, order.fulfillmentMethod)}</option>)}</select></div>
                       {order.fulfillmentMethod === 'store_pickup' ? <div className="commerce-field"><label>Çatdırılma haqqı</label><input value="0.00" disabled data-testid={`input-seller-delivery-fee-${order.id}`} /><small style={{ color: '#7c8590' }}>Mağazadan götürmə pulsuzdur</small></div> : <div className="commerce-field"><label htmlFor={`fee-${order.id}`}>Çatdırılma haqqı</label><input id={`fee-${order.id}`} type="number" min="0" max="1000" step="0.01" value={draft.deliveryFeeAzN} onChange={(event) => setDraft(order.id, { deliveryFeeAzN: event.target.value })} data-testid={`input-seller-delivery-fee-${order.id}`} /></div>}

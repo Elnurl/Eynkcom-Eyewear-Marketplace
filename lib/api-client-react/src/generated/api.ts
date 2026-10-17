@@ -23,6 +23,7 @@ import type {
   AdminAccess,
   AdminOrder,
   AdminUser,
+  BuyerCancellationRequest,
   BuyerOrder,
   BuyerOrderDecision,
   CheckoutOptions,
@@ -565,6 +566,95 @@ export const useDecideGuestOrderRevision = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getDecideGuestOrderRevisionMutationOptions(options));
+    }
+
+export const getRequestOrderCancellationUrl = (orderId: string,) => {
+
+
+
+
+  return `/api/orders/${orderId}/cancellation-request`
+}
+
+/**
+ * @summary Ask the store to cancel the order; cancellation completes after seller approval
+ */
+export const requestOrderCancellation = async (orderId: string,
+    buyerCancellationRequest?: BuyerCancellationRequest, options?: Parameters<typeof customFetch>[1]): Promise<BuyerOrder> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<BuyerOrder>(getRequestOrderCancellationUrl(orderId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(buyerCancellationRequest)
+  }
+);}
+
+
+
+
+
+export const getRequestOrderCancellationMutationKey = () => ['requestOrderCancellation'] as const;
+
+export const getRequestOrderCancellationMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestOrderCancellation>>, TError,RequestOrderCancellationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof requestOrderCancellation>>, TError,RequestOrderCancellationMutationVariables, TContext> => {
+
+const mutationKey = getRequestOrderCancellationMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestOrderCancellation>>, RequestOrderCancellationMutationVariables> = (props) => {
+          const {orderId,data} = props ?? {};
+
+          return  requestOrderCancellation(orderId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestOrderCancellationMutationResult = NonNullable<Awaited<ReturnType<typeof requestOrderCancellation>>>
+    export type RequestOrderCancellationMutationBody = BodyType<BuyerCancellationRequest> | undefined
+    export type RequestOrderCancellationMutationError = ErrorType<ErrorEnvelope>
+    export type RequestOrderCancellationMutationVariables = {orderId: string;data?: BodyType<BuyerCancellationRequest>}
+
+    /**
+ * @summary Ask the store to cancel the order; cancellation completes after seller approval
+ */
+export const useRequestOrderCancellation = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestOrderCancellation>>, TError,RequestOrderCancellationMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof requestOrderCancellation>>,
+        TError,
+        RequestOrderCancellationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRequestOrderCancellationMutationOptions(options));
     }
 
 export const getCreateOrderReturnRequestUrl = (orderId: string,) => {

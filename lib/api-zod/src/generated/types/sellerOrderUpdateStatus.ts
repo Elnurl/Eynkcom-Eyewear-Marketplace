@@ -15,4 +15,6 @@ export const SellerOrderUpdateStatus = {
   preparing: 'preparing',
   out_for_delivery: 'out_for_delivery',
   delivered: 'delivered',
+  cancelled: 'cancelled',
+  pending_confirmation: 'pending_confirmation',
 } as const;

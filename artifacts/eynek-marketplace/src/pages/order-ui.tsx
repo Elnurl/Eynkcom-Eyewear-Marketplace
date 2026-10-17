@@ -39,6 +39,7 @@ const orderLabels: Record<OrderStatus, string> = {
   awaiting_buyer_approval: 'Sizin təsdiqiniz gözlənilir',
   confirmed: 'Təsdiqləndi',
   preparing: 'Hazırlanır',
+  cancellation_requested: 'Ləğv sorğusu göndərilib',
   out_for_delivery: 'Çatdırılır',
   partially_delivered: 'Qismən çatdırılıb',
   delivered: 'Çatdırıldı',
@@ -51,6 +52,7 @@ const sellerLabels: Record<SellerOrderStatus, string> = {
   declined: 'Qəbul edilmədi',
   paused: 'Dayandırılıb',
   preparing: 'Hazırlanır',
+  cancellation_requested: 'Ləğv sorğusu',
   out_for_delivery: 'Çatdırılır',
   delivered: 'Çatdırıldı',
   cancelled: 'Ləğv edildi',
@@ -114,7 +116,7 @@ export function paymentStatusLabel(status: PaymentStatus, fulfillment?: Fulfillm
 export function statusTone(status: string) {
   if (['delivered', 'paid_on_delivery', 'confirmed'].includes(status)) return 'is-green';
   if (['cancelled', 'declined', 'failed', 'refunded'].includes(status)) return 'is-red';
-  if (['awaiting_buyer_approval', 'pending_confirmation', 'preparing'].includes(status)) return 'is-warm';
+  if (['awaiting_buyer_approval', 'pending_confirmation', 'preparing', 'cancellation_requested'].includes(status)) return 'is-warm';
   return 'is-blue';
 }
 

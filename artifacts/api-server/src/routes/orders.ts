@@ -22,6 +22,9 @@ import {
   RecordOrderSettlementBody,
   RecordOrderSettlementParams,
   RecordOrderSettlementResponse,
+  RequestOrderCancellationBody,
+  RequestOrderCancellationParams,
+  RequestOrderCancellationResponse,
   UpdateOrderReturnRequestBody,
   UpdateOrderReturnRequestParams,
   UpdateOrderReturnRequestResponse,
@@ -56,6 +59,19 @@ import { noticeForSellerStatus } from "../lib/buyer-notices";
 const router: IRouter = Router();
 type OrderTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const commissionRate = 0.05;
+
+const buyerCancellableParentStatuses = new Set([
+  "pending_confirmation",
+  "confirmed",
+  "preparing",
+  "cancellation_requested",
+]);
+
+const buyerCancellableSellerStatuses = new Set([
+  "pending_confirmation",
+  "confirmed",
+  "preparing",
+]);
 
 function buyerCanReadOrder(
   user: { id: string; email?: string | null } | undefined,
@@ -200,6 +216,8 @@ async function refreshParentOrder(tx: OrderTransaction, orderId: string) {
     status = "partially_delivered";
   } else if (active.some((sellerOrder) => sellerOrder.status === "out_for_delivery")) {
     status = "out_for_delivery";
+  } else if (active.some((sellerOrder) => sellerOrder.status === "cancellation_requested")) {
+    status = "cancellation_requested";
   } else if (active.some((sellerOrder) => sellerOrder.status === "preparing")) {
     status = "preparing";
   } else if (
@@ -592,6 +610,79 @@ router.post("/orders/:orderId/decision", optionalAuth, async (req, res): Promise
   res.json(DecideGuestOrderRevisionResponse.parse(saved));
 });
 
+router.post("/orders/:orderId/cancellation-request", optionalAuth, async (req, res): Promise<void> => {
+  const params = RequestOrderCancellationParams.safeParse(req.params);
+  const body = RequestOrderCancellationBody.safeParse(req.body ?? {});
+  const token = req.get("X-Order-Access-Token") ?? "";
+  if (!params.success) {
+    res.status(404).json({ error: "Sifariş tapılmadı." });
+    return;
+  }
+
+  const result = await db.transaction(async (tx) => {
+    const [order] = await tx
+      .select()
+      .from(marketplaceOrdersTable)
+      .where(eq(marketplaceOrdersTable.id, params.data.orderId))
+      .for("update")
+      .limit(1);
+    if (!order || !buyerCanReadOrder(req.dbUser, order, token)) {
+      return { kind: "missing" as const };
+    }
+    if (!buyerCancellableParentStatuses.has(order.status)) {
+      return { kind: "invalid-state" as const };
+    }
+
+    const sellerOrders = await tx
+      .select()
+      .from(marketplaceSellerOrdersTable)
+      .where(eq(marketplaceSellerOrdersTable.orderId, order.id))
+      .for("update");
+    const note = body.success && body.data.note?.trim() ? body.data.note.trim() : "";
+    let changed = 0;
+    for (const sellerOrder of sellerOrders) {
+      if (!buyerCancellableSellerStatuses.has(sellerOrder.status)) continue;
+      await tx
+        .update(marketplaceSellerOrdersTable)
+        .set({ status: "cancellation_requested", updatedAt: new Date() })
+        .where(eq(marketplaceSellerOrdersTable.id, sellerOrder.id));
+      changed += 1;
+      const label = note
+        ? `Alıcı ləğv sorğusu göndərdi: ${note}`
+        : "Alıcı ləğv sorğusu göndərdi.";
+      await addEvent(tx, order.id, "cancellation_requested", label, sellerOrder.id);
+    }
+    if (changed === 0) {
+      return { kind: "invalid-state" as const };
+    }
+    await addEvent(
+      tx,
+      order.id,
+      "cancellation_requested",
+      note
+        ? `Alıcı ləğv sorğusu göndərdi: ${note}`
+        : "Alıcı ləğv sorğusu göndərdi. Mağaza təsdiq edənə qədər sifariş davam edir.",
+    );
+    await refreshParentOrder(tx, order.id);
+    return { kind: "updated" as const };
+  });
+
+  if (result.kind === "missing") {
+    res.status(404).json({ error: "Sifariş tapılmadı." });
+    return;
+  }
+  if (result.kind === "invalid-state") {
+    res.status(400).json({ error: "Bu mərhələdə ləğv sorğusu göndərilə bilməz." });
+    return;
+  }
+  const saved = await loadBuyerOrder(params.data.orderId);
+  if (!saved) {
+    res.status(404).json({ error: "Sifariş tapılmadı." });
+    return;
+  }
+  res.json(RequestOrderCancellationResponse.parse(saved));
+});
+
 router.post("/orders/:orderId/returns", optionalAuth, async (req, res): Promise<void> => {
   const params = CreateOrderReturnRequestParams.safeParse(req.params);
   const body = CreateOrderReturnRequestBody.safeParse(req.body);
@@ -735,6 +826,59 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
 
     const nextStatus = body.data.status;
     const pickupOrder = isPickup(parent.fulfillmentMethod);
+
+    if (sellerOrder.status === "cancellation_requested") {
+      const [storeRecord] = await tx
+        .select()
+        .from(sellerStoresTable)
+        .where(eq(sellerStoresTable.id, store.id))
+        .limit(1);
+      const storeName = storeRecord?.name ?? "Mağaza";
+      if (nextStatus === "cancelled") {
+        await releaseInventory(tx, [sellerOrder.id]);
+        await tx
+          .update(marketplaceSellerOrdersTable)
+          .set({ status: "cancelled", updatedAt: new Date() })
+          .where(eq(marketplaceSellerOrdersTable.id, sellerOrder.id));
+        await addEvent(
+          tx,
+          parent.id,
+          "cancelled",
+          `${storeName} ləğv sorğusunu təsdiqlədi.`,
+          sellerOrder.id,
+        );
+        await refreshParentOrder(tx, parent.id);
+        return {
+          kind: "updated" as const,
+          orderId: parent.id,
+          notice: {
+            email: parent.customerEmail,
+            phone: parent.customerPhone,
+            orderNumber: parent.orderNumber,
+            orderId: parent.id,
+            notice: { kind: "cancelled" as const, storeName },
+          },
+        };
+      }
+      if (nextStatus === "confirmed" || nextStatus === "pending_confirmation") {
+        const restore = sellerOrder.confirmedAt ? "confirmed" : "pending_confirmation";
+        await tx
+          .update(marketplaceSellerOrdersTable)
+          .set({ status: restore, updatedAt: new Date() })
+          .where(eq(marketplaceSellerOrdersTable.id, sellerOrder.id));
+        await addEvent(
+          tx,
+          parent.id,
+          restore,
+          `${storeName} ləğv sorğusunu rədd etdi.`,
+          sellerOrder.id,
+        );
+        await refreshParentOrder(tx, parent.id);
+        return { kind: "updated" as const, orderId: parent.id, notice: null };
+      }
+      return { kind: "invalid-state" as const };
+    }
+
     if (nextStatus === "confirmed") {
       if (
         sellerOrder.status !== "pending_confirmation" ||

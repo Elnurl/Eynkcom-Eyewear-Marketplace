@@ -8,6 +8,7 @@ import {
   useCreateOrderReturnRequest,
   useDecideGuestOrderRevision,
   useGetGuestOrder,
+  useRequestOrderCancellation,
 } from '@workspace/api-client-react';
 import type { BuyerOrder, BuyerSellerOrderSummary } from '@workspace/api-client-react';
 import { BrandLogo } from '@/components/brand-logo';
@@ -44,6 +45,8 @@ export default function OrderPage() {
   const [returnDrafts, setReturnDrafts] = useState<Record<string, { reason: string; note: string }>>({});
   const [returnError, setReturnError] = useState('');
   const [returnFor, setReturnFor] = useState<string | null>(null);
+  const [cancelNote, setCancelNote] = useState('');
+  const [cancelError, setCancelError] = useState('');
   const accountAccess = isLoaded && Boolean(isSignedIn);
   const queryKey = useMemo(() => [...getGetGuestOrderQueryKey(orderId), accessToken], [orderId, accessToken]);
   const order = useGetGuestOrder(orderId, {
@@ -56,6 +59,32 @@ export default function OrderPage() {
   const createReturn = useCreateOrderReturnRequest({
     request: { headers: accessToken ? { 'X-Order-Access-Token': accessToken } : {} },
   });
+  const requestCancellation = useRequestOrderCancellation({
+    request: { headers: accessToken ? { 'X-Order-Access-Token': accessToken } : {} },
+  });
+
+  const canRequestCancellation = (data: BuyerOrder) => {
+    if (['cancelled', 'delivered', 'out_for_delivery', 'partially_delivered', 'awaiting_buyer_approval'].includes(data.status)) return false;
+    return data.sellerOrders.some((seller) => ['pending_confirmation', 'confirmed', 'preparing'].includes(seller.status));
+  };
+
+  const cancellationPending = (data: BuyerOrder) =>
+    data.status === 'cancellation_requested' || data.sellerOrders.some((seller) => seller.status === 'cancellation_requested');
+
+  const submitCancellationRequest = async () => {
+    setCancelError('');
+    try {
+      const updated = await requestCancellation.mutateAsync({
+        orderId,
+        data: cancelNote.trim() ? { note: cancelNote.trim() } : {},
+      });
+      queryClient.setQueryData(queryKey, updated);
+      setCancelNote('');
+    } catch (error) {
+      const response = error as { data?: { error?: string } };
+      setCancelError(response.data?.error ?? 'Ləğv sorğusu göndərilmədi.');
+    }
+  };
 
   const unlock = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -121,6 +150,19 @@ export default function OrderPage() {
       <>
         <section className="commerce-card order-hero"><div><div className="order-number">SİFARİŞ {order.data.orderNumber}</div><h1>{orderStatusLabel(order.data.status, order.data.fulfillmentMethod)}</h1><p>Yaradılıb: {dateLabel(order.data.createdAt)} · {fulfillmentLabel(order.data.fulfillmentMethod)} · {order.data.deliveryArea}</p></div><StatePill status={order.data.status} label={orderStatusLabel(order.data.status, order.data.fulfillmentMethod)} /></section>
         {order.data.status === 'awaiting_buyer_approval' && <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}><div className="commerce-card-heading"><div><h2>Yenilənmiş sifariş təsdiqinizi gözləyir</h2><p>Mağazalardan biri məhsul və ya çatdırılma detallarını dəyişib. Sifarişi təsdiqləyin və ya ləğv edin.</p></div><ClipboardCheck size={19} color="#9b5c36" /></div><div style={{ display: 'flex', gap: 9, marginTop: 18, flexWrap: 'wrap' }}><button className="btn btn-blue" disabled={decideRevision.isPending} onClick={() => void decide(true)} data-testid="button-approve-revision"><Check size={15} /> {decideRevision.isPending ? 'Göndərilir...' : 'Yenilənmiş sifarişi təsdiqlə'}</button><button className="btn btn-secondary" disabled={decideRevision.isPending} onClick={() => void decide(false)} data-testid="button-cancel-revision"><RotateCcw size={15} /> Sifarişi ləğv et</button></div>{decisionError && <QueryError message={decisionError} />}</section>}
+        {cancellationPending(order.data) && !canRequestCancellation(order.data) && order.data.status !== 'cancelled' && (
+          <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="status-cancellation-pending">
+            <div className="commerce-card-heading"><div><h2>Ləğv sorğusu mağazada</h2><p>Mağaza sorğunu təsdiqləyəndə sifariş ləğv olunacaq. Təsdiq gözləyən mərhələdə sifariş hələ davam edir.</p></div><RotateCcw size={19} color="#9b5c36" /></div>
+          </section>
+        )}
+        {canRequestCancellation(order.data) && (
+          <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="section-cancellation-request">
+            <div className="commerce-card-heading"><div><h2>Sifarişi ləğv etmək istəyirsən?</h2><p>Ləğv dərhal olmur — mağazaya sorğu gedir. Mağaza təsdiqləyəndə sifariş bağlanır.</p></div><X size={19} color="#9b5c36" /></div>
+            <div className="commerce-field" style={{ marginTop: 16 }}><label htmlFor="cancel-note">Qısa səbəb (istəyə bağlı)</label><textarea id="cancel-note" rows={3} maxLength={500} value={cancelNote} onChange={(event) => setCancelNote(event.target.value)} placeholder="Məsələn: plan dəyişdi" data-testid="input-cancellation-note" /></div>
+            <div style={{ display: 'flex', gap: 9, marginTop: 14, flexWrap: 'wrap' }}><button className="btn btn-secondary" type="button" disabled={requestCancellation.isPending} onClick={() => void submitCancellationRequest()} data-testid="button-request-cancellation"><RotateCcw size={15} /> {requestCancellation.isPending ? 'Göndərilir...' : 'Ləğv sorğusu göndər'}</button></div>
+            {cancelError && <QueryError message={cancelError} />}
+          </section>
+        )}
         <div className="commerce-grid" style={{ marginTop: 16 }}>
           <div>
             <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Sifariş mərhələləri</h2><p>Son yeniliklər mağazaların təsdiqləmələrinə əsasən yenilənir.</p></div><Package size={19} color="#5b719a" /></div><OrderTimeline events={order.data.timeline} orderStatus={order.data.status} /></section>

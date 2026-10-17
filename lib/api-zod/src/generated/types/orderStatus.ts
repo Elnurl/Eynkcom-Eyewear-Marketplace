@@ -15,6 +15,7 @@ export const OrderStatus = {
   awaiting_buyer_approval: 'awaiting_buyer_approval',
   confirmed: 'confirmed',
   preparing: 'preparing',
+  cancellation_requested: 'cancellation_requested',
   out_for_delivery: 'out_for_delivery',
   partially_delivered: 'partially_delivered',
   delivered: 'delivered',

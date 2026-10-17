@@ -15,6 +15,7 @@ export const SellerOrderStatus = {
   declined: 'declined',
   paused: 'paused',
   preparing: 'preparing',
+  cancellation_requested: 'cancellation_requested',
   out_for_delivery: 'out_for_delivery',
   delivered: 'delivered',
   cancelled: 'cancelled',

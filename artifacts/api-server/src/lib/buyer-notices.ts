@@ -4,6 +4,7 @@ export type BuyerNotice =
   | { kind: "placed" }
   | { kind: "confirmed"; storeName: string }
   | { kind: "declined"; storeName: string }
+  | { kind: "cancelled"; storeName: string }
   | { kind: "out_for_delivery"; storeName: string; pickup: boolean }
   | { kind: "delivered"; storeName: string; pickup: boolean };
 
@@ -68,6 +69,17 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): BuyerNoti
         body: `${notice.storeName} sifariş ${orderNumber} üzrə öz hissəsini təsdiqlədi. Hazırlıq mərhələsi davam edir.`,
         details: orderDetails(orderNumber, `${notice.storeName} təsdiqlədi`, payOnReceive),
         accent: "success",
+      };
+    case "cancelled":
+      return {
+        subject: `EYNƏK — ${notice.storeName} sifarişi ləğv etdi`,
+        sms: `EYNƏK: ${notice.storeName} sifariş ${orderNumber} ləğv sorğusunu təsdiqlədi.`,
+        intro: `${notice.storeName} sifariş ${orderNumber} üzrə ləğv sorğusunu təsdiqlədi.`,
+        badge: "Sifariş ləğv edildi",
+        headline: "Sifariş ləğv olundu.",
+        body: `${notice.storeName} ləğv sorğunu təsdiqlədi. Sifarişin bu mağaza hissəsi bağlanıb.`,
+        details: orderDetails(orderNumber, "Ləğv edildi"),
+        accent: "neutral",
       };
     case "declined":
       return {
