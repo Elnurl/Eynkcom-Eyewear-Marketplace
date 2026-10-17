@@ -639,6 +639,32 @@ router.post("/orders/:orderId/cancellation-request", optionalAuth, async (req, r
       .where(eq(marketplaceSellerOrdersTable.orderId, order.id))
       .for("update");
     const note = body.success && body.data.note?.trim() ? body.data.note.trim() : "";
+    const active = sellerOrders.filter(
+      (sellerOrder) => !["declined", "cancelled"].includes(sellerOrder.status),
+    );
+    const immediateCancel =
+      active.length > 0 && active.every((sellerOrder) => sellerOrder.status === "pending_confirmation");
+
+    if (immediateCancel) {
+      const pendingIds = active.map((sellerOrder) => sellerOrder.id);
+      await releaseInventory(tx, pendingIds);
+      await tx
+        .update(marketplaceSellerOrdersTable)
+        .set({ status: "cancelled", updatedAt: new Date() })
+        .where(inArray(marketplaceSellerOrdersTable.id, pendingIds));
+      await addEvent(
+        tx,
+        order.id,
+        "cancelled",
+        note ? `Alıcı sifarişi ləğv etdi: ${note}` : "Alıcı sifarişi ləğv etdi.",
+      );
+      await tx
+        .update(marketplaceOrdersTable)
+        .set({ status: "cancelled", updatedAt: new Date() })
+        .where(eq(marketplaceOrdersTable.id, order.id));
+      return { kind: "updated" as const };
+    }
+
     let changed = 0;
     for (const sellerOrder of sellerOrders) {
       if (!buyerCancellableSellerStatuses.has(sellerOrder.status)) continue;

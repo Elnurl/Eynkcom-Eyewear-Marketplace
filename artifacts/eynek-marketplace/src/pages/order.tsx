@@ -63,6 +63,14 @@ export default function OrderPage() {
     request: { headers: accessToken ? { 'X-Order-Access-Token': accessToken } : {} },
   });
 
+  const activeSellerOrders = (data: BuyerOrder) =>
+    data.sellerOrders.filter((seller) => !['declined', 'cancelled'].includes(seller.status));
+
+  const immediateCancelEligible = (data: BuyerOrder) => {
+    const active = activeSellerOrders(data);
+    return active.length > 0 && active.every((seller) => seller.status === 'pending_confirmation');
+  };
+
   const canRequestCancellation = (data: BuyerOrder) => {
     if (['cancelled', 'delivered', 'out_for_delivery', 'partially_delivered', 'awaiting_buyer_approval'].includes(data.status)) return false;
     return data.sellerOrders.some((seller) => ['pending_confirmation', 'confirmed', 'preparing'].includes(seller.status));
@@ -73,6 +81,7 @@ export default function OrderPage() {
 
   const submitCancellationRequest = async () => {
     setCancelError('');
+    const immediate = order.data ? immediateCancelEligible(order.data) : false;
     try {
       const updated = await requestCancellation.mutateAsync({
         orderId,
@@ -82,7 +91,7 @@ export default function OrderPage() {
       setCancelNote('');
     } catch (error) {
       const response = error as { data?: { error?: string } };
-      setCancelError(response.data?.error ?? 'Ləğv sorğusu göndərilmədi.');
+      setCancelError(response.data?.error ?? (immediate ? 'Sifariş ləğv edilmədi.' : 'Ləğv sorğusu göndərilmədi.'));
     }
   };
 
@@ -155,14 +164,17 @@ export default function OrderPage() {
             <div className="commerce-card-heading"><div><h2>Ləğv sorğusu mağazada</h2><p>Mağaza sorğunu təsdiqləyəndə sifariş ləğv olunacaq. Təsdiq gözləyən mərhələdə sifariş hələ davam edir.</p></div><RotateCcw size={19} color="#9b5c36" /></div>
           </section>
         )}
-        {canRequestCancellation(order.data) && (
-          <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="section-cancellation-request">
-            <div className="commerce-card-heading"><div><h2>Sifarişi ləğv etmək istəyirsən?</h2><p>Ləğv dərhal olmur — mağazaya sorğu gedir. Mağaza təsdiqləyəndə sifariş bağlanır.</p></div><X size={19} color="#9b5c36" /></div>
-            <div className="commerce-field" style={{ marginTop: 16 }}><label htmlFor="cancel-note">Qısa səbəb (istəyə bağlı)</label><textarea id="cancel-note" rows={3} maxLength={500} value={cancelNote} onChange={(event) => setCancelNote(event.target.value)} placeholder="Məsələn: plan dəyişdi" data-testid="input-cancellation-note" /></div>
-            <div style={{ display: 'flex', gap: 9, marginTop: 14, flexWrap: 'wrap' }}><button className="btn btn-secondary" type="button" disabled={requestCancellation.isPending} onClick={() => void submitCancellationRequest()} data-testid="button-request-cancellation"><RotateCcw size={15} /> {requestCancellation.isPending ? 'Göndərilir...' : 'Ləğv sorğusu göndər'}</button></div>
-            {cancelError && <QueryError message={cancelError} />}
-          </section>
-        )}
+        {canRequestCancellation(order.data) && (() => {
+          const immediate = immediateCancelEligible(order.data);
+          return (
+            <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="section-cancellation-request">
+              <div className="commerce-card-heading"><div><h2>Sifarişi ləğv etmək istəyirsən?</h2><p>{immediate ? 'Mağaza hələ təsdiqləməyib. Sifariş dərhal ləğv olunacaq.' : 'Mağaza artıq təsdiqləyibsə, ləğv sorğusu göndərilir. Mağaza təsdiqləyəndə sifariş bağlanır.'}</p></div><X size={19} color="#9b5c36" /></div>
+              <div className="commerce-field" style={{ marginTop: 16 }}><label htmlFor="cancel-note">Qısa səbəb (istəyə bağlı)</label><textarea id="cancel-note" rows={3} maxLength={500} value={cancelNote} onChange={(event) => setCancelNote(event.target.value)} placeholder="Məsələn: plan dəyişdi" data-testid="input-cancellation-note" /></div>
+              <div style={{ display: 'flex', gap: 9, marginTop: 14, flexWrap: 'wrap' }}><button className="btn btn-secondary" type="button" disabled={requestCancellation.isPending} onClick={() => void submitCancellationRequest()} data-testid={immediate ? 'button-cancel-order' : 'button-request-cancellation'}><RotateCcw size={15} /> {requestCancellation.isPending ? 'Göndərilir...' : immediate ? 'Sifarişi ləğv et' : 'Ləğv sorğusu göndər'}</button></div>
+              {cancelError && <QueryError message={cancelError} />}
+            </section>
+          );
+        })()}
         <div className="commerce-grid" style={{ marginTop: 16 }}>
           <div>
             <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Sifariş mərhələləri</h2><p>Son yeniliklər mağazaların təsdiqləmələrinə əsasən yenilənir.</p></div><Package size={19} color="#5b719a" /></div><OrderTimeline events={order.data.timeline} orderStatus={order.data.status} /></section>
