@@ -1187,7 +1187,7 @@ body { background: #f8faff; }
 .haven-tabs button.is-on { color: #1c1c1a; border-bottom-color: #1c1c1a; }
 .haven-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
 .haven-card-photo { position: relative; aspect-ratio: 1 / 1.05; background: #f3f3f1; }
-.haven-card-link { position: absolute; inset: 0; display: grid; place-items: center; }
+.haven-card-link { position: absolute; z-index: 0; inset: 0; display: grid; place-items: center; cursor: pointer; }
 .haven-card-link img { width: 78%; height: 58%; object-fit: contain; transition: opacity .4s ease; }
 .haven-card-link img.haven-card-worn { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; opacity: 0; }
 .haven-card-link img.haven-card-side { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%; opacity: 0; transition: opacity .4s ease; }
@@ -1197,18 +1197,19 @@ body { background: #f8faff; }
   .haven-card:hover .haven-card-worn,
   .haven-card:hover .haven-card-side { opacity: 1; }
 }
-.haven-card-flag { position: absolute; z-index: 1; top: 14px; left: 14px; }
-.haven-heart { position: absolute; z-index: 1; top: 10px; right: 10px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; color: #1c1c1a; cursor: pointer; }
+.haven-card-flag { position: absolute; z-index: 2; top: 14px; left: 14px; pointer-events: none; }
+.haven-heart { position: absolute; z-index: 3; top: 10px; right: 10px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; color: #1c1c1a; cursor: pointer; }
 .haven-heart.liked { color: #1c1c1a; }
-.haven-card-actions { position: absolute; z-index: 2; inset: 0; pointer-events: none; opacity: 0; transition: opacity .25s ease; }
-.haven-card-photo:hover .haven-card-actions { opacity: 1; }
-.haven-card-action { pointer-events: auto; position: absolute; bottom: 14px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #fff; color: #1c1c1a; cursor: pointer; box-shadow: 0 6px 16px rgba(28,28,26,.14); transition: transform .2s ease, background .2s ease; }
+.haven-card-action { position: absolute; z-index: 3; bottom: 14px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #fff; color: #1c1c1a; cursor: pointer; box-shadow: 0 6px 16px rgba(28,28,26,.14); opacity: 0; pointer-events: none; transition: opacity .25s ease, transform .2s ease, background .2s ease; }
+.haven-card-photo:hover .haven-card-action { opacity: 1; pointer-events: auto; }
 .haven-card-action:hover { transform: scale(1.04); background: #fafafa; }
 .haven-card-action--try { left: 14px; }
 .haven-card-action--cart { right: 14px; }
-.haven-card-action:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.haven-card-action:disabled { opacity: 0; pointer-events: none; cursor: not-allowed; transform: none; }
+.haven-card-photo:hover .haven-card-action:disabled { opacity: .4; }
 @media (hover: none) {
-  .haven-card-actions { opacity: 1; }
+  .haven-card-action { opacity: 1; pointer-events: auto; }
+  .haven-card-action:disabled { opacity: .4; pointer-events: none; }
 }
 .haven-card-copy { padding: 14px 2px 8px; }
 .haven-card-copy h3 { margin: 0 0 4px; color: #1c1c1a; font-size: 16px; font-weight: 600; }

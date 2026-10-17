@@ -490,17 +490,23 @@ function HavenCard({ product, liked, onFavorite, onTryOn, onAdd, editorPick }: {
   return (
     <article className="haven-card" data-testid={`card-product-${product.id}`}>
       <div className="haven-card-photo">
-        <span className="haven-card-flag">{editorPick ? 'Redaktorun seçimi' : 'Seçilən model'}</span>
-        <button className={`haven-heart ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} sevimlilər`} data-testid={`button-favorite-${product.id}`}><Heart size={18} strokeWidth={1.6} fill={liked ? 'currentColor' : 'none'} /></button>
         <Link href={`/product/${product.id}`} className="haven-card-link" aria-label={`${product.name} modelinə bax`} data-testid={`link-product-image-${product.id}`}>
           <img className="haven-card-cutout" src={photoSrc(product.image)} alt={`${product.name} — ${product.color} eynək`} />
           {hover?.kind === 'worn' && <img className="haven-card-worn" src={photoSrc(hover.src)} alt={`${product.name} modelin üzündə`} loading="lazy" />}
           {hover?.kind === 'side' && <img className="haven-card-side" src={photoSrc(hover.src)} alt={`${product.name} — ikinci görünüş`} loading="lazy" />}
         </Link>
-        <div className="haven-card-actions">
-          <button type="button" className="haven-card-action haven-card-action--try" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onTryOn(product); }} aria-label="Üzündə yoxla" data-testid={`button-try-on-${product.id}`}><ScanFace size={18} strokeWidth={1.6} /></button>
-          <button type="button" className="haven-card-action haven-card-action--cart" disabled={product.previewOnly || !product.isAvailable} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onAdd(product); }} aria-label="Səbətə əlavə et" data-testid={`button-add-cart-${product.id}`}><ShoppingBag size={18} strokeWidth={1.6} /></button>
-        </div>
+        <span className="haven-card-flag">{editorPick ? 'Redaktorun seçimi' : 'Seçilən model'}</span>
+        <button
+          type="button"
+          className={`haven-heart ${liked ? 'liked' : ''}`}
+          onClick={(event) => { event.preventDefault(); event.stopPropagation(); onFavorite(product.id); }}
+          aria-label={`${product.name} sevimlilər`}
+          data-testid={`button-favorite-${product.id}`}
+        >
+          <Heart size={18} strokeWidth={1.6} fill={liked ? 'currentColor' : 'none'} />
+        </button>
+        <button type="button" className="haven-card-action haven-card-action--try" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onTryOn(product); }} aria-label="Üzündə yoxla" data-testid={`button-try-on-${product.id}`}><ScanFace size={18} strokeWidth={1.6} /></button>
+        <button type="button" className="haven-card-action haven-card-action--cart" disabled={product.previewOnly || !product.isAvailable} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onAdd(product); }} aria-label="Səbətə əlavə et" data-testid={`button-add-cart-${product.id}`}><ShoppingBag size={18} strokeWidth={1.6} /></button>
       </div>
       <div className="haven-card-copy">
         <span>{product.brand || 'EYNƏK'}</span>
