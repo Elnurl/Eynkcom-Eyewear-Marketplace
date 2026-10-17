@@ -666,6 +666,54 @@ body { background: #f8faff; }
 .nav > .nav-links { grid-column: 1; grid-row: 2; }
 .nav > .nav-actions { grid-column: 2; grid-row: 2; margin-left: 0; }
 .seller-auth-header .brand-image { width: 129px; }
+/* Auth pages: match the renewed charcoal storefront palette */
+.seller-auth-page { background: #f8faff; }
+.seller-auth-container {
+  border-color: #e6e9ef;
+  box-shadow: 0 14px 36px rgba(23, 26, 58, .05);
+}
+.seller-auth-header h1 { color: #14171b; }
+.seller-auth-header p { color: #6c737e; }
+.seller-auth-form .field label { color: #14171b; }
+.seller-auth-form .field input,
+.seller-auth-form .password-input-wrapper input {
+  border-color: #dce1e9;
+  color: #14171b;
+}
+.seller-auth-form .field input:focus,
+.seller-auth-form .password-input-wrapper input:focus {
+  border-color: #111214;
+  box-shadow: 0 0 0 3px rgba(17, 18, 20, .08);
+}
+.seller-auth-page .password-toggle { color: #8b919c; }
+.seller-auth-page .password-toggle:hover { color: #14171b; }
+.auth-inline-link { color: #142232; }
+.auth-inline-link:hover { color: #52616d; }
+.seller-auth-footer { color: #6c737e; }
+.seller-auth-footer a { color: #142232; }
+.seller-auth-footer a:hover { color: #52616d; }
+.seller-auth-page .btn-blue {
+  border-color: #111214;
+  background: #111214;
+}
+.seller-auth-page .btn-blue:hover:not(:disabled) {
+  border-color: #2a2d33;
+  background: #2a2d33;
+}
+.seller-auth-page .btn-secondary {
+  border-color: #dce1e9;
+  background: #fff;
+  color: #14171b;
+}
+.seller-auth-page .btn-secondary:hover {
+  border-color: #111214;
+  background: #f4f5f7;
+}
+.seller-auth-page button:focus-visible,
+.seller-auth-page a:focus-visible,
+.seller-auth-page input:focus-visible {
+  outline-color: #111214;
+}
 .nav-links { gap: 8px; color: #191b20; font-weight: 700; }
 .nav-links a { min-height: 38px; border: 1px solid transparent; border-radius: 999px; padding: 0 13px; }
 .nav-links a:hover, .nav-links a.active { color: #111317; border-color: #d7dae3; background: white; }
