@@ -294,6 +294,11 @@
 .order-item-thumb--empty { background: #eef1f4; }
 .order-item-row strong { color: #2a333e; font-size: 11px; font-weight: 700; }
 .order-item-row > span:last-child { color: #252d37; font-weight: 800; white-space: nowrap; }
+.seller-buyer-contact { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 0 0 12px; padding: 14px 16px; border-radius: 8px; background: #f6f8fb; border: 1px solid #e8ecf2; }
+.seller-buyer-contact small { display: block; color: #87909c; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
+.seller-buyer-contact strong { display: block; margin-top: 4px; color: #26313e; font-size: 12px; word-break: break-word; }
+.seller-buyer-note { grid-column: 1 / -1; }
+.seller-buyer-pending { margin: 0 0 12px; padding: 12px 14px; border-radius: 8px; background: #fff8ef; border: 1px solid #f0e0c8; color: #7a6548; font-size: 11px; line-height: 1.5; }
 .order-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 12px; border-top: 1px solid #edf0f4; padding-top: 15px; }
 .order-meta-grid small { display: block; color: #87909c; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
 .order-meta-grid strong { display: block; margin-top: 4px; color: #26313e; font-size: 12px; }

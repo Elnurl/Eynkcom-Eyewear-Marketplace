@@ -45,6 +45,10 @@ function errorText(error: unknown) {
   return response.data?.error ?? 'Dəyişiklik yadda saxlanmadı.';
 }
 
+function sellerSeesBuyerContact(status: SellerOrder['status']) {
+  return !['pending_confirmation', 'declined', 'paused'].includes(status);
+}
+
 export default function SellerOrdersPage() {
   const { isLoaded, isSignedIn, user } = useAuthSession();
   const [, setLocation] = useLocation();
@@ -123,6 +127,16 @@ export default function SellerOrdersPage() {
                 return <article className="commerce-card seller-order-card" key={order.id} data-testid={`card-seller-order-${order.id}`}>
                   <div className="seller-order-top"><div><strong>{order.orderNumber}</strong><small>{order.customerName} · {dateLabel(order.updatedAt)}</small></div><StatePill status={order.status} label={sellerStatusLabel(order.status, order.fulfillmentMethod)} /></div>
                   <div style={{ display: 'grid', gap: 5, padding: '15px 0 3px', color: '#707b87', fontSize: 11 }}><span><strong style={{ color: '#2b3540' }}>Üsul:</strong> {fulfillmentLabel(order.fulfillmentMethod)}</span><span><strong style={{ color: '#2b3540' }}>{order.fulfillmentMethod === 'store_pickup' ? 'Götürmə:' : 'Çatdırılma:'}</strong> {order.deliveryArea}, {order.deliveryAddress}</span><span><strong style={{ color: '#2b3540' }}>Ödəniş:</strong> {paymentStatusLabel(order.paymentStatus, order.fulfillmentMethod)}</span></div>
+                  {sellerSeesBuyerContact(order.status) ? (
+                    <div className="seller-buyer-contact" data-testid={`buyer-contact-${order.id}`}>
+                      <div><small>Alıcı</small><strong>{order.customerName}</strong></div>
+                      <div><small>Telefon</small><strong>{order.customerPhone || '—'}</strong></div>
+                      <div><small>E-poçt</small><strong>{order.customerEmail || '—'}</strong></div>
+                      {order.deliveryNote ? <div className="seller-buyer-note"><small>Qeyd</small><strong>{order.deliveryNote}</strong></div> : null}
+                    </div>
+                  ) : (
+                    <p className="seller-buyer-pending" data-testid={`buyer-contact-pending-${order.id}`}>Mağaza təsdiq etdikdən sonra alıcının telefonu və e-poçtu burada görünəcək.</p>
+                  )}
                   <div className="order-items">{order.items.map((item) => <OrderItemRow key={item.productId} item={item} />)}</div>
                   {order.returnRequest && <div className="return-box" data-testid={`status-seller-return-${order.id}`}><strong>Qaytarma sorğusu · {returnStatusLabel(order.returnRequest.status)}</strong><p>{order.returnRequest.reason}</p><small>Alıcı sorğunu EYNƏK-ə göndərib. Mağaza satıcı olaraq qalır; geri ödənişi platforma ayrıca qeyd edir.</small></div>}
                   <div className="order-meta-grid"><div><small>Məhsullar</small><strong>{money(order.productSubtotalAzN)}</strong></div><div><small>Çatdırılma</small><strong>{money(order.deliveryFeeAzN)}</strong></div><div><small>Komissiya</small><strong>{money(order.commissionAzN)}</strong></div><div><small>Qazanc</small><strong>{money(order.sellerEarningsAzN)}</strong></div><div><small>Hesablaşma</small><strong>{settlementStatusLabel(order.settlementStatus)}</strong></div></div>

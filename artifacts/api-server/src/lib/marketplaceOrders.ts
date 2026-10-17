@@ -57,6 +57,19 @@ function summarizeSellerOrder(
   };
 }
 
+/** Alıcı əlaqəsi yalnız mağaza sifarişi qəbul etdikdən (və ya irəlilədikdən) sonra açılır. */
+function sellerBuyerContact(
+  order: { customerName: string; customerEmail: string; customerPhone: string },
+  sellerStatus: string,
+) {
+  const share = !["pending_confirmation", "declined", "paused"].includes(sellerStatus);
+  return {
+    customerName: order.customerName,
+    customerEmail: share ? order.customerEmail : "",
+    customerPhone: share ? order.customerPhone : "",
+  };
+}
+
 function toReturnRequest(row: typeof marketplaceReturnRequestsTable.$inferSelect) {
   return {
     id: row.id,
@@ -204,9 +217,7 @@ export async function loadSellerOrder(sellerOrderId: string) {
   return {
     ...group.summary,
     orderNumber: row.order.orderNumber,
-    customerName: row.order.customerName,
-    customerEmail: row.order.customerEmail,
-    customerPhone: row.order.customerPhone,
+    ...sellerBuyerContact(row.order, row.sellerOrder.status),
     deliveryArea: row.order.deliveryArea,
     deliveryAddress: row.order.deliveryAddress,
     deliveryNote: row.order.deliveryNote,
@@ -270,9 +281,7 @@ export async function listSellerOrders(sellerId: string) {
       ? { returnRequest: toReturnRequest(returnsBySellerOrder.get(sellerOrder.id)!) }
       : {}),
     orderNumber: order.orderNumber,
-    customerName: order.customerName,
-    customerEmail: order.customerEmail,
-    customerPhone: order.customerPhone,
+    ...sellerBuyerContact(order, sellerOrder.status),
     deliveryArea: order.deliveryArea,
     deliveryAddress: order.deliveryAddress,
     deliveryNote: order.deliveryNote,

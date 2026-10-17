@@ -1200,7 +1200,16 @@ body { background: #f8faff; }
 .haven-card-flag { position: absolute; z-index: 1; top: 14px; left: 14px; }
 .haven-heart { position: absolute; z-index: 1; top: 10px; right: 10px; width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: transparent; color: #1c1c1a; cursor: pointer; }
 .haven-heart.liked { color: #1c1c1a; }
-.haven-try { position: absolute; z-index: 1; left: 50%; bottom: 16px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 0; background: #fff; color: #1c1c1a; font-size: 12px; font-weight: 500; white-space: nowrap; cursor: pointer; box-shadow: 0 6px 16px rgba(28,28,26,.14); }
+.haven-card-actions { position: absolute; z-index: 2; inset: 0; pointer-events: none; opacity: 0; transition: opacity .25s ease; }
+.haven-card-photo:hover .haven-card-actions { opacity: 1; pointer-events: auto; }
+.haven-card-action { position: absolute; bottom: 14px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #fff; color: #1c1c1a; cursor: pointer; box-shadow: 0 6px 16px rgba(28,28,26,.14); transition: transform .2s ease, background .2s ease; }
+.haven-card-action:hover { transform: scale(1.04); background: #fafafa; }
+.haven-card-action--try { left: 14px; }
+.haven-card-action--cart { right: 14px; }
+.haven-card-action:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+@media (hover: none) {
+  .haven-card-actions { opacity: 1; pointer-events: auto; }
+}
 .haven-card-copy { padding: 14px 2px 8px; }
 .haven-card-copy h3 { margin: 0 0 4px; color: #1c1c1a; font-size: 16px; font-weight: 600; }
 .haven-card-copy p { display: flex; align-items: center; gap: 8px; margin: 0; color: #6e6e6a; font-size: 13px; }
@@ -1262,7 +1271,9 @@ body { background: #f8faff; }
   .haven-tile--sun img { height: 240px; object-position: center 12%; }
   .haven-tile::before, .haven-tile--dark::before, .haven-tile--virtual::before { display: none; }
   .haven-tile-btn { position: static; margin: 16px 20px 0; }
-  .haven-try { max-width: calc(100% - 16px); font-size: 11px; padding: 0 8px; }
+  .haven-card-action { width: 36px; height: 36px; bottom: 10px; }
+  .haven-card-action--try { left: 10px; }
+  .haven-card-action--cart { right: 10px; }
 }
 @media (max-width: 900px) and (min-width: 681px) {
   .haven-hero h1 { font-size: 44px; max-width: min(520px, 54%); }
@@ -1287,7 +1298,7 @@ body { background: #f8faff; }
   .haven-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; }
   .haven-card-flag { top: 8px; left: 8px; font-size: 9px; letter-spacing: .08em; }
   .haven-heart { top: 4px; right: 2px; }
-  .haven-try { min-height: 28px; gap: 4px; font-size: 10px; }
+  .haven-card-action { width: 32px; height: 32px; }
   .haven-card-copy { padding-top: 10px; }
   .haven-card-copy h3 { font-size: 14px; }
   .haven-card-copy p { font-size: 11px; gap: 6px; }
@@ -1307,5 +1318,4 @@ body { background: #f8faff; }
 @media (max-width: 360px) {
   .haven-hero h1 { font-size: 30px; }
   .haven-grid { gap: 16px 8px; }
-  .haven-try span, .haven-try { letter-spacing: 0; }
 }

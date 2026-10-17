@@ -30,6 +30,29 @@ const ACCENT_DOT: Record<BrandEmailAccent, string> = {
   neutral: "#9aa3ad",
 };
 
+function safeHref(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return "#";
+    return parsed.href;
+  } catch {
+    return "#";
+  }
+}
+
+async function postResend(payload: Record<string, unknown>): Promise<{ ok: boolean; status: number; body: string }> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) return { ok: false, status: 0, body: "missing api key" };
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = await response.text();
+  return { ok: response.ok, status: response.status, body };
+}
+
 /**
  * Transactional email through Resend's HTTP API. Without RESEND_API_KEY the
  * message is not sent: development logs it (links included) so flows can be
@@ -38,25 +61,36 @@ const ACCENT_DOT: Record<BrandEmailAccent, string> = {
 export async function sendEmail(message: EmailMessage): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.EMAIL_FROM?.trim();
+  const to = message.to.trim();
   if (!apiKey || !from) {
     if (process.env.NODE_ENV === "production") {
-      logger.warn({ to: message.to, subject: message.subject }, "Email not sent: RESEND_API_KEY/EMAIL_FROM not configured");
+      logger.warn({ to, subject: message.subject }, "Email not sent: RESEND_API_KEY/EMAIL_FROM not configured");
     } else {
-      logger.info({ to: message.to, subject: message.subject, text: message.text }, "Email (development, not sent)");
+      logger.info({ to, subject: message.subject, text: message.text }, "Email (development, not sent)");
     }
+    return;
+  }
+  if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    logger.warn({ to, subject: message.subject }, "Email not sent: invalid recipient");
     return;
   }
 
   try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: [message.to], subject: message.subject, text: message.text, html: message.html }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!response.ok) {
-      logger.error({ status: response.status, body: await response.text(), subject: message.subject }, "Email provider rejected message");
+    const primary = await postResend({ from, to: [to], subject: message.subject, text: message.text, html: message.html });
+    if (primary.ok) {
+      logger.info({ to, subject: message.subject, providerStatus: primary.status }, "Email accepted by provider");
+      return;
     }
+    logger.error(
+      { status: primary.status, body: primary.body, subject: message.subject },
+      "Email provider rejected HTML message; retrying text-only",
+    );
+    const fallback = await postResend({ from, to: [to], subject: message.subject, text: message.text });
+    if (fallback.ok) {
+      logger.info({ to, subject: message.subject }, "Email sent as text-only fallback");
+      return;
+    }
+    logger.error({ status: fallback.status, body: fallback.body, subject: message.subject }, "Email provider rejected message");
   } catch (error) {
     logger.error({ err: error, subject: message.subject }, "Email delivery failed");
   }
@@ -73,13 +107,13 @@ function detailRowsHtml(details: EmailDetailRow[]): string {
     const hint = row.hint
       ? `<div style="margin-top:4px;font-size:12px;line-height:1.5;color:#8a9099;">${escapeHtml(row.hint)}</div>`
       : "";
-    return `<tr><td style="padding:14px 18px;${border}">
+    return `<div style="padding:14px 18px;${border}">
 <div style="font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#9aa0a8;margin-bottom:6px;">${escapeHtml(row.label)}</div>
 <div style="font-size:14px;font-weight:600;line-height:1.45;color:#1a1f26;">${escapeHtml(row.value)}</div>
 ${hint}
-</td></tr>`;
+</div>`;
   }).join("");
-  return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 24px;background:#f3f5f8;border-radius:2px;">${rows}</table>`;
+  return `<div style="margin:0 0 24px;background:#f3f5f8;border-radius:2px;">${rows}</div>`;
 }
 
 function detailsPlain(details: EmailDetailRow[]): string {
@@ -93,8 +127,9 @@ export function brandEmail(options: BrandEmailOptions): EmailMessage {
   const outro = options.outro ?? "Bu bildiriş yalnız sifarişinizin vəziyyəti üçündür.";
   const details = options.details ?? [];
   const actionLabel = options.action.includes("→") ? options.action : `${options.action} →`;
+  const href = safeHref(options.url);
 
-  const text = `${options.badge}\n\n${options.headline}\n\n${options.body}${detailsPlain(details)}\n\n${actionLabel}: ${options.url}\n\n${outro}\n\nEYNƏK · eynek.store`;
+  const text = `${options.badge}\n\n${options.headline}\n\n${options.body}${detailsPlain(details)}\n\n${actionLabel}: ${href}\n\n${outro}\n\nEYNƏK · eynek.store`;
 
   const html = `<!DOCTYPE html>
 <html lang="az">
@@ -114,7 +149,7 @@ export function brandEmail(options: BrandEmailOptions): EmailMessage {
 <h1 style="margin:0 0 14px;font-size:28px;font-weight:300;line-height:1.28;color:#3d4450;">${escapeHtml(options.headline)}</h1>
 <p style="margin:0 0 26px;font-size:14px;line-height:1.65;color:#7a828c;">${escapeHtml(options.body)}</p>
 ${detailRowsHtml(details)}
-<a href="${escapeHtml(options.url)}" style="display:block;box-sizing:border-box;text-align:center;background:#0b0b0b;color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;padding:16px 24px;">${escapeHtml(actionLabel)}</a>
+<a href="${href.replace(/"/g, "&quot;")}" style="display:block;box-sizing:border-box;text-align:center;background:#0b0b0b;color:#ffffff;text-decoration:none;font-size:14px;font-weight:500;padding:16px 24px;">${escapeHtml(actionLabel)}</a>
 </td></tr>
 <tr><td style="padding:22px 32px 28px;border-top:1px solid #e8ebf0;font-family:Helvetica,Arial,sans-serif;">
 <p style="margin:0 0 10px;font-size:11px;line-height:1.55;color:#9aa0a8;">${escapeHtml(outro)}</p>

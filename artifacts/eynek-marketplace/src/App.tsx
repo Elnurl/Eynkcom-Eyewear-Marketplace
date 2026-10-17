@@ -478,7 +478,7 @@ function frameSwatch(color: string) {
   return known[color] ?? '#1c1c1c';
 }
 
-function HavenCard({ product, liked, onFavorite, onTryOn, editorPick }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onTryOn: (product: Product) => void; editorPick?: boolean }) {
+function HavenCard({ product, liked, onFavorite, onTryOn, onAdd, editorPick }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onTryOn: (product: Product) => void; onAdd: (product: Product) => void; editorPick?: boolean }) {
   const photoSrc = (path: string) => (path.startsWith('data:') || path.startsWith('http') ? path : assetUrl(path));
   const hover = productHoverImage(product);
   return (
@@ -491,7 +491,10 @@ function HavenCard({ product, liked, onFavorite, onTryOn, editorPick }: { produc
           {hover?.kind === 'worn' && <img className="haven-card-worn" src={photoSrc(hover.src)} alt={`${product.name} modelin üzündə`} loading="lazy" />}
           {hover?.kind === 'side' && <img className="haven-card-side" src={photoSrc(hover.src)} alt={`${product.name} — ikinci görünüş`} loading="lazy" />}
         </Link>
-        <button type="button" className="haven-try" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}><ScanFace size={14} /> Üzündə yoxla <ArrowRight size={14} /></button>
+        <div className="haven-card-actions">
+          <button type="button" className="haven-card-action haven-card-action--try" onClick={() => onTryOn(product)} aria-label="Üzündə yoxla" data-testid={`button-try-on-${product.id}`}><ScanFace size={18} strokeWidth={1.6} /></button>
+          <button type="button" className="haven-card-action haven-card-action--cart" disabled={product.previewOnly || !product.isAvailable} onClick={() => onAdd(product)} aria-label="Səbətə əlavə et" data-testid={`button-add-cart-${product.id}`}><ShoppingBag size={18} strokeWidth={1.6} /></button>
+        </div>
       </div>
       <div className="haven-card-copy">
         <span>{product.brand || 'EYNƏK'}</span>
@@ -502,7 +505,7 @@ function HavenCard({ product, liked, onFavorite, onTryOn, editorPick }: { produc
   );
 }
 
-function Home({ products, likedIds, onFavorite, onTryOn }: CommonProps) {
+function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & { onAdd: (product: Product) => void }) {
   const [tab, setTab] = useState<'all' | 'sun' | 'optical'>('all');
   const featured = products.filter((product) => tab === 'sun' ? product.type === 'Gün eynəyi' : tab === 'optical' ? product.type === 'Optik çərçivə' : true).slice(0, 4);
   return (
@@ -545,7 +548,7 @@ function Home({ products, likedIds, onFavorite, onTryOn }: CommonProps) {
           </div>
           {featured.length ? (
             <div className="haven-grid">
-              {featured.map((product, index) => <HavenCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onTryOn={onTryOn} editorPick={index === 2} />)}
+              {featured.map((product, index) => <HavenCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onTryOn={onTryOn} onAdd={onAdd} editorPick={index === 2} />)}
             </div>
           ) : (
             <div className="empty-state">
@@ -1243,7 +1246,7 @@ function Storefront() {
         <Route path="/satici-muqavilesi"><LegalPage slug="satici-muqavilesi" /></Route>
         <Route path="/vendor/:slug"><VendorPage {...common} /></Route>
         <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={(product) => openTintTryOn(product.id)} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
-        <Route path="/"><Home {...common} /></Route>
+        <Route path="/"><Home {...common} onAdd={addToCart} /></Route>
         <Route component={NotFound} />
       </Switch>
       <MobileBottomNav onTryOn={openTintTryOn} />
