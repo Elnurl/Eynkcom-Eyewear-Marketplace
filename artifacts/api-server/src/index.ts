@@ -2,6 +2,7 @@ import path from "node:path";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db } from "@workspace/db";
 import app from "./app";
+import { seedHorizonCatalogIfEnabled } from "./lib/horizonCatalogSeed";
 import { logger } from "./lib/logger";
 
 const rawPort = process.env["PORT"];
@@ -28,6 +29,7 @@ async function start(): Promise<void> {
     const migrationsFolder = process.env.MIGRATIONS_DIR ?? path.resolve(__dirname, "migrations");
     await migrate(db, { migrationsFolder });
     logger.info({ migrationsFolder }, "Database migrations applied");
+    await seedHorizonCatalogIfEnabled();
   }
 
   app.listen(port, (err) => {

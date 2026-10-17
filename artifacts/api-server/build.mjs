@@ -120,6 +120,7 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
 
   // Applied by src/index.ts at startup.
   await cp(path.resolve(artifactDir, "../../lib/db/drizzle"), path.resolve(distDir, "migrations"), { recursive: true });
+  await cp(path.resolve(artifactDir, "src/data"), path.resolve(distDir, "data"), { recursive: true });
 }
 
 buildAll().catch((err) => {

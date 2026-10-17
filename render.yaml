@@ -23,6 +23,8 @@ services:
           property: connectionString
       - key: MARKETPLACE_ADMIN_EMAIL
         value: hmdzadelnur@gmail.com
+      - key: HORIZON_AUTO_SEED
+        value: "true"
       - key: BETTER_AUTH_SECRET
         generateValue: true
       - key: BETTER_AUTH_URL
