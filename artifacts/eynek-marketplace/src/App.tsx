@@ -134,16 +134,22 @@ function money(value: number) {
 const TINT_TRY_ON_URL = 'https://tintvto.com/?q=Eb6iMswtR8R7';
 
 function openTintTryOn(variantId?: number | string) {
+  const sku = variantId != null && String(variantId) !== '' ? String(variantId) : '';
   const widget = document.querySelector('tint-vto') as (HTMLElement & { open?: () => void }) | null;
   if (widget?.open) {
-    widget.setAttribute('variant-id', variantId != null && String(variantId) !== '' ? String(variantId) : '');
-    widget.open();
-    return;
+    widget.setAttribute('variant-id', sku);
+    try {
+      widget.open();
+      return;
+    } catch {
+      /* fall through to URL */
+    }
   }
-  const url = variantId != null && String(variantId) !== ''
-    ? `https://tintvto.com/?customer_product_skus=${encodeURIComponent(String(variantId))}`
+  const url = sku
+    ? `https://tintvto.com/?customer_product_skus=${encodeURIComponent(sku)}`
     : TINT_TRY_ON_URL;
-  window.open(url, '_blank', 'noopener,noreferrer');
+  const opened = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!opened) window.location.assign(url);
 }
 
 function assetUrl(path: string) {
@@ -492,8 +498,8 @@ function HavenCard({ product, liked, onFavorite, onTryOn, onAdd, editorPick }: {
           {hover?.kind === 'side' && <img className="haven-card-side" src={photoSrc(hover.src)} alt={`${product.name} — ikinci görünüş`} loading="lazy" />}
         </Link>
         <div className="haven-card-actions">
-          <button type="button" className="haven-card-action haven-card-action--try" onClick={() => onTryOn(product)} aria-label="Üzündə yoxla" data-testid={`button-try-on-${product.id}`}><ScanFace size={18} strokeWidth={1.6} /></button>
-          <button type="button" className="haven-card-action haven-card-action--cart" disabled={product.previewOnly || !product.isAvailable} onClick={() => onAdd(product)} aria-label="Səbətə əlavə et" data-testid={`button-add-cart-${product.id}`}><ShoppingBag size={18} strokeWidth={1.6} /></button>
+          <button type="button" className="haven-card-action haven-card-action--try" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onTryOn(product); }} aria-label="Üzündə yoxla" data-testid={`button-try-on-${product.id}`}><ScanFace size={18} strokeWidth={1.6} /></button>
+          <button type="button" className="haven-card-action haven-card-action--cart" disabled={product.previewOnly || !product.isAvailable} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onAdd(product); }} aria-label="Səbətə əlavə et" data-testid={`button-add-cart-${product.id}`}><ShoppingBag size={18} strokeWidth={1.6} /></button>
         </div>
       </div>
       <div className="haven-card-copy">
