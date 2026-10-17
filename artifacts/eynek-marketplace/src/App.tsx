@@ -413,7 +413,7 @@ function Footer() {
           <Link href="/" className="site-wordmark">EYNƏK</Link>
           <p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p>
           <NewsletterSignup />
-        </div>
+      </div>
         <nav aria-label="Kəşf et">
           <h3>Kəşf et</h3>
           <Link href="/collection">Eynəklər</Link>
@@ -591,15 +591,15 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
                 <img src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" />
                 <h3>Almazdan əvvəl üzündə yoxla.</h3>
                 <button type="button" className="haven-tile-btn" onClick={() => openTintTryOn()} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
-              </div>
+          </div>
               <div className="haven-tile haven-tile--wide haven-tile--light haven-tile--store">
                 <img src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" />
                 <h3>Optikaları bir-bir kəşf etmə.</h3>
                 <p>Mağazaları, satıcıları və təsdiqlənmiş məhsullarını bir yerdə gör.</p>
                 <Link className="haven-tile-btn haven-tile-btn--solid" href="/stores" data-testid="link-feature-stores">Mağazalara bax <ArrowRight size={14} /></Link>
               </div>
+              </div>
             </div>
-          </div>
         </section>
         <section className="haven-seller">
           <div className="haven-shell haven-seller-inner">

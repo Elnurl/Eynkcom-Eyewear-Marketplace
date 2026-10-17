@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
 import { db, sellerProductsTable, sellerStoresTable } from "@workspace/db";
@@ -26,7 +26,17 @@ type SeedFile = {
 };
 
 function loadSeed(): SeedFile {
-  const file = path.join(__dirname, "..", "data", "horizon-catalog-seed.json");
+  const name = "horizon-catalog-seed.json";
+  // Bundled prod: build.mjs copies src/data → dist/data (__dirname === dist).
+  // Local tsx: module lives under src/lib → ../data.
+  const candidates = [
+    path.join(__dirname, "data", name),
+    path.join(__dirname, "..", "data", name),
+  ];
+  const file = candidates.find((candidate) => existsSync(candidate));
+  if (!file) {
+    throw new Error(`Horizon seed file not found (checked: ${candidates.join(", ")})`);
+  }
   return JSON.parse(readFileSync(file, "utf-8")) as SeedFile;
 }
 
@@ -34,7 +44,13 @@ function loadSeed(): SeedFile {
 export async function seedHorizonCatalogIfEnabled(): Promise<void> {
   if (process.env.HORIZON_AUTO_SEED !== "true") return;
 
-  const seed = loadSeed();
+  let seed: SeedFile;
+  try {
+    seed = loadSeed();
+  } catch (err) {
+    logger.error({ err }, "Horizon catalog seed file could not be loaded");
+    return;
+  }
   const [store] = await db
     .select()
     .from(sellerStoresTable)

@@ -1280,7 +1280,7 @@ body { background: #f8faff; }
   .haven-card-action--try { left: 10px; }
   .haven-card-action--cart { right: 10px; }
 }
-@media (max-width: 900px) and (min-width: 681px) {
+@media (max-width: 900px) {
   .haven-hero h1 { font-size: 44px; max-width: min(520px, 54%); }
   .haven-lead { max-width: 48%; }
   .haven-hero::after { content: ''; position: absolute; z-index: 0; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(243,243,241,.94) 0%, rgba(243,243,241,.78) 40%, rgba(243,243,241,0) 64%); }
@@ -1288,15 +1288,15 @@ body { background: #f8faff; }
 @media (max-width: 680px) {
   .site-wordmark { font-size: 24px; }
   .haven-shell { width: calc(100% - 28px); }
-  .haven-hero { display: flex; flex-direction: column; min-height: 0; background: #f4f3f1; }
-  .haven-hero-image { position: relative; inset: auto; order: -1; width: 100%; height: min(56vw, 400px); min-height: 320px; object-fit: cover; object-position: 62% 28%; }
-  .haven-hero-copy { min-height: 0; gap: 20px; padding: 24px 0 16px; }
-  .haven-hero h1 { font-size: 34px; max-width: 100%; }
-  .haven-lead { max-width: none; margin: 14px 0 18px; font-size: 14px; }
-  .haven-hero-actions { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .haven-hero { position: relative; min-height: min(88vh, 520px); background: #ececec; overflow: hidden; }
+  .haven-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 68% 32%; }
+  .haven-hero-copy { min-height: min(88vh, 520px); gap: 18px; padding: 28px 0 72px; }
+  .haven-hero h1 { font-size: clamp(26px, 7.4vw, 34px); max-width: min(300px, 72%); line-height: 1.12; }
+  .haven-lead { max-width: min(280px, 70%); margin: 0; font-size: 14px; }
+  .haven-hero-actions { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; }
   .haven-hero-credit { display: none; }
-  .haven-hero-foot { position: static; width: calc(100% - 28px); margin: 8px auto 18px; left: auto; right: auto; bottom: auto; }
-  .haven-hero::after { display: none; }
+  .haven-hero-foot { position: absolute; left: 0; right: 0; bottom: 14px; width: auto; margin: 0; }
+  .haven-hero::after { display: block; background: linear-gradient(90deg, rgba(243,243,241,.97) 0%, rgba(243,243,241,.88) 42%, rgba(243,243,241,.35) 56%, rgba(243,243,241,0) 70%); }
   .haven-benefits { grid-template-columns: 1fr 1fr; font-size: 12px; }
   .haven-block { padding: 32px 0 8px; }
   .haven-block--featured { padding-top: 14px; }
