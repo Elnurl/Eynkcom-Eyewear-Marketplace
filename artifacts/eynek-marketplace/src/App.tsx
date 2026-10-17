@@ -542,14 +542,14 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
           <span><Glasses size={16} strokeWidth={1.6} /> Hər üzə uyğun bir çərçivə</span>
           <span><Store size={16} strokeWidth={1.6} /> Yerli mağazalar, bir ünvan</span>
             </div>
-        <section className="haven-shell haven-block">
-          <div className="haven-heading haven-heading--end">
-            <Link href="/collection" data-testid="link-view-all">{products.length} model</Link>
-          </div>
-          <div className="haven-tabs" role="tablist" aria-label="Kolleksiya">
-            <button type="button" role="tab" aria-selected={tab === 'all'} className={tab === 'all' ? 'is-on' : ''} onClick={() => setTab('all')}>Hamısı</button>
-            <button type="button" role="tab" aria-selected={tab === 'sun'} className={tab === 'sun' ? 'is-on' : ''} onClick={() => setTab('sun')}>Gün eynəyi</button>
-            <button type="button" role="tab" aria-selected={tab === 'optical'} className={tab === 'optical' ? 'is-on' : ''} onClick={() => setTab('optical')}>Optik çərçivə</button>
+        <section className="haven-shell haven-block haven-block--featured">
+          <div className="haven-collection-bar">
+            <div className="haven-tabs" role="tablist" aria-label="Kolleksiya">
+              <button type="button" role="tab" aria-selected={tab === 'all'} className={tab === 'all' ? 'is-on' : ''} onClick={() => setTab('all')}>Hamısı</button>
+              <button type="button" role="tab" aria-selected={tab === 'sun'} className={tab === 'sun' ? 'is-on' : ''} onClick={() => setTab('sun')}>Gün eynəyi</button>
+              <button type="button" role="tab" aria-selected={tab === 'optical'} className={tab === 'optical' ? 'is-on' : ''} onClick={() => setTab('optical')}>Optik çərçivə</button>
+            </div>
+            <Link href="/collection" className="haven-collection-count" data-testid="link-view-all">{products.length} model</Link>
           </div>
           {featured.length ? (
             <div className="haven-grid">

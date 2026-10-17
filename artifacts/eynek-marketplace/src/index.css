@@ -1160,7 +1160,7 @@ body { background: #f8faff; }
 .haven-shell { width: min(1320px, calc(100% - 120px)); margin: 0 auto; }
 .haven-hero { position: relative; min-height: 610px; display: flex; align-items: stretch; background: #ececec; overflow: hidden; }
 .haven-hero-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 44%; }
-.haven-hero-copy { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; min-height: 610px; }
+.haven-hero-copy { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 28px; min-height: 610px; }
 .haven-kicker { display: flex; align-items: center; gap: 8px; margin: 0 0 24px; color: #3a3a38; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
 .haven-kicker i { width: 6px; height: 6px; border-radius: 50%; background: #c6d94a; }
 .haven-hero h1 { margin: 0; max-width: 600px; color: #1c1c1a; font-family: Manrope, sans-serif; font-size: 58px; font-weight: 500; line-height: 1.14; letter-spacing: 0; }
@@ -1178,8 +1178,11 @@ body { background: #f8faff; }
 .haven-benefits { min-height: 70px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; gap: 18px; border-bottom: 1px solid #ecece8; color: #2a2a28; font-size: 13px; }
 .haven-benefits span { display: flex; align-items: center; gap: 8px; }
 .haven-block { padding: 54px 0 20px; }
+.haven-block--featured { padding-top: 20px; }
+.haven-collection-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; border-bottom: 1px solid #ecece8; }
+.haven-collection-bar .haven-tabs { flex: 1; min-width: 0; margin-bottom: 0; border-bottom: 0; }
+.haven-collection-count { flex-shrink: 0; padding-bottom: 10px; color: #6a6a66; font-size: 13px; white-space: nowrap; }
 .haven-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
-.haven-heading--end { justify-content: flex-end; }
 .haven-heading p, .haven-editorial p, .haven-seller p, .haven-cat span, .haven-card-flag, .haven-card-copy span { margin: 0 0 8px; color: #8a8a84; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
 .haven-heading h2, .haven-editorial h2, .haven-seller h2 { margin: 0; color: #1c1c1a; font-size: clamp(28px, 3vw, 32px); font-weight: 500; letter-spacing: 0; line-height: 1.25; }
 .haven-heading a { color: #6a6a66; font-size: 13px; }
@@ -1286,8 +1289,8 @@ body { background: #f8faff; }
   .site-wordmark { font-size: 24px; }
   .haven-shell { width: calc(100% - 28px); }
   .haven-hero { display: flex; flex-direction: column; min-height: 0; background: #f4f3f1; }
-  .haven-hero-image { position: relative; inset: auto; order: -1; width: 100%; height: 320px; object-fit: cover; object-position: 72% 32%; }
-  .haven-hero-copy { min-height: 0; padding: 22px 0 8px; }
+  .haven-hero-image { position: relative; inset: auto; order: -1; width: 100%; height: min(56vw, 400px); min-height: 320px; object-fit: cover; object-position: 62% 28%; }
+  .haven-hero-copy { min-height: 0; gap: 20px; padding: 24px 0 16px; }
   .haven-hero h1 { font-size: 34px; max-width: 100%; }
   .haven-lead { max-width: none; margin: 14px 0 18px; font-size: 14px; }
   .haven-hero-actions { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 14px; }
@@ -1296,6 +1299,9 @@ body { background: #f8faff; }
   .haven-hero::after { display: none; }
   .haven-benefits { grid-template-columns: 1fr 1fr; font-size: 12px; }
   .haven-block { padding: 32px 0 8px; }
+  .haven-block--featured { padding-top: 14px; }
+  .haven-collection-bar { margin-bottom: 18px; }
+  .haven-collection-bar .haven-tabs { gap: 16px; overflow-x: auto; }
   .haven-tabs { gap: 16px; }
   .haven-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; }
   .haven-card-flag { top: 8px; left: 8px; font-size: 9px; letter-spacing: .08em; }
