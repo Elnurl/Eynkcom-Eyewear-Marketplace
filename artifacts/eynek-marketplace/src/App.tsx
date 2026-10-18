@@ -575,13 +575,11 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
             <div className="haven-mosaic-row">
               <Link href="/collection?type=sunglasses" className="haven-tile haven-tile--wide haven-tile--dark haven-tile--sun" data-testid="link-category-sunglasses">
                 <img src={`${import.meta.env.BASE_URL}haven-sunglasses.webp`} alt="" />
-                <span>Kateqoriya 01</span>
                 <h3>Gün eynəkləri</h3>
                 <p>Formanı, ölçünü və satıcını müqayisə et.</p>
               </Link>
               <Link href="/collection?type=optical" className="haven-tile haven-tile--light" data-testid="link-category-optical">
                 <img src={`${import.meta.env.BASE_URL}haven-optical.webp`} alt="" />
-                <span>Kateqoriya 02</span>
                 <h3>Optik çərçivələr</h3>
                 <p>Gündəlik istifadə üçün modelləri kəşf et.</p>
               </Link>
@@ -606,7 +604,7 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
             <div>
               <p>Satıcılar üçün</p>
               <h2>Mağazanı EYNƏK-də aç.</h2>
-              <span>Məhsullarını daha çox alıcı ilə tanış et. Birlikdə daha çoxuna çataq.</span>
+              <span>Məhsullarını daha çox alıcı ilə tanış et.</span>
             </div>
             <Link href="/seller" className="haven-btn" data-testid="link-home-seller">Bizə qoşul</Link>
           </div>
