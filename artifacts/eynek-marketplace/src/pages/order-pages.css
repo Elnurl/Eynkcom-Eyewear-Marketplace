@@ -282,10 +282,25 @@
 .timeline-row p { margin: 5px 0 0; color: #7d8793; font-size: 10px; }
 
 .seller-summary { display: grid; gap: 14px; margin-top: 18px; }
-.seller-order-card { padding: 22px; }
-.seller-order-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding-bottom: 15px; border-bottom: 1px solid #edf0f4; }
-.seller-order-top strong { color: #1b232e; font-size: 15px; }
-.seller-order-top small { display: block; margin-top: 5px; color: #7b8490; font-size: 10px; }
+.seller-order-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 14px; padding-bottom: 12px; border-bottom: 1px solid #e4e8ef; }
+.seller-order-tabs button { min-height: 38px; padding: 0 16px; border: 1px solid #dfe4eb; border-radius: 999px; background: #fff; color: #5c6773; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.seller-order-tabs button.is-on { border-color: #1b232e; background: #1b232e; color: #fff; }
+.seller-order-list { margin-top: 0; }
+.seller-order-card { padding: 0; overflow: hidden; }
+.seller-order-card.is-collapsed { border-color: #e8ebf0; }
+.seller-order-toggle { width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 16px 20px; border: 0; background: transparent; text-align: left; cursor: pointer; font: inherit; }
+.seller-order-toggle:hover { background: #fafbfc; }
+.seller-order-toggle-main { min-width: 0; flex: 1; }
+.seller-order-toggle-main strong { display: block; color: #1b232e; font-size: 15px; }
+.seller-order-toggle-main small { display: block; margin-top: 5px; color: #7b8490; font-size: 10px; line-height: 1.45; }
+.seller-order-toggle-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.seller-order-chevron { color: #8a929d; transition: transform .2s ease; }
+.seller-order-card.is-expanded .seller-order-chevron { transform: rotate(180deg); }
+.seller-order-body { padding: 0 20px 20px; border-top: 1px solid #edf0f4; }
+.seller-order-meta-lines { display: grid; gap: 5px; padding: 15px 0 3px; color: #707b87; font-size: 11px; }
+.seller-order-meta-lines strong { color: #2b3540; }
+.seller-order-empty { margin-top: 8px; }
+.seller-status-log--closed { margin-top: 14px; }
 .order-items { display: grid; gap: 10px; padding: 16px 0; }
 .order-item-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #69747f; font-size: 11px; }
 .order-item-main { display: flex; align-items: center; gap: 10px; min-width: 0; }

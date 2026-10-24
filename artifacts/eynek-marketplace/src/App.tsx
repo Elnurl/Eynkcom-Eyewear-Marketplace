@@ -203,8 +203,8 @@ function CategoryMenu() {
   }, [open]);
   return (
     <div className="nav-category" ref={rootRef}>
-      <button ref={triggerRef} type="button" className={`nav-category-trigger${location.startsWith('/collection') ? ' active' : ''}`} aria-expanded={open} aria-controls="nav-category-menu" onClick={() => setOpen((current) => !current)} data-testid="button-category-menu">
-        Kolleksiya <ChevronDown size={14} strokeWidth={1.8} className="nav-category-chevron" />
+      <button ref={triggerRef} type="button" className={`nav-category-trigger${location.startsWith('/collection') && location !== '/collection' ? ' active' : ''}`} aria-expanded={open} aria-controls="nav-category-menu" onClick={() => setOpen((current) => !current)} data-testid="link-categories">
+        Kateqoriyalar <ChevronDown size={14} strokeWidth={1.8} className="nav-category-chevron" />
       </button>
       {open && (
         <div className="nav-category-menu" id="nav-category-menu" data-testid="menu-category">
@@ -337,8 +337,8 @@ function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: 
           <button className="icon-button mobile-menu" onClick={onMenu} aria-label="Menyunu aç" aria-expanded={menuOpen} aria-controls="mobile-drawer" data-testid="button-menu"><Menu size={19} /></button>
           <Link href="/" className="brand site-wordmark" data-testid="link-brand">EYNƏK</Link>
           <nav className="nav-links" aria-label="Əsas menyu">
+            <Link href="/collection" className={location === '/collection' ? 'active' : ''} data-testid="link-collection">Kolleksiya</Link>
             <CategoryMenu />
-            <Link href="/#kateqoriyalar" data-testid="link-categories">Kateqoriyalar</Link>
             <Link href="/stores" className={location.startsWith('/stores') ? 'active' : ''} data-testid="link-stores">Mağazalar</Link>
           </nav>
           {/* On phones the search collapses to an icon inside this group; desktop CSS lays the group out in one row. */}
