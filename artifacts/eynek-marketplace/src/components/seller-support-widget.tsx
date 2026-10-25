@@ -160,9 +160,8 @@ export function SellerSupportWidget({ enabled, uploadMode = 'buyer', defaultName
           </div>
 
           <div className="seller-support-hero">
-            <h2 className="seller-support-title">EYNƏK dəstəyinə yaz</h2>
             <div className="seller-support-hero-card">
-              <span className="seller-support-avatar" aria-hidden>E</span>
+              <span className="seller-support-avatar" aria-hidden><MessageCircle size={20} strokeWidth={1.8} /></span>
               <div>
                 <strong>Dəstək</strong>
                 <span>EYNƏK komandası</span>
@@ -194,7 +193,7 @@ export function SellerSupportWidget({ enabled, uploadMode = 'buyer', defaultName
                 </label>
               </div>
               {error ? <p className="seller-support-error" role="alert">{error}</p> : null}
-              <button type="button" className="seller-support-primary" onClick={startCompose} data-testid="button-support-start">
+              <button type="button" className="btn btn-full seller-support-intro-submit" onClick={startCompose} data-testid="button-support-start">
                 Çata başlayın
               </button>
             </div>
@@ -221,8 +220,8 @@ export function SellerSupportWidget({ enabled, uploadMode = 'buyer', defaultName
                 <button type="button" className="btn btn-secondary" disabled={uploading || sending} onClick={() => fileRef.current?.click()} data-testid="button-seller-support-image">
                   {uploading ? <Loader2 size={16} className="spin" /> : <ImagePlus size={16} />} Şəkil
                 </button>
-                <button type="button" className="seller-support-primary seller-support-primary--inline" disabled={sending || message.trim().length < 3} onClick={() => void submit()} data-testid="button-seller-support-send">
-                  {sending ? <Loader2 size={16} className="spin" /> : <Send size={16} />} Göndər
+                <button type="button" className="btn seller-support-send" disabled={sending || message.trim().length < 3} onClick={() => void submit()} data-testid="button-seller-support-send">
+                  {sending ? <Loader2 size={16} className="spin" /> : <Send size={16} strokeWidth={2} />} Göndər
                 </button>
               </div>
               {error ? <p className="seller-support-error" role="alert">{error}</p> : null}
