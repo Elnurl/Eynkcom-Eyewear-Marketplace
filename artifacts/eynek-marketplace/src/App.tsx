@@ -38,6 +38,7 @@ import NotFound from '@/pages/not-found';
 import SellerLogin from '@/pages/seller-login';
 import SellerPanel from '@/pages/seller-panel';
 import SellerAdminPage from '@/pages/seller-admin';
+import { SellerSupportWidget } from '@/components/seller-support-widget';
 import CheckoutPage from '@/pages/checkout';
 import { LegalPage } from '@/pages/legal';
 import { HelpPage } from '@/pages/help';
@@ -1099,6 +1100,7 @@ function RoutedErrorBoundary({ children }: { children: ReactNode }) {
 
 function Storefront() {
   const [location, setLocation] = useLocation();
+  const { isLoaded, isSignedIn, user } = useAuthSession();
   const productsQuery = useListProducts();
   const storesQuery = useListStores();
   const productRows = Array.isArray(productsQuery.data) ? productsQuery.data : [];
@@ -1247,6 +1249,9 @@ function Storefront() {
       <MobileBottomNav onTryOn={openTintTryOn} />
       {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={(product) => openTintTryOn(product.id)} />}
       {toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}
+      {isLoaded && isSignedIn && (
+        <SellerSupportWidget enabled uploadMode="buyer" contextLabel={user?.email ?? undefined} />
+      )}
     </div>
   );
 }

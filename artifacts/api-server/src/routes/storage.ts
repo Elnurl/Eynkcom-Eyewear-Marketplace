@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db, productImageUploadsTable, sellerStoresTable } from "@workspace/db";
+import { db, productImageUploadsTable, sellerStoresTable, supportImageUploadsTable } from "@workspace/db";
 import {
   CompleteUploadBody,
   CompleteUploadResponse,
@@ -82,6 +82,51 @@ router.post(
       res.json({ objectPath });
     } catch (error) {
       req.log.error({ err: error }, "Direct product image upload failed");
+      res.status(500).json({ error: "Şəkil yüklənmədi. Yenidən cəhd edin." });
+    }
+  },
+);
+
+router.post(
+  "/storage/uploads/inquiry",
+  requireAuth,
+  express.raw({
+    limit: MAX_IMAGE_BYTES,
+    type: (req) => imageContentType(req.headers["content-type"] ?? undefined) !== null,
+  }),
+  async (req: Request, res: Response): Promise<void> => {
+    const email = requireUserEmail(req, res);
+    if (!email) return;
+    const contentType = imageContentType(req.headers["content-type"]);
+    if (!contentType) {
+      res.status(400).json({ error: "Yalnız JPG və ya PNG qəbul olunur." });
+      return;
+    }
+    const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    if (!body.length) {
+      res.status(400).json({ error: "Şəkil faylı boşdur." });
+      return;
+    }
+    if (body.length > MAX_IMAGE_BYTES) {
+      res.status(413).json({ error: "Şəklin ölçüsü maksimum 10 MB ola bilər." });
+      return;
+    }
+    if (!matchesImageMagic(contentType, body.subarray(0, 8))) {
+      res.status(400).json({ error: "Fayl JPG və ya PNG şəkli deyil." });
+      return;
+    }
+    try {
+      const { objectPath } = await storage.putNewUpload(body, contentType);
+      await db.insert(supportImageUploadsTable).values({
+        objectPath,
+        ownerId: req.dbUser!.id,
+        contentType,
+        size: body.length,
+        finalizedAt: new Date(),
+      });
+      res.json({ objectPath });
+    } catch (error) {
+      req.log.error({ err: error }, "Inquiry image upload failed");
       res.status(500).json({ error: "Şəkil yüklənmədi. Yenidən cəhd edin." });
     }
   },

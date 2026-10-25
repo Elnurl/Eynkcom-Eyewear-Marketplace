@@ -11,6 +11,8 @@ import {
 import type { SellerOrder, SellerOrderUpdate } from '@workspace/api-client-react';
 import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 import { BrandLogo } from '@/components/brand-logo';
+import { SellerSupportWidget } from '@/components/seller-support-widget';
+import { useSellerWorkspace } from '@/hooks/use-seller-workspace';
 import { LoadingCard, OrderItemRow, QueryError, StatePill, dateLabel, fulfillmentLabel, money, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
 import './order-pages.css';
 
@@ -61,6 +63,7 @@ export default function SellerOrdersPage() {
   const queryClient = useQueryClient();
   const orders = useListSellerOrders({ query: { enabled: isLoaded && Boolean(isSignedIn), queryKey: getListSellerOrdersQueryKey(), retry: false } });
   const updateOrder = useUpdateSellerOrder();
+  const { store } = useSellerWorkspace();
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [error, setError] = useState('');
   const [savedId, setSavedId] = useState('');
@@ -239,6 +242,7 @@ export default function SellerOrdersPage() {
           ) : <div className="empty-state" data-testid="status-seller-orders-loaded"><Package size={22} /><h3>Hələ sifariş yoxdur.</h3><p>Mağazanız üçün yeni sifarişlər burada görünəcək.</p></div>}
         </div>
       </main>
+      <SellerSupportWidget enabled={Boolean(store)} uploadMode="seller" contextLabel={store?.name} />
     </div>
   );
 }

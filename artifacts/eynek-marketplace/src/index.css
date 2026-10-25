@@ -549,6 +549,41 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .mt-2 { margin-top: 8px; }
 .btn-sm { min-height: 32px; padding: 0 12px; font-size: 11px; }
 
+.seller-support-widget { position: fixed; z-index: 90; right: 22px; bottom: 22px; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
+.seller-support-widget > * { pointer-events: auto; }
+.seller-support-fab { width: 56px; height: 56px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #171b22; color: #fff; box-shadow: 0 12px 28px rgba(23,27,34,.28); cursor: pointer; }
+.seller-support-fab:hover { background: #000; }
+.seller-support-panel { width: min(360px, calc(100vw - 32px)); padding: 16px 16px 14px; border: 1px solid #e4e8ef; border-radius: 16px; background: #fff; box-shadow: 0 18px 40px rgba(17,19,23,.14); animation: fade-in .18s ease both; }
+.seller-support-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.seller-support-panel-head strong { display: block; color: #171b22; font-size: 15px; }
+.seller-support-panel-head span { display: block; margin-top: 4px; color: #7a8490; font-size: 11px; }
+.seller-support-close { width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; background: #f3f5f7; color: #171b22; cursor: pointer; }
+.seller-support-lead { margin: 0 0 10px; color: #6e7884; font-size: 12px; line-height: 1.5; }
+.seller-support-panel textarea { width: 100%; min-height: 110px; resize: vertical; border: 1px solid #dfe4eb; border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 13px; }
+.seller-support-preview { display: grid; gap: 8px; margin: 10px 0; }
+.seller-support-preview img { max-height: 140px; width: auto; max-width: 100%; border-radius: 8px; border: 1px solid #e8ebf0; object-fit: contain; }
+.seller-support-preview button { justify-self: start; border: 0; background: transparent; color: #5b719a; font-size: 11px; cursor: pointer; }
+.seller-support-actions { display: flex; gap: 8px; margin-top: 12px; }
+.seller-support-actions .btn { flex: 1; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.seller-support-error { margin: 10px 0 0; color: #a33535; font-size: 11px; }
+.seller-support-success { margin: 24px 0; color: #2f6b3a; font-size: 13px; text-align: center; }
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.nav-count--alert { background: #e5484d; color: #fff; }
+.admin-inquiries-block { margin: 0 0 28px; padding: 18px 0 8px; border-top: 1px solid #ecece8; border-bottom: 1px solid #ecece8; }
+.admin-inquiries-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.admin-inquiries-head h3 { margin: 0; font-size: 18px; color: #171b22; }
+.admin-inquiries-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border-radius: 999px; background: #fff0ef; color: #a34c47; font-size: 11px; font-weight: 700; }
+.admin-inquiry-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px solid #e4e8ef; }
+.admin-inquiry-tabs button { min-height: 38px; padding: 0 16px; border: 1px solid #dfe4eb; border-radius: 999px; background: #fff; color: #5c6773; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.admin-inquiry-tabs button.is-on { border-color: #1b232e; background: #1b232e; color: #fff; }
+.admin-users-subtitle { margin: 24px 0 12px; font-size: 16px; color: #171b22; }
+.admin-review-card--unread { border-color: #f0c8a8; box-shadow: 0 0 0 1px rgba(240,200,168,.35); }
+.admin-support-message { margin: 0; white-space: pre-wrap; color: #3a424d; font-size: 13px; line-height: 1.55; }
+.admin-support-image-link { display: inline-block; margin-top: 12px; }
+.admin-support-image-link img { max-width: min(280px, 100%); max-height: 180px; border-radius: 8px; border: 1px solid #e8ebf0; object-fit: contain; }
+
 @media (max-width: 980px) {
   .seller-panel-layout { flex-direction: column; height: auto; min-width: 0; overflow: visible; }
   .seller-sidebar { width: 100%; max-width: 100%; height: auto; flex-basis: auto; position: static; overflow: visible; }

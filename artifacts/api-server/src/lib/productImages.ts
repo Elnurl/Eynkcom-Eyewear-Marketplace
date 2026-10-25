@@ -1,5 +1,5 @@
 import { and, eq, isNotNull, or } from "drizzle-orm";
-import { db, productImageUploadsTable, sellerProductsTable } from "@workspace/db";
+import { db, productImageUploadsTable, sellerProductsTable, sellerSupportTicketsTable, supportImageUploadsTable } from "@workspace/db";
 import { ObjectNotFoundError, ObjectStorageService } from "./objectStorage";
 import { logger } from "./logger";
 
@@ -22,13 +22,39 @@ export async function imageBelongsToSeller(path: string, sellerId: string): Prom
 }
 
 /** Only finalized uploads are publicly readable. */
+export async function imageBelongsToUser(path: string, userId: string): Promise<boolean> {
+  if (!UPLOADED_IMAGE_PATH.test(path)) return false;
+  const [ticket] = await db
+    .select()
+    .from(supportImageUploadsTable)
+    .where(and(eq(supportImageUploadsTable.objectPath, path), eq(supportImageUploadsTable.ownerId, userId)))
+    .limit(1);
+  if (!ticket?.finalizedAt) return false;
+  try {
+    await storage.stat(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function isPublishedImage(path: string): Promise<boolean> {
   if (!UPLOADED_IMAGE_PATH.test(path)) return false;
-  const [ticket] = await db.select({ objectPath: productImageUploadsTable.objectPath })
+  const [productUpload] = await db.select({ objectPath: productImageUploadsTable.objectPath })
     .from(productImageUploadsTable)
     .where(and(eq(productImageUploadsTable.objectPath, path), isNotNull(productImageUploadsTable.finalizedAt)))
     .limit(1);
-  return Boolean(ticket);
+  if (productUpload) return true;
+  const [supportUpload] = await db.select({ objectPath: supportImageUploadsTable.objectPath })
+    .from(supportImageUploadsTable)
+    .where(and(eq(supportImageUploadsTable.objectPath, path), isNotNull(supportImageUploadsTable.finalizedAt)))
+    .limit(1);
+  if (supportUpload) return true;
+  const [inquiry] = await db.select({ id: sellerSupportTicketsTable.id })
+    .from(sellerSupportTicketsTable)
+    .where(eq(sellerSupportTicketsTable.imagePath, path))
+    .limit(1);
+  return Boolean(inquiry);
 }
 
 export async function removeUnusedImage(path: string, sellerId: string): Promise<void> {

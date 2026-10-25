@@ -24,3 +24,5 @@ export * from "./product-image-uploads";
 export * from "./seller-stores";
 export * from "./marketplace-orders";
 export * from "./newsletter-subscribers";
+export * from "./seller-support-tickets";
+export * from "./support-image-uploads";

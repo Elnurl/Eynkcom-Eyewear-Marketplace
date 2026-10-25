@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useSellerWorkspace, type SellerProduct, type SellerProductInput } from '@/hooks/use-seller-workspace';
 import { BrandLogo } from '@/components/brand-logo';
+import { SellerSupportWidget } from '@/components/seller-support-widget';
 
 function imageUploadContentType(file: File): 'image/jpeg' | 'image/png' | null {
   const type = file.type.toLowerCase();
@@ -413,6 +414,7 @@ export default function SellerPanel() {
           }}
         />
       )}
+      <SellerSupportWidget enabled={Boolean(store)} uploadMode="seller" contextLabel={store?.name} />
     </div>
   );
 }

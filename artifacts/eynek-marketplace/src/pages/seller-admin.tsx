@@ -21,6 +21,25 @@ import { BrandLogo } from '@/components/brand-logo';
 
 type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'needs_changes';
 type AdminSection = 'applications' | 'products' | 'users' | 'newsletter';
+type SupportTicket = {
+  id: string;
+  sellerId: string | null;
+  authorType: string;
+  storeName: string | null;
+  authorEmail: string;
+  message: string;
+  imagePath: string | null;
+  status: string;
+  adminReadAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type InquirySummary = {
+  pendingApplications: number;
+  unreadSupportTickets: number;
+  totalUnread: number;
+};
 type ProductStatus = 'approved' | 'rejected' | 'needs_changes';
 
 const applicationStatusLabel: Record<ApplicationStatus, string> = {
@@ -87,6 +106,10 @@ export default function SellerAdminPage() {
   const [actionError, setActionError] = useState('');
   const [subscribers, setSubscribers] = useState<Array<{ id: string; email: string; createdAt: string }>>([]);
   const [section, setSection] = useState<AdminSection>(sectionFromLocation);
+  const [inquiryFilter, setInquiryFilter] = useState<'all' | 'seller' | 'buyer'>('all');
+  const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
+  const [inquirySummary, setInquirySummary] = useState<InquirySummary | null>(null);
+  const [supportLoading, setSupportLoading] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
   const openSection = (id: AdminSection) => {
@@ -116,6 +139,57 @@ export default function SellerAdminPage() {
       })
       .catch(() => undefined);
   }, [isAdmin]);
+
+  const loadInquiries = () => {
+    if (!isAdmin) return;
+    void fetch('/api/admin/inquiries/summary', { credentials: 'include' })
+      .then(async (response) => (response.ok ? response.json() : null))
+      .then((summary: InquirySummary | null) => {
+        if (summary && typeof summary.totalUnread === 'number') setInquirySummary(summary);
+      })
+      .catch(() => undefined);
+    if (section === 'users') {
+      setSupportLoading(true);
+      void fetch('/api/admin/support-tickets', { credentials: 'include' })
+        .then(async (response) => (response.ok ? response.json() : []))
+        .then((rows: SupportTicket[]) => {
+          if (Array.isArray(rows)) setSupportTickets(rows);
+        })
+        .catch(() => undefined)
+        .finally(() => setSupportLoading(false));
+    }
+  };
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    loadInquiries();
+    const timer = window.setInterval(loadInquiries, 15000);
+    return () => window.clearInterval(timer);
+  }, [isAdmin, section]);
+
+  const markSupportRead = async (id: string) => {
+    await fetch(`/api/admin/support-tickets/${id}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ markRead: true }),
+    });
+    setSupportTickets((rows) => rows.map((row) => (row.id === id ? { ...row, adminReadAt: new Date().toISOString() } : row)));
+    loadInquiries();
+  };
+
+  const closeSupportTicket = async (id: string) => {
+    await fetch(`/api/admin/support-tickets/${id}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'closed', markRead: true }),
+    });
+    setSupportTickets((rows) => rows.map((row) => (row.id === id ? { ...row, status: 'closed', adminReadAt: new Date().toISOString() } : row)));
+    loadInquiries();
+  };
+
+  const supportImageUrl = (path: string) => (path.startsWith('/objects/') ? `/api/storage${path}` : path);
 
   if (!isLoaded || !isSignedIn) return null;
   if (!isAdmin) {
@@ -172,9 +246,9 @@ export default function SellerAdminPage() {
           <div><strong>İdarəetmə</strong><small>{user?.email}</small></div>
         </div>
         <nav className="seller-nav">
-          <button type="button" className={`seller-nav-item ${section === 'applications' ? 'active' : ''}`} onClick={() => openSection('applications')}><ShieldCheck size={18} /> Satıcı müraciətləri</button>
+          <button type="button" className={`seller-nav-item ${section === 'applications' ? 'active' : ''}`} onClick={() => openSection('applications')}><ShieldCheck size={18} /> Satıcı müraciətləri {(inquirySummary?.pendingApplications ?? 0) > 0 ? <span className="nav-count nav-count--alert">{inquirySummary?.pendingApplications}</span> : null}</button>
           <button type="button" className={`seller-nav-item ${section === 'products' ? 'active' : ''}`} onClick={() => openSection('products')}><Check size={18} /> Məhsul yoxlaması</button>
-          <button type="button" className={`seller-nav-item ${section === 'users' ? 'active' : ''}`} onClick={() => openSection('users')}><Users size={18} /> İstifadəçilər <span className="nav-count">{users.data?.length ?? 0}</span></button>
+          <button type="button" className={`seller-nav-item ${section === 'users' ? 'active' : ''}`} onClick={() => openSection('users')}><Users size={18} /> İstifadəçilər {(inquirySummary?.unreadSupportTickets ?? 0) > 0 ? <span className="nav-count nav-count--alert">{inquirySummary?.unreadSupportTickets}</span> : <span className="nav-count">{users.data?.length ?? 0}</span>}</button>
           <button type="button" className={`seller-nav-item ${section === 'newsletter' ? 'active' : ''}`} onClick={() => openSection('newsletter')}><Mail size={18} /> Abunələr <span className="nav-count">{subscribers.length}</span></button>
           <Link className="seller-nav-item" href="/seller-admin/orders"><ClipboardList size={18} /> Sifarişlər</Link>
         </nav>
@@ -336,6 +410,61 @@ export default function SellerAdminPage() {
 
           {section === 'users' && <section id="users" className="seller-panel-section">
             <h2>İstifadəçilər {users.data ? `(${users.data.length})` : ''}</h2>
+
+            <div className="admin-inquiries-block" data-testid="section-admin-inquiries">
+              <div className="admin-inquiries-head">
+                <h3>Sorğular</h3>
+                {(inquirySummary?.unreadSupportTickets ?? 0) > 0 && (
+                  <span className="admin-inquiries-badge" data-testid="badge-inquiries-unread">{inquirySummary?.unreadSupportTickets} yeni</span>
+                )}
+              </div>
+              <p className="field-help" style={{ marginTop: 0 }}>Satıcı paneli və saytdakı daxil olmuş istifadəçilərin EYNƏK-ə yazdığı mesajlar. Yeni satıcı müraciətləri ayrıca «Satıcı müraciətləri» tabındadır.</p>
+              <div className="admin-inquiry-tabs" role="tablist" aria-label="Sorğu filtri">
+                <button type="button" role="tab" aria-selected={inquiryFilter === 'all'} className={inquiryFilter === 'all' ? 'is-on' : ''} onClick={() => setInquiryFilter('all')} data-testid="tab-inquiries-all">Hamısı</button>
+                <button type="button" role="tab" aria-selected={inquiryFilter === 'seller'} className={inquiryFilter === 'seller' ? 'is-on' : ''} onClick={() => setInquiryFilter('seller')} data-testid="tab-inquiries-seller">Satıcı</button>
+                <button type="button" role="tab" aria-selected={inquiryFilter === 'buyer'} className={inquiryFilter === 'buyer' ? 'is-on' : ''} onClick={() => setInquiryFilter('buyer')} data-testid="tab-inquiries-buyer">Alıcı</button>
+              </div>
+
+              {(() => {
+                const filtered = supportTickets.filter((ticket) => inquiryFilter === 'all' || ticket.authorType === inquiryFilter);
+                if (supportLoading && !supportTickets.length) return <div className="empty-state-mini">Sorğular yüklənir...</div>;
+                if (!filtered.length) return <div className="empty-state-mini">Bu filtr üzrə sorğu yoxdur.</div>;
+                return (
+                  <div className="admin-review-list">
+                    {filtered.map((ticket) => {
+                      const unread = !ticket.adminReadAt && ticket.status === 'open';
+                      const title = ticket.authorType === 'seller'
+                        ? (ticket.storeName ?? 'Satıcı')
+                        : (ticket.authorEmail || 'Alıcı');
+                      const subtitle = ticket.authorType === 'seller'
+                        ? `${ticket.authorEmail} · Satıcı`
+                        : 'Sayt istifadəçisi';
+                      return (
+                        <article className={`admin-review-card${unread ? ' admin-review-card--unread' : ''}`} key={ticket.id} data-testid={`card-support-ticket-${ticket.id}`} onClick={() => { if (unread) void markSupportRead(ticket.id); }}>
+                          <div className="admin-review-heading">
+                            <div><h3>{title}</h3><span>{subtitle} · {reviewDate(ticket.createdAt)}</span></div>
+                            <span className={`status-badge ${ticket.status === 'open' ? (unread ? 'pending' : 'draft') : 'active'}`}>{ticket.status === 'closed' ? 'Bağlanıb' : unread ? 'Yeni' : 'Oxunub'}</span>
+                          </div>
+                          <p className="admin-support-message">{ticket.message}</p>
+                          {ticket.imagePath ? (
+                            <a className="admin-support-image-link" href={supportImageUrl(ticket.imagePath)} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()}>
+                              <img src={supportImageUrl(ticket.imagePath)} alt="Əlavə şəkil" />
+                            </a>
+                          ) : null}
+                          {ticket.status === 'open' && (
+                            <div className="admin-review-actions" onClick={(event) => event.stopPropagation()}>
+                              <button type="button" className="btn btn-secondary" onClick={() => void closeSupportTicket(ticket.id)} data-testid={`button-close-support-${ticket.id}`}>Bağla</button>
+                            </div>
+                          )}
+                        </article>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <h3 className="admin-users-subtitle">Hesab siyahısı</h3>
             {users.isLoading ? <div className="empty-state-mini">İstifadəçilər yüklənir...</div> : users.data?.length ? (
               <div className="admin-review-list">
                 {users.data.map((account) => (
