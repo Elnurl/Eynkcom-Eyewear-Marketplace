@@ -242,7 +242,7 @@ export default function SellerOrdersPage() {
           ) : <div className="empty-state" data-testid="status-seller-orders-loaded"><Package size={22} /><h3>Hələ sifariş yoxdur.</h3><p>Mağazanız üçün yeni sifarişlər burada görünəcək.</p></div>}
         </div>
       </main>
-      <SellerSupportWidget enabled={Boolean(store)} uploadMode="seller" contextLabel={store?.name} />
+      <SellerSupportWidget enabled={Boolean(store)} uploadMode="seller" defaultName={user?.name ?? ''} defaultEmail={user?.email ?? ''} />
     </div>
   );
 }

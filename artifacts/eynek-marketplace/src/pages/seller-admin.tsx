@@ -27,6 +27,8 @@ type SupportTicket = {
   authorType: string;
   storeName: string | null;
   authorEmail: string;
+  authorName: string | null;
+  authorPhone: string | null;
   message: string;
   imagePath: string | null;
   status: string;
@@ -433,12 +435,14 @@ export default function SellerAdminPage() {
                   <div className="admin-review-list">
                     {filtered.map((ticket) => {
                       const unread = !ticket.adminReadAt && ticket.status === 'open';
-                      const title = ticket.authorType === 'seller'
-                        ? (ticket.storeName ?? 'Satıcı')
-                        : (ticket.authorEmail || 'Alıcı');
-                      const subtitle = ticket.authorType === 'seller'
-                        ? `${ticket.authorEmail} · Satıcı`
-                        : 'Sayt istifadəçisi';
+                      const title = ticket.authorName?.trim()
+                        || (ticket.authorType === 'seller' ? (ticket.storeName ?? 'Satıcı') : 'Alıcı');
+                      const subtitleParts = [
+                        ticket.authorPhone?.trim(),
+                        ticket.authorEmail,
+                        ticket.authorType === 'seller' ? 'Satıcı' : 'Alıcı',
+                      ].filter(Boolean);
+                      const subtitle = subtitleParts.join(' · ');
                       return (
                         <article className={`admin-review-card${unread ? ' admin-review-card--unread' : ''}`} key={ticket.id} data-testid={`card-support-ticket-${ticket.id}`} onClick={() => { if (unread) void markSupportRead(ticket.id); }}>
                           <div className="admin-review-heading">

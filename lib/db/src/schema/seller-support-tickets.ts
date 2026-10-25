@@ -11,6 +11,8 @@ export const sellerSupportTicketsTable = pgTable(
     authorType: text("author_type").notNull().default("seller"),
     authorUserId: text("author_user_id").notNull(),
     authorEmail: text("author_email").notNull(),
+    authorName: text("author_name"),
+    authorPhone: text("author_phone"),
     message: text("message").notNull(),
     imagePath: text("image_path"),
     status: text("status").notNull().default("open"),

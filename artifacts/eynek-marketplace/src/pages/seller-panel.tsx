@@ -414,7 +414,7 @@ export default function SellerPanel() {
           }}
         />
       )}
-      <SellerSupportWidget enabled={Boolean(store)} uploadMode="seller" contextLabel={store?.name} />
+      <SellerSupportWidget enabled={Boolean(store)} uploadMode="seller" defaultName={user?.name ?? ''} defaultEmail={user?.email ?? ''} />
     </div>
   );
 }

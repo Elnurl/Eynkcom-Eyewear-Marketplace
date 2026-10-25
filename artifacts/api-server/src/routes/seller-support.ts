@@ -34,6 +34,8 @@ function ticketDto(
     authorType: row.authorType,
     storeName,
     authorEmail: row.authorEmail,
+    authorName: row.authorName,
+    authorPhone: row.authorPhone,
     message: row.message,
     imagePath: row.imagePath,
     status: row.status,
@@ -49,7 +51,18 @@ async function createInquiry(req: Request, res: Response): Promise<void> {
 
   const message = typeof req.body?.message === "string" ? req.body.message.trim() : "";
   const imagePath = typeof req.body?.imagePath === "string" ? req.body.imagePath.trim() : "";
+  const authorName = typeof req.body?.contactName === "string" ? req.body.contactName.trim() : "";
+  const authorPhone = typeof req.body?.contactPhone === "string" ? req.body.contactPhone.trim() : "";
+  const contactEmail = typeof req.body?.contactEmail === "string" ? req.body.contactEmail.trim().toLocaleLowerCase("en-US") : "";
 
+  if (authorName.length < 2) {
+    res.status(400).json({ error: "Adınızı yazın." });
+    return;
+  }
+  if (authorPhone.replace(/\D/g, "").length < 7) {
+    res.status(400).json({ error: "Düzgün əlaqə nömrəsi yazın." });
+    return;
+  }
   if (message.length < 3) {
     res.status(400).json({ error: "Mesaj ən azı 3 simvol olmalıdır." });
     return;
@@ -82,7 +95,9 @@ async function createInquiry(req: Request, res: Response): Promise<void> {
     sellerId: store?.id ?? null,
     authorType,
     authorUserId: req.dbUser!.id,
-    authorEmail: email,
+    authorEmail: contactEmail && contactEmail.includes("@") ? contactEmail : email,
+    authorName: authorName || null,
+    authorPhone: authorPhone || null,
     message,
     imagePath: imagePath || null,
     status: "open",

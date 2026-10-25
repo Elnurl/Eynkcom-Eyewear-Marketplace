@@ -1250,7 +1250,7 @@ function Storefront() {
       {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={(product) => openTintTryOn(product.id)} />}
       {toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}
       {isLoaded && isSignedIn && (
-        <SellerSupportWidget enabled uploadMode="buyer" contextLabel={user?.email ?? undefined} />
+        <SellerSupportWidget enabled uploadMode="buyer" defaultName={user?.name ?? ''} defaultEmail={user?.email ?? ''} />
       )}
     </div>
   );
