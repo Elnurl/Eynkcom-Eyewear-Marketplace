@@ -62,6 +62,7 @@ export default function SellerPanel() {
   } = useSellerWorkspace();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'store'>('products');
+  const [storeForm, setStoreForm] = useState({ name: '', location: '', description: '', instagram: '', website: '' });
   const [storeSaveMessage, setStoreSaveMessage] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +77,17 @@ export default function SellerPanel() {
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-panel')}`);
   }, [isAuthLoading, isAuthenticated, setLocation]);
+
+  useEffect(() => {
+    if (!store) return;
+    setStoreForm({
+      name: store.name,
+      location: store.location,
+      description: store.description,
+      instagram: store.instagram,
+      website: store.website,
+    });
+  }, [store]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p =>
@@ -134,6 +146,23 @@ export default function SellerPanel() {
     }
   };
 
+  const saveStoreProfile = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStoreSaveMessage('');
+    try {
+      await updateStore({
+        name: storeForm.name.trim(),
+        location: storeForm.location.trim(),
+        description: storeForm.description.trim(),
+        instagram: storeForm.instagram.trim(),
+        website: storeForm.website.trim(),
+      });
+      setStoreSaveMessage('Mağaza məlumatları yadda saxlanıldı.');
+    } catch {
+      setStoreSaveMessage(errorMessage || 'Mağaza məlumatları saxlanmadı.');
+    }
+  };
+
   const onPickStoreLogo = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -165,7 +194,7 @@ export default function SellerPanel() {
           type="button"
           className="seller-store-info seller-store-info--button"
           onClick={() => setActiveTab('store')}
-          aria-label="Mağaza tənzimləmələri"
+          aria-label="Mağaza məlumatları"
           data-testid="button-store-settings"
         >
           {store.logoPath ? (
@@ -177,7 +206,7 @@ export default function SellerPanel() {
           )}
           <div>
             <strong>{store.name}</strong>
-            <small>Mağaza tənzimləmələri</small>
+            <small>Mağaza məlumatları</small>
           </div>
         </button>
 
@@ -202,7 +231,7 @@ export default function SellerPanel() {
             onClick={() => setActiveTab('store')}
             data-testid="nav-store"
           >
-            <Settings size={18} /> Mağaza tənzimləmələri
+            <Settings size={18} /> Mağaza məlumatları
           </button>
           <Link href="/seller-orders" className="seller-nav-item" data-testid="nav-orders">
             <Truck size={18} /> Sifarişlər
@@ -392,34 +421,47 @@ export default function SellerPanel() {
         {activeTab === 'store' && (
           <div className="seller-content fade-in">
             <header className="seller-main-header">
-              <h1>Mağaza tənzimləmələri</h1>
-              <p>Loqonuz panel sidebarında və vitrində görünür.</p>
+              <h1>Mağaza məlumatları</h1>
+              <p>İctimai vitrin məlumatlarını və loqonu buradan idarə edin.</p>
             </header>
-            <div className="seller-logo-card">
-              <div className="seller-logo-preview">
-                {store.logoPath ? (
-                  <img src={sellerImageUrl(store.logoPath)} alt={`${store.name} loqosu`} />
-                ) : (
-                  <div className="seller-logo-placeholder"><Store size={32} strokeWidth={1.5} /></div>
-                )}
-              </div>
-              <div className="seller-logo-copy">
-                <strong>{store.name}</strong>
-                <p>JPG və ya PNG, maksimum 10 MB. Tövsiyə: kvadrat, minimum 256×256 px.</p>
-                <div className="seller-logo-actions">
-                  <input ref={logoInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={(event) => void onPickStoreLogo(event)} />
-                  <button type="button" className="btn btn-blue" disabled={logoUploading || isSaving} onClick={() => logoInputRef.current?.click()} data-testid="button-upload-store-logo">
-                    {logoUploading ? <Loader2 size={16} className="spin" /> : <ImagePlus size={16} />}
-                    {store.logoPath ? 'Loqonu dəyiş' : 'Loqo əlavə et'}
-                  </button>
-                  {store.logoPath ? (
-                    <button type="button" className="btn btn-secondary" disabled={logoUploading || isSaving} onClick={() => void saveStoreLogo(null)} data-testid="button-remove-store-logo">
-                      Loqonu sil
-                    </button>
-                  ) : null}
+            <div className="seller-store-settings">
+              <section className="seller-logo-card" aria-labelledby="store-logo-heading">
+                <h2 id="store-logo-heading" className="seller-settings-section-title">Mağaza loqosu</h2>
+                <div className="seller-logo-card-inner">
+                  <div className="seller-logo-preview">
+                    {store.logoPath ? (
+                      <img src={sellerImageUrl(store.logoPath)} alt={`${store.name} loqosu`} />
+                    ) : (
+                      <div className="seller-logo-placeholder"><Store size={32} strokeWidth={1.5} /></div>
+                    )}
+                  </div>
+                  <div className="seller-logo-copy">
+                    <p>JPG və ya PNG, maksimum 10 MB. Tövsiyə: kvadrat, minimum 256×256 px.</p>
+                    <div className="seller-logo-actions">
+                      <input ref={logoInputRef} type="file" accept="image/jpeg,image/png" hidden onChange={(event) => void onPickStoreLogo(event)} />
+                      <button type="button" className="btn btn-blue" disabled={logoUploading || isSaving} onClick={() => logoInputRef.current?.click()} data-testid="button-upload-store-logo">
+                        {logoUploading ? <Loader2 size={16} className="spin" /> : <ImagePlus size={16} />}
+                        {store.logoPath ? 'Loqonu dəyiş' : 'Loqo əlavə et'}
+                      </button>
+                      {store.logoPath ? (
+                        <button type="button" className="btn btn-secondary" disabled={logoUploading || isSaving} onClick={() => void saveStoreLogo(null)} data-testid="button-remove-store-logo">
+                          Loqonu sil
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                {storeSaveMessage ? <p className="seller-logo-status" role="status">{storeSaveMessage}</p> : null}
-              </div>
+              </section>
+              <form className="seller-form seller-store-profile-form" onSubmit={saveStoreProfile} noValidate>
+                <h2 className="seller-settings-section-title">Vitrin məlumatları</h2>
+                <div className="field"><label htmlFor="store-profile-name">Mağaza adı</label><input id="store-profile-name" required value={storeForm.name} onChange={(event) => setStoreForm((form) => ({ ...form, name: event.target.value }))} data-testid="input-store-name" /></div>
+                <div className="field"><label htmlFor="store-profile-location">Ünvan</label><input id="store-profile-location" required value={storeForm.location} onChange={(event) => setStoreForm((form) => ({ ...form, location: event.target.value }))} data-testid="input-store-location" /></div>
+                <div className="field full"><label htmlFor="store-profile-description">Haqqında</label><textarea id="store-profile-description" value={storeForm.description} onChange={(event) => setStoreForm((form) => ({ ...form, description: event.target.value }))} data-testid="input-store-description" /></div>
+                <div className="field"><label htmlFor="store-profile-instagram">Instagram</label><input id="store-profile-instagram" value={storeForm.instagram} onChange={(event) => setStoreForm((form) => ({ ...form, instagram: event.target.value }))} data-testid="input-store-instagram" /></div>
+                <div className="field"><label htmlFor="store-profile-website">Veb-sayt</label><input id="store-profile-website" value={storeForm.website} onChange={(event) => setStoreForm((form) => ({ ...form, website: event.target.value }))} data-testid="input-store-website" /></div>
+                {storeSaveMessage ? <div className="field-help" role="status">{storeSaveMessage}</div> : null}
+                <div className="form-actions"><button className="btn btn-blue" disabled={isSaving || logoUploading} type="submit" data-testid="button-save-store-profile">{isSaving ? 'Yadda saxlanılır...' : 'Məlumatları saxla'}</button></div>
+              </form>
             </div>
           </div>
         )}
