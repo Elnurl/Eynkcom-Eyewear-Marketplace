@@ -135,7 +135,7 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
             <CheckCircle2 size={28} color="#1f8a4c" />
             <div className="eyebrow">Sifariş qəbul edildi</div>
             <h1>Sifarişin tamamlandı.</h1>
-            <p>Sifariş {placedOrder.orderNumber} qeydə alındı. Mağaza təsdiqini gözləyir. İzləmə səhifəsində hazırlıq və götürmə mərhələsini görə bilərsən.</p>
+            <p>Sifariş {placedOrder.orderNumber} qeydə alındı. Mağaza təsdiqini gözləyir. İzləmə səhifəsində hazırlıq və götürmə mərhələsini görə bilərsiniz.</p>
             <button className="btn btn-blue" type="button" data-testid="link-track-order" onClick={() => setLocation(`/order/${placedOrder.id}#${placedOrder.token}`)}>Sifarişi izlə <ArrowRight size={16} /></button>
           </section>
         </div>

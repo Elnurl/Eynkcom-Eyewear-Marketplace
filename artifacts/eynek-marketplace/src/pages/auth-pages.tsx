@@ -147,7 +147,7 @@ export function SignUpPage() {
   return (
     <AuthShell
       title="Hesab yarat"
-      lead="Hesab açmaq məcburi deyil: qonaq kimi də sifariş verə bilərsən."
+      lead="Hesab açmaq məcburi deyil: qonaq kimi də sifariş verə bilərsiniz."
       footer={<>Artıq hesabın var?<Link href={`/sign-in?redirect_url=${encodeURIComponent(target)}`} data-testid="link-to-sign-in">Daxil ol</Link></>}
     >
       {sentTo ? (

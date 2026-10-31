@@ -173,7 +173,7 @@ export function SellerSupportWidget({ enabled, uploadMode = 'buyer', defaultName
             <div className="seller-support-success" role="status" data-testid="status-support-sent">
               <span className="seller-support-success-icon" aria-hidden><Check size={28} strokeWidth={2.2} /></span>
               <strong>Göndərildi</strong>
-              <p>Mesajın çatdı. Tezliklə sizinlə əlaqə saxlayacağıq.</p>
+              <p>Mesajınız çatdı. Tezliklə sizinlə əlaqə saxlayacağıq.</p>
             </div>
           ) : phase === 'intro' ? (
             <div className="seller-support-intro">

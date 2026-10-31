@@ -112,6 +112,8 @@
 .account-payment-choice.is-disabled small { color: #8a919a; }
 
 .account-orders { padding-top: 56px; scroll-margin-top: 90px; }
+.account-orders-page .account-orders { padding-top: 48px; padding-bottom: 64px; }
+.account-orders-back { display: inline-block; margin-bottom: 12px; font-size: 13px; }
 .account-page .account-order-list { display: grid; gap: 10px; }
 .account-page .account-order-card { padding: 20px 24px; border: 1px solid #eceae4; border-radius: 20px; background: #fff; }
 .account-page .account-order-main strong { color: #142232; font-size: 14px; }

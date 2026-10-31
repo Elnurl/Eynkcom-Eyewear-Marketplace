@@ -1,0 +1,37 @@
+/* EYNƏK marketplace design tokens (2026 redesign) */
+:root {
+  --mp-white: #ffffff;
+  --mp-paper: #ffffff;
+  --mp-tile: #f3f3f1;
+  --mp-ink: #161614;
+  --mp-muted: #6f6f6b;
+  --mp-line: #e4e4e0;
+  --mp-lime: #bfd630;
+  --mp-lime-soft: rgba(191, 214, 48, 0.22);
+  --mp-radius-sm: 3px;
+  --mp-radius-md: 4px;
+  --mp-space-1: 4px;
+  --mp-space-2: 8px;
+  --mp-space-3: 12px;
+  --mp-space-4: 16px;
+  --mp-space-5: 24px;
+  --mp-space-6: 32px;
+  --mp-font: 'Manrope', sans-serif;
+  --mp-heading-weight: 300;
+  --mp-label-size: 10px;
+  --mp-label-track: 0.14em;
+
+  /* Legacy aliases — seller panel & checkout keep working */
+  --navy: var(--mp-ink);
+  --ink: var(--mp-ink);
+  --muted: var(--mp-muted);
+  --paper: var(--mp-paper);
+  --surface: var(--mp-tile);
+  --white: var(--mp-white);
+  --line: var(--mp-line);
+  --blue: var(--mp-lime);
+  --app-font: var(--mp-font);
+  --radius-sm: var(--mp-radius-sm);
+  --radius-md: var(--mp-radius-md);
+  --radius-lg: var(--mp-radius-md);
+}

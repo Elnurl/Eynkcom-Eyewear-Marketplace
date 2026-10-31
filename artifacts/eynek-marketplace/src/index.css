@@ -1,17 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
+@import './styles/marketplace.css';
 @layer theme, base, components, utilities;
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
 :root {
-  --navy: #171A3A;
-  --ink: #111111;
-  --muted: #6B6B6B;
-  --paper: #FAFAF8;
-  --surface: #F3F3EF;
-  --white: #FFFFFF;
-  --line: #E6E6E2;
-  --blue: #3D5AFE;
+  --navy: #161614;
+  --ink: #161614;
+  --muted: #6f6f6b;
+  --paper: #ffffff;
+  --surface: #f3f3f1;
+  --white: #ffffff;
+  --line: #e4e4e0;
+  --blue: #bfd630;
   --warm: #ECE8DF;
   --app-font: 'Manrope', sans-serif;
   --background: 60 20% 98%;

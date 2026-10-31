@@ -25,6 +25,7 @@ import {
   Trash2,
   UserRound,
   Video,
+  Wallet,
   X,
 } from 'lucide-react';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
@@ -39,6 +40,12 @@ import SellerLogin from '@/pages/seller-login';
 import SellerPanel from '@/pages/seller-panel';
 import SellerAdminPage from '@/pages/seller-admin';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
+import { TrustBar } from '@/components/marketplace/TrustBar';
+import { MegaNav } from '@/components/marketplace/MegaNav';
+import { MarketProductCard, productSupportsVto } from '@/components/marketplace/MarketProductCard';
+import { HomeMarketSections } from '@/components/marketplace/HomeMarketSections';
+import { VendorMark } from '@/components/marketplace/VendorMark';
+import { az } from '@/i18n/az';
 import CheckoutPage from '@/pages/checkout';
 import { LegalPage } from '@/pages/legal';
 import { HelpPage } from '@/pages/help';
@@ -116,17 +123,6 @@ type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'sin
 function uploadedStoreImageUrl(path: string) {
   if (path.startsWith('/objects/')) return `/api/storage${path}`;
   return path;
-}
-
-function VendorMark({ vendor }: { vendor: Pick<Vendor, 'initials' | 'logoPath' | 'name'> }) {
-  if (vendor.logoPath) {
-    return (
-      <span className="store-mark store-mark--logo">
-        <img src={uploadedStoreImageUrl(vendor.logoPath)} alt={`${vendor.name} loqosu`} />
-      </span>
-    );
-  }
-  return <span className="store-mark">{vendor.initials}</span>;
 }
 
 const sampleCatalog: Product[] = [
@@ -233,10 +229,9 @@ function CategoryMenu() {
 }
 
 const helpLinks = [
-  { href: '/account', label: 'Sifarişimi izlə', testId: 'link-help-track' },
+  { href: '/account/orders', label: 'Sifarişimi izlə', testId: 'link-help-track' },
   { href: '/destek#suallar', label: 'Suallar', testId: 'link-help-faq' },
   { href: '/destek#telimat', label: 'Təlimatlar', testId: 'link-help-guides' },
-  { href: '/destek#pd', label: 'Bəbək məsafəsi — PD', testId: 'link-help-pd' },
 ];
 
 function HelpMenu() {
@@ -275,7 +270,6 @@ function HelpMenu() {
             <strong>Dəstək</strong>
           </div>
           {helpLinks.map((item) => <Link key={item.href} href={item.href} className="help-link" onClick={() => setOpen(false)} data-testid={item.testId}>{item.label}</Link>)}
-          <a className="help-link" href="mailto:info@eynek.store" data-testid="link-help-email">info@eynek.store</a>
           <Link href="/destek" className="help-center" onClick={() => setOpen(false)} data-testid="link-help-center">Dəstək mərkəzi</Link>
         </div>
       )}
@@ -349,14 +343,16 @@ function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: 
   const [location] = useLocation();
   return (
     <>
-      <header className="topbar">
+      <TrustBar />
+      <header className="topbar mp-topbar">
         <div className="container nav">
           <button className="icon-button mobile-menu" onClick={onMenu} aria-label="Menyunu aç" aria-expanded={menuOpen} aria-controls="mobile-drawer" data-testid="button-menu"><Menu size={19} /></button>
           <Link href="/" className="brand site-wordmark" data-testid="link-brand">EYNƏK</Link>
-          <nav className="nav-links" aria-label="Əsas menyu">
-            <Link href="/collection" className={location === '/collection' ? 'active' : ''} data-testid="link-collection">Kolleksiya</Link>
+          <MegaNav />
+          <nav className="nav-links" aria-label="Mobil menyu">
+            <Link href="/collection" className={location === '/collection' ? 'active' : ''} data-testid="link-collection">{az.nav.collection}</Link>
             <CategoryMenu />
-            <Link href="/stores" className={location.startsWith('/stores') ? 'active' : ''} data-testid="link-stores">Mağazalar</Link>
+            <Link href="/stores" className={location.startsWith('/stores') ? 'active' : ''} data-testid="link-stores">{az.nav.stores}</Link>
           </nav>
           {/* On phones the search collapses to an icon inside this group; desktop CSS lays the group out in one row. */}
           <div className="nav-actions">
@@ -424,7 +420,7 @@ function NewsletterSignup() {
 
 function Footer() {
   return (
-    <footer className="haven-footer">
+    <footer className="haven-footer mp-footer">
       <div className="haven-shell haven-footer-grid">
         <div className="haven-footer-brand">
           <Link href="/" className="site-wordmark">EYNƏK</Link>
@@ -442,7 +438,6 @@ function Footer() {
           <Link href="/wishlist">Seçilmişlər</Link>
           <Link href="/account">Hesab</Link>
           <Link href="/destek">Dəstək</Link>
-          <a href="mailto:info@eynek.store">info@eynek.store</a>
           <Link href="/qaydalar">Qaydalar</Link>
           <Link href="/mexfilik">Məxfilik</Link>
           <Link href="/qaytarma">Qaytarma</Link>
@@ -456,7 +451,6 @@ function Footer() {
       </div>
       <div className="haven-shell haven-footer-bottom">
         <span>© {new Date().getFullYear()} EYNƏK. Bütün hüquqlar qorunur.</span>
-        <span>Fərqli baxışlar. Bir ünvan.</span>
       </div>
     </footer>
   );
@@ -466,22 +460,16 @@ function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product
   const photoSrc = (path: string) => (path.startsWith('data:') || path.startsWith('http') ? path : assetUrl(path));
   const hover = productHoverImage(product);
   return (
-    <article className="product-card" data-testid={`card-product-${product.id}`}>
-      <div className={`product-image ${product.tone}`}>
-        <Link href={`/product/${product.id}`} className="product-image-link" aria-label={`${product.name} məhsul səhifəsini aç`} data-testid={`link-product-image-${product.id}`}>
-          <img className="product-photo" src={photoSrc(product.image)} alt={`${product.name} — ${product.color} eynək modeli, ön görünüş`} loading="lazy" />
-          {hover?.kind === 'worn' && <img className="product-photo on-model" src={photoSrc(hover.src)} alt={`${product.name} modelin üzündə`} loading="lazy" />}
-          {hover?.kind === 'side' && <img className="product-photo side-view" src={photoSrc(hover.src)} alt={`${product.name} — ${product.color} eynək modeli, yan görünüş`} loading="lazy" />}
-        </Link>
-        <button className={`heart-button ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} seçilmişlərə əlavə et`} data-testid={`button-favorite-${product.id}`}><Heart size={18} strokeWidth={1.8} fill={liked ? 'currentColor' : 'none'} /></button>
-        <button type="button" className="product-badge" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}><span className="badge-light" aria-hidden="true" />3D YOXLA</button>
-      </div>
-      <div className="product-info">
-        <span className="product-label">{product.brand || product.type}</span>
-        <Link href={`/product/${product.id}`} data-testid={`link-product-${product.id}`}><h3 className="product-name">{product.name}</h3></Link>
-        {!product.previewOnly && product.price > 0 && <span className="product-price">{money(product.price)}</span>}
-      </div>
-    </article>
+    <MarketProductCard
+      product={product}
+      liked={liked}
+      onFavorite={onFavorite}
+      onTryOn={onTryOn}
+      photoSrc={photoSrc}
+      hover={hover}
+      swatchColor={frameSwatch(product.color)}
+      formatPrice={money}
+    />
   );
 }
 
@@ -534,7 +522,7 @@ function HavenCard({ product, liked, onFavorite, onTryOn, onAdd, editorPick }: {
   );
 }
 
-function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & { onAdd: (product: Product) => void }) {
+function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & { onAdd: (product: Product) => void }) {
   const [tab, setTab] = useState<'all' | 'sun' | 'optical'>('all');
   const featured = products.filter((product) => tab === 'sun' ? product.type === 'Gün eynəyi' : tab === 'optical' ? product.type === 'Optik çərçivə' : true).slice(0, 4);
   return (
@@ -543,21 +531,18 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
         <section className="haven-hero">
           <img className="haven-hero-image" src={`${import.meta.env.BASE_URL}eynek-campaign.jpg`} alt="Qara gün eynəyində EYNƏK kolleksiyasının müasir üslubu" />
           <div className="haven-shell haven-hero-copy">
-            <h1>Sənə yaraşan<br />çərçivəni tap.</h1>
+            <h1>{az.hero.titleLine1}<br />{az.hero.titleLine2}</h1>
             <div className="haven-hero-actions">
-              <Link href="/collection" className="haven-btn" data-testid="link-hero-collection">Kolleksiyanı kəşf et <ArrowRight size={16} /></Link>
-              <button className="haven-text-btn" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> Virtual sınaq</button>
+              <Link href="/collection" className="haven-btn" data-testid="link-hero-collection">{az.hero.ctaCollection} <ArrowRight size={16} /></Link>
+              <button className="haven-text-btn" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> {az.hero.ctaVto}</button>
               </div>
             </div>
-          <div className="haven-shell haven-hero-foot">
-            <span className="haven-hero-credit">EYNƏK — Fərqli baxışlar üçün</span>
-          </div>
+          <div className="haven-shell haven-hero-foot" aria-hidden="true" />
         </section>
-        <div className="haven-shell haven-benefits">
-          <span><ShieldCheck size={16} strokeWidth={1.6} /> Diqqətlə seçilmiş modellər</span>
-          <span><ScanFace size={16} strokeWidth={1.6} /> Almazdan əvvəl üzündə yoxla</span>
-          <span><Glasses size={16} strokeWidth={1.6} /> Hər üzə uyğun bir çərçivə</span>
-          <span><Store size={16} strokeWidth={1.6} /> Yerli mağazalar, bir ünvan</span>
+        <div className="haven-shell haven-benefits mp-trust-inline">
+          <span><ScanFace size={16} strokeWidth={1.6} /> {az.trust.vto}</span>
+          <span><Wallet size={16} strokeWidth={1.6} /> {az.trust.cod}</span>
+          <span><Store size={16} strokeWidth={1.6} /> {az.trust.courier}</span>
             </div>
         <section className="haven-shell haven-block haven-block--featured">
           <div className="haven-collection-bar">
@@ -569,8 +554,8 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
             <Link href="/collection" className="haven-collection-count" data-testid="link-view-all">{products.length} model</Link>
           </div>
           {featured.length ? (
-            <div className="haven-grid">
-              {featured.map((product, index) => <HavenCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onTryOn={onTryOn} onAdd={onAdd} editorPick={index === 2} />)}
+            <div className="product-grid haven-grid">
+              {featured.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={() => {}} onTryOn={onTryOn} />)}
             </div>
           ) : (
             <div className="empty-state">
@@ -584,7 +569,7 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
         <section className="haven-shell haven-block" id="kateqoriyalar">
           <div className="haven-heading">
             <div>
-              <p>Üslubuna uyğun</p>
+              <p>Üslubunuza uyğun</p>
               <h2>Hər baxışın bir hekayəsi var.</h2>
               </div>
               </div>
@@ -616,6 +601,7 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
               </div>
             </div>
         </section>
+        <HomeMarketSections products={products} stores={stores} onTryOn={() => openTintTryOn()} />
         <section className="haven-seller">
           <div className="haven-shell haven-seller-inner">
             <div>
@@ -632,16 +618,46 @@ function Home({ products, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & 
   );
 }
 
-function Filters({ filters, setFilters, open, stores, priceCeiling }: { filters: { gender: string; material: string; type: string; maxPrice: number; size: string; seller: string }; setFilters: (filters: { gender: string; material: string; type: string; maxPrice: number; size: string; seller: string }) => void; open: boolean; stores: Vendor[]; priceCeiling: number }) {
-  const update = (key: keyof typeof filters, value: string | number) => setFilters({ ...filters, [key]: value });
+type CatalogFilters = {
+  gender: string;
+  material: string;
+  type: string;
+  maxPrice: number;
+  size: string;
+  seller: string;
+  brand: string;
+  color: string;
+  shape: string;
+  vtoOnly: boolean;
+};
+
+const emptyCatalogFilters = (): CatalogFilters => ({
+  gender: '',
+  material: '',
+  type: '',
+  maxPrice: 0,
+  size: '',
+  seller: '',
+  brand: '',
+  color: '',
+  shape: '',
+  vtoOnly: false,
+});
+
+function Filters({ filters, setFilters, open, stores, priceCeiling, brands, colors }: { filters: CatalogFilters; setFilters: (filters: CatalogFilters) => void; open: boolean; stores: Vendor[]; priceCeiling: number; brands: string[]; colors: string[] }) {
+  const update = (key: keyof CatalogFilters, value: string | number | boolean) => setFilters({ ...filters, [key]: value });
   return (
     <aside className={`filter-panel ${open ? 'open' : ''}`}>
       <div className="filter-group"><div className="filter-title">Kateqoriya <ChevronDown size={14} /></div>{['Optik çərçivə', 'Gün eynəyi'].map((item) => <label className="check-row" key={item}><input type="radio" name="type" checked={filters.type === item} onChange={() => update('type', filters.type === item ? '' : item)} />{item}</label>)}</div>
+      {brands.length > 0 && <div className="filter-group"><div className="filter-title">Brend <ChevronDown size={14} /></div>{brands.map((item) => <label className="check-row" key={item}><input type="radio" name="brand" checked={filters.brand === item} onChange={() => update('brand', filters.brand === item ? '' : item)} />{item}</label>)}</div>}
       <div className="filter-group"><div className="filter-title">Satıcı <ChevronDown size={14} /></div>{stores.map((vendor) => <label className="check-row" key={vendor.slug}><input type="radio" name="seller" checked={filters.seller === vendor.slug} onChange={() => update('seller', filters.seller === vendor.slug ? '' : vendor.slug)} />{vendor.name}</label>)}</div>
+      <div className="filter-group"><div className="filter-title">Forma <ChevronDown size={14} /></div>{shapes.map((item) => <label className="check-row" key={item}><input type="radio" name="shape" checked={filters.shape === item} onChange={() => update('shape', filters.shape === item ? '' : item)} />{item}</label>)}</div>
+      {colors.length > 0 && <div className="filter-group"><div className="filter-title">Rəng <ChevronDown size={14} /></div>{colors.map((item) => <label className="check-row" key={item}><input type="radio" name="color" checked={filters.color === item} onChange={() => update('color', filters.color === item ? '' : item)} />{item}</label>)}</div>}
       <div className="filter-group"><div className="filter-title">Cins <ChevronDown size={14} /></div>{genders.map((item) => <label className="check-row" key={item}><input type="radio" name="gender" checked={filters.gender === item} onChange={() => update('gender', filters.gender === item ? '' : item)} />{item}</label>)}</div>
       <div className="filter-group"><div className="filter-title">Material <ChevronDown size={14} /></div>{materials.map((item) => <label className="check-row" key={item}><input type="radio" name="material" checked={filters.material === item} onChange={() => update('material', filters.material === item ? '' : item)} />{item}</label>)}</div>
       <div className="filter-group"><div className="filter-title">Maksimum qiymət</div><input type="range" min="0" max={priceCeiling} step="10" value={filters.maxPrice || priceCeiling} onChange={(event) => { const value = Number(event.target.value); update('maxPrice', value >= priceCeiling ? 0 : value); }} /><div className="range-labels"><span>0 AZN</span><span>{filters.maxPrice ? `${filters.maxPrice} AZN` : 'Limitsiz'}</span></div></div>
       <div className="filter-group"><div className="filter-title">Ölçü <ChevronDown size={14} /></div>{['S', 'M', 'L'].map((item) => <label className="check-row" key={item}><input type="radio" name="size" checked={filters.size === item} onChange={() => update('size', filters.size === item ? '' : item)} />{item} çərçivə</label>)}</div>
+      <div className="filter-group"><label className="check-row"><input type="checkbox" checked={filters.vtoOnly} onChange={(event) => update('vtoOnly', event.target.checked)} />{az.collection.vtoFilter}</label></div>
     </aside>
   );
 }
@@ -656,31 +672,56 @@ function Collection({ products, stores, likedIds, onFavorite, onQuickView, onTry
   const [focused, setFocused] = useState(false);
   const [sort, setSort] = useState('Tövsiyə olunan');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({ gender: '', material: '', type: '', maxPrice: 0, size: '', seller: '' });
+  const [filters, setFilters] = useState(emptyCatalogFilters);
   const priceCeiling = useMemo(() => Math.max(100, Math.ceil(Math.max(0, ...products.map((product) => product.price)) / 10) * 10), [products]);
-  const shape = params.get('shape') ?? '';
+  const brands = useMemo(() => [...new Set(products.map((product) => product.brand.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [products]);
+  const colorOptions = useMemo(() => [...new Set(products.map((product) => product.color.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [products]);
+  const shapeParam = params.get('shape') ?? '';
   const queryType = params.get('type');
+  useEffect(() => {
+    if (!shapeParam) return;
+    setFilters((current) => (current.shape === shapeParam ? current : { ...current, shape: shapeParam }));
+  }, [shapeParam]);
   const filtered = useMemo(() => {
     const list = products.filter((product) => {
       const haystack = `${product.name} ${product.brand} ${product.vendor} ${product.shape} ${product.color} ${product.type}`.toLowerCase();
       const matchesQuery = haystack.includes(query.toLowerCase());
-      const matchesShape = !shape || product.shape.toLowerCase() === shape.toLowerCase();
+      const activeShape = filters.shape || shapeParam;
+      const matchesShape = !activeShape || product.shape.toLowerCase() === activeShape.toLowerCase();
       const matchesType = filters.type ? product.type === filters.type : queryType === 'sunglasses' ? product.type === 'Gün eynəyi' : queryType === 'optical' ? product.type === 'Optik çərçivə' : true;
-      return matchesQuery && matchesShape && matchesType && (!filters.size || product.size.startsWith(filters.size)) && (!filters.seller || product.vendorSlug === filters.seller) && (!filters.gender || product.gender === filters.gender) && (!filters.material || product.material === filters.material) && (!filters.maxPrice || product.price <= filters.maxPrice);
+      const matchesVto = !filters.vtoOnly || productSupportsVto(product);
+      return matchesQuery && matchesShape && matchesType && matchesVto && (!filters.brand || product.brand === filters.brand) && (!filters.color || product.color === filters.color) && (!filters.size || product.size.startsWith(filters.size)) && (!filters.seller || product.vendorSlug === filters.seller) && (!filters.gender || product.gender === filters.gender) && (!filters.material || product.material === filters.material) && (!filters.maxPrice || product.price <= filters.maxPrice);
     });
     if (sort === 'Qiymət: aşağıdan yuxarı') return [...list].sort((a, b) => a.price - b.price);
     if (sort === 'Qiymət: yuxarıdan aşağı') return [...list].sort((a, b) => b.price - a.price);
     if (sort === 'Ada görə') return [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [products, filters, query, queryType, shape, sort]);
-  const clearFilters = () => { setFilters({ gender: '', material: '', type: '', maxPrice: 0, size: '', seller: '' }); setQuery(''); setLocation('/collection'); };
+  }, [products, filters, query, queryType, shapeParam, sort]);
+  const clearFilters = () => { setFilters(emptyCatalogFilters()); setQuery(''); setLocation('/collection'); };
+  const activeChips = useMemo(() => {
+    const chips: { key: keyof CatalogFilters; label: string }[] = [];
+    if (filters.type) chips.push({ key: 'type', label: filters.type });
+    if (filters.brand) chips.push({ key: 'brand', label: filters.brand });
+    if (filters.seller) chips.push({ key: 'seller', label: stores.find((s) => s.slug === filters.seller)?.name ?? filters.seller });
+    if (filters.shape) chips.push({ key: 'shape', label: filters.shape });
+    if (filters.color) chips.push({ key: 'color', label: filters.color });
+    if (filters.gender) chips.push({ key: 'gender', label: filters.gender });
+    if (filters.material) chips.push({ key: 'material', label: filters.material });
+    if (filters.size) chips.push({ key: 'size', label: `${filters.size} ölçü` });
+    if (filters.maxPrice) chips.push({ key: 'maxPrice', label: `≤ ${filters.maxPrice} AZN` });
+    if (filters.vtoOnly) chips.push({ key: 'vtoOnly', label: az.collection.vtoFilter });
+    return chips;
+  }, [filters, stores]);
+  const removeChip = (key: keyof CatalogFilters) => {
+    setFilters({ ...filters, [key]: key === 'maxPrice' ? 0 : key === 'vtoOnly' ? false : '' });
+  };
   const suggestion = (value: string) => { setQuery(value); setFocused(false); };
   return (
     <>
       <main className="collection-page"><div className="container">
         <div className="collection-intro"><div><div className="eyebrow">Shop</div><h1>Eynəyini<br />burada tap.</h1></div><p>Təsdiqlənmiş optik mağazaların məhsullarını marka, model, forma, satıcı və ölçü ilə axtar.</p></div>
         <div className="collection-tools"><div className="search-box"><Search size={16} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setFocused(true)} placeholder="Eynək, marka və ya model axtar..." data-testid="input-search-products" />{focused && <div className="search-suggestions"><h4>Tez axtarış</h4><div className="suggestion-row"><button onClick={() => suggestion('Gün eynəyi')} data-testid="button-suggestion-sunglasses">Gün eynəyi</button><button onClick={() => suggestion('Aviator')} data-testid="button-suggestion-aviator">Aviator</button><button onClick={() => suggestion('Optika')} data-testid="button-suggestion-optika">Optika</button></div><h4 style={{ marginTop: 16 }}>Formalar</h4><div className="suggestion-row">{shapes.slice(0, 4).map((item) => <button key={item} onClick={() => suggestion(item)}>{item}</button>)}</div></div>}</div><button className="btn btn-secondary filter-toggle" onClick={() => setFilterOpen(!filterOpen)} data-testid="button-toggle-filters"><SlidersHorizontal size={14} /> Filtrlər</button><select className="select-control" value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sıralama" data-testid="select-sort"><option>Tövsiyə olunan</option><option>Qiymət: aşağıdan yuxarı</option><option>Qiymət: yuxarıdan aşağı</option><option>Ada görə</option></select></div>
-        <div className="catalog-layout"><Filters filters={filters} setFilters={setFilters} open={filterOpen} stores={stores} priceCeiling={priceCeiling} /><section><div className="catalog-head"><span><strong>{filtered.length}</strong> model</span><button className="text-link" onClick={clearFilters} data-testid="button-clear-filters">Təmizlə <X size={12} /></button></div><div className="product-grid">{filtered.length ? filtered.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Search size={22} /><h3>Bu axtarışa uyğun eynək tapılmadı.</h3><p>Axtarışı və ya filtrləri bir az yumşalt.</p><button className="btn btn-secondary" onClick={clearFilters} data-testid="button-empty-reset">Filtrləri sıfırla</button></div>}</div></section></div>
+        <div className="catalog-layout"><Filters filters={filters} setFilters={setFilters} open={filterOpen} stores={stores} priceCeiling={priceCeiling} brands={brands} colors={colorOptions} /><section><div className="catalog-head"><span><strong>{filtered.length}</strong> {az.collection.results}</span><button className="text-link" onClick={clearFilters} data-testid="button-clear-filters">{az.collection.clearFilters} <X size={12} /></button></div>{activeChips.length > 0 && <div className="mp-filter-chips">{activeChips.map((chip) => <span key={chip.key} className="mp-filter-chip">{chip.label}<button type="button" aria-label={`${chip.label} filtrini sil`} onClick={() => removeChip(chip.key)}><X size={12} /></button></span>)}</div>}<div className="product-grid">{filtered.length ? filtered.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Search size={22} /><h3>Bu axtarışa uyğun eynək tapılmadı.</h3><p>Axtarışı və ya filtrləri bir az yumşalt.</p><button className="btn btn-secondary" onClick={clearFilters} data-testid="button-empty-reset">Filtrləri sıfırla</button></div>}</div></section></div>
       </div></main><Footer />
     </>
   );
@@ -872,13 +913,13 @@ function SellerPage() {
 
 function WishlistPage({ products, likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
   const items = products.filter((product) => likedIds.has(product.id));
-  return <><main className="collection-page"><div className="container"><div className="collection-intro"><div><div className="eyebrow">Seçilmişlər</div><h1>Saxladığın<br />modellər.</h1></div></div><div className="product-grid wishlist-grid">{items.length ? items.map((product) => <ProductCard key={product.id} product={product} liked onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Heart size={22} /><h3>Hələ seçilmiş model yoxdur.</h3><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-wishlist">Eynəklərə bax</Link></div>}</div></div></main><Footer /></>;
+  return <><main className="collection-page"><div className="container"><div className="collection-intro"><div><div className="eyebrow">Seçilmişlər</div><h1>Saxladığınız<br />modellər.</h1></div></div><div className="product-grid wishlist-grid">{items.length ? items.map((product) => <ProductCard key={product.id} product={product} liked onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Heart size={22} /><h3>Hələ seçilmiş model yoxdur.</h3><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-wishlist">Eynəklərə bax</Link></div>}</div></div></main><Footer /></>;
 }
 
 function CartPage({ items, stores, onRemove, onCheckout }: { items: Product[]; stores: Vendor[]; onRemove: (id: number | string) => void; onCheckout: () => void }) {
   const total = items.reduce((sum, item) => sum + item.price, 0);
   const grouped = stores.map((vendor) => ({ vendor, items: items.filter((item) => item.vendorSlug === vendor.slug) })).filter((group) => group.items.length);
-  return <><main className="cart-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Səbət</div><h1>Sifarişin.</h1></div></div>{items.length ? <div className="cart-panel"><h2>{items.length} məhsul</h2>{grouped.map((group) => <div className="cart-items" key={group.vendor.slug}><div className="eyebrow">{group.vendor.name}</div>{group.items.map((item, itemIndex) => (
+  return <><main className="cart-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Səbət</div><h1>Sifarişiniz.</h1></div></div>{items.length ? <div className="cart-panel"><h2>{items.length} məhsul</h2>{grouped.map((group) => <div className="cart-items" key={group.vendor.slug}><div className="eyebrow">{group.vendor.name}</div>{group.items.map((item, itemIndex) => (
                 <div className="cart-row" key={`${item.id}-${group.vendor.slug}-${itemIndex}`}>
                   <div className="cart-row-main">
                     <img className="cart-row-thumb" src={productImageSrc(item.image)} alt="" />
@@ -886,7 +927,7 @@ function CartPage({ items, stores, onRemove, onCheckout }: { items: Product[]; s
                   </div>
                   <button className="icon-button" onClick={() => onRemove(item.id)} aria-label={`${item.name} sil`} data-testid={`button-remove-cart-${item.id}`}><Trash2 size={15} /></button>
                 </div>
-              ))}</div>)}<div className="cart-row"><strong>Cəmi</strong><strong>{money(total)}</strong></div><button className="btn" onClick={onCheckout} data-testid="button-checkout">Sifarişə keç <ArrowRight size={14} /></button></div> : <div className="empty-state"><ShoppingBag size={22} /><h3>Səbətin hələ boşdur.</h3><p>Məhsulları bir neçə satıcıdan seçib burada toplaya bilərsən.</p><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-cart">Eynəklərə bax</Link></div>}</div></main><Footer /></>;
+              ))}</div>)}<div className="cart-row"><strong>Cəmi</strong><strong>{money(total)}</strong></div><button className="btn" onClick={onCheckout} data-testid="button-checkout">Sifarişə keç <ArrowRight size={14} /></button></div> : <div className="empty-state"><ShoppingBag size={22} /><h3>Səbətiniz hələ boşdur.</h3><p>Məhsulları bir neçə satıcıdan seçib burada toplaya bilərsiniz.</p><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-cart">Eynəklərə bax</Link></div>}</div></main><Footer /></>;
 }
 
 function AccountPage() {
@@ -921,12 +962,12 @@ function AccountPage() {
   };
   const shortcuts = isSignedIn
     ? [
-        { href: '#orders', icon: <Package size={20} strokeWidth={1.8} />, title: 'Sifarişlərim', text: orders.isLoading ? 'Yüklənir…' : `${orderCount} sifariş`, testId: 'link-account-orders' },
-        { href: '/wishlist', icon: <Heart size={20} strokeWidth={1.8} />, title: 'Seçilmişlər', text: 'Bəyəndiyin çərçivələr', testId: 'link-account-wishlist' },
+        { href: '/account/orders', icon: <Package size={20} strokeWidth={1.8} />, title: 'Sifarişlərim', text: orders.isLoading ? 'Yüklənir…' : `${orderCount} sifariş`, testId: 'link-account-orders' },
+        { href: '/wishlist', icon: <Heart size={20} strokeWidth={1.8} />, title: 'Seçilmişlər', text: 'Bəyəndiyiniz çərçivələr', testId: 'link-account-wishlist' },
       ]
     : [
-        { href: '/wishlist', icon: <Heart size={20} strokeWidth={1.8} />, title: 'Seçilmişlər', text: 'Bu brauzerdə saxladıqların', testId: 'link-account-wishlist' },
-        { href: '/cart', icon: <ShoppingBag size={20} strokeWidth={1.8} />, title: 'Səbət', text: 'Seçdiyin məhsullar', testId: 'link-account-cart' },
+        { href: '/wishlist', icon: <Heart size={20} strokeWidth={1.8} />, title: 'Seçilmişlər', text: 'Bu brauzerdə saxladıqlarınız', testId: 'link-account-wishlist' },
+        { href: '/cart', icon: <ShoppingBag size={20} strokeWidth={1.8} />, title: 'Səbət', text: 'Seçdiyiniz məhsullar', testId: 'link-account-cart' },
         { href: '/collection', icon: <Glasses size={20} strokeWidth={1.8} />, title: 'Eynəklərə bax', text: 'Optik və gün eynəkləri', testId: 'link-account-collection' },
       ];
   return (
@@ -943,7 +984,7 @@ function AccountPage() {
               ) : isSignedIn ? (
                 <>
                   <h1>Salam{firstName ? `, ${firstName}` : ''}.</h1>
-                  <p className="account-hero-sub" data-testid="text-account-identity">{email} ilə daxil olmusan. Sifarişlərin və seçimlərin burada.</p>
+                  <p className="account-hero-sub" data-testid="text-account-identity">{email} ilə daxil olmusunuz. Sifarişləriniz və seçimləriniz burada.</p>
                   <div className="account-hero-actions">
                     <Link href="/collection" className="btn account-cta" data-testid="link-account-shop">Eynəkləri kəşf et <ArrowRight size={16} /></Link>
                     <button className="account-text-action" type="button" onClick={() => void signOutAndGo('/')} data-testid="button-account-sign-out">Hesabdan çıx</button>
@@ -951,13 +992,13 @@ function AccountPage() {
                 </>
               ) : (
                 <>
-                  <h1>Sifarişlərin bir yerdə.</h1>
-                  <p className="account-hero-sub">Daxil ol və ya hesab yarat: sifarişlərini izlə, bəyəndiyin çərçivələri saxla.</p>
+                  <h1>Sifarişləriniz bir yerdə.</h1>
+                  <p className="account-hero-sub">Daxil olun və ya hesab yaradın: sifarişlərinizi izləyin, bəyəndiyiniz çərçivələri saxlayın.</p>
                   <div className="account-hero-actions">
                     <Link href="/sign-in?redirect_url=%2Faccount" className="btn account-cta" data-testid="link-account-sign-in">Daxil ol <ArrowRight size={16} /></Link>
                     <Link href="/sign-up" className="account-text-action" data-testid="link-account-sign-up">Hesab yarat</Link>
                   </div>
-                  <div className="account-hero-note"><Info size={14} /> Hesab məcburi deyil, qonaq kimi də sifariş verə bilərsən.</div>
+                  <div className="account-hero-note"><Info size={14} /> Hesab məcburi deyil, qonaq kimi də sifariş verə bilərsiniz.</div>
                 </>
               )}
             </div>
@@ -966,12 +1007,13 @@ function AccountPage() {
 
         <section className="account-shortcuts-section">
           <div className="container account-shortcuts">
-            {shortcuts.map((item) => {
-              const body = <><span className="account-shortcut-icon">{item.icon}</span><span className="account-shortcut-text"><strong>{item.title}</strong><small>{item.text}</small></span><ArrowRight size={16} className="account-shortcut-arrow" /></>;
-              return item.href.startsWith('#')
-                ? <a key={item.href} href={item.href} className="account-shortcut" data-testid={item.testId}>{body}</a>
-                : <Link key={item.href} href={item.href} className="account-shortcut" data-testid={item.testId}>{body}</Link>;
-            })}
+            {shortcuts.map((item) => (
+              <Link key={item.href} href={item.href} className="account-shortcut" data-testid={item.testId}>
+                <span className="account-shortcut-icon">{item.icon}</span>
+                <span className="account-shortcut-text"><strong>{item.title}</strong><small>{item.text}</small></span>
+                <ArrowRight size={16} className="account-shortcut-arrow" />
+              </Link>
+            ))}
             {isSignedIn && <AccountSettingsButton open={settingsOpen} onClick={() => setSettingsOpen((current) => !current)} />}
           </div>
         </section>
@@ -995,51 +1037,78 @@ function AccountPage() {
           </section>
         )}
 
-        {isLoaded && isSignedIn && (
-          <section className="account-orders" id="orders" aria-labelledby="account-orders-heading">
-            <div className="container">
-              <div className="section-head">
-                <div><div className="home-overline">Sifariş tarixçəsi</div><h2 className="section-title" id="account-orders-heading">Sifarişlərin</h2></div>
-                <span className="home-count" data-testid="text-account-order-count">{orderCount} sifariş</span>
+      </main>
+      <Footer />
+    </>
+  );
+}
+
+function AccountOrdersPage() {
+  const { isLoaded, isSignedIn } = useAuthSession();
+  const orders = useListAccountOrders({
+    query: {
+      queryKey: getListAccountOrdersQueryKey(),
+      enabled: isLoaded && Boolean(isSignedIn),
+      retry: false,
+    },
+  });
+
+  if (isLoaded && !isSignedIn) {
+    return <Redirect to="/sign-in?redirect_url=%2Faccount%2Forders" />;
+  }
+
+  const orderCount = orders.data?.length ?? 0;
+
+  return (
+    <>
+      <main className="account-page account-orders-page">
+        <section className="account-orders">
+          <div className="container">
+            <div className="section-head">
+              <div>
+                <Link href="/account" className="text-link account-orders-back" data-testid="link-account-orders-back">← Hesabım</Link>
+                <div className="home-overline">Sifariş tarixçəsi</div>
+                <h1 className="section-title" id="account-orders-heading">Sifarişləriniz</h1>
               </div>
-              {orders.isLoading ? (
-                <div className="account-empty account-orders-loading" role="status" data-testid="status-account-orders-loading" aria-label="Sifarişlər yüklənir"><span /><span /></div>
-              ) : orders.isError ? (
-                <div className="account-empty" role="alert" data-testid="status-account-orders-error">
-                  <ShieldCheck size={20} aria-hidden="true" />
-                  <span>Sifariş tarixçəsini yükləmək alınmadı. Yenidən yoxlayın.</span>
-                  <button className="text-link" type="button" onClick={() => void orders.refetch()} data-testid="button-account-orders-retry">Yenidən cəhd et <ArrowRight size={14} /></button>
-                </div>
-              ) : orders.data?.length ? (
-                <div className="account-order-list">
-                  {orders.data.map((order) => (
-                    <article className="account-order-card" key={order.id} data-testid={`card-account-order-${order.id}`}>
-                      <div className="account-order-main">
-                        <div>
-                          <strong>{order.orderNumber}</strong>
-                          <span>{orderStatusLabel(order.status, order.fulfillmentMethod)}</span>
-                        </div>
-                        <div>
-                          <strong>{order.totalAzN === null ? 'Məbləğ təsdiqlənir' : formatOrderMoney(order.totalAzN)}</strong>
-                          <span>{dateLabel(order.createdAt)}</span>
-                        </div>
-                      </div>
-                      <Link href={`/order/${order.id}`} className="text-link" data-testid={`link-account-order-${order.id}`}>
-                        Sifarişə bax <ArrowRight size={14} />
-                      </Link>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="account-empty" data-testid="status-account-orders-empty">
-                  <Package size={20} strokeWidth={1.7} aria-hidden="true" />
-                  <span>Hələ bu hesabla sifariş verməmisən. Qonaq sifarişləri hesab tarixçəsinə əlavə olunmur.</span>
-                  <Link href="/collection" className="text-link" data-testid="link-account-empty-orders-shop">Eynəklərə bax <ArrowRight size={14} /></Link>
-                </div>
-              )}
+              <span className="home-count" data-testid="text-account-order-count">{orderCount} sifariş</span>
             </div>
-          </section>
-        )}
+            {!isLoaded || orders.isLoading ? (
+              <div className="account-empty account-orders-loading" role="status" data-testid="status-account-orders-loading" aria-label="Sifarişlər yüklənir"><span /><span /></div>
+            ) : orders.isError ? (
+              <div className="account-empty" role="alert" data-testid="status-account-orders-error">
+                <ShieldCheck size={20} aria-hidden="true" />
+                <span>Sifariş tarixçəsini yükləmək alınmadı. Yenidən yoxlayın.</span>
+                <button className="text-link" type="button" onClick={() => void orders.refetch()} data-testid="button-account-orders-retry">Yenidən cəhd et <ArrowRight size={14} /></button>
+              </div>
+            ) : orders.data?.length ? (
+              <div className="account-order-list">
+                {orders.data.map((order) => (
+                  <article className="account-order-card" key={order.id} data-testid={`card-account-order-${order.id}`}>
+                    <div className="account-order-main">
+                      <div>
+                        <strong>{order.orderNumber}</strong>
+                        <span>{orderStatusLabel(order.status, order.fulfillmentMethod)}</span>
+                      </div>
+                      <div>
+                        <strong>{order.totalAzN === null ? 'Məbləğ təsdiqlənir' : formatOrderMoney(order.totalAzN)}</strong>
+                        <span>{dateLabel(order.createdAt)}</span>
+                      </div>
+                    </div>
+                    <Link href={`/order/${order.id}`} className="text-link" data-testid={`link-account-order-${order.id}`}>
+                      Sifarişə bax <ArrowRight size={14} />
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="account-empty" data-testid="status-account-orders-empty">
+                <Package size={20} strokeWidth={1.7} aria-hidden="true" />
+                <span>Hələ bu hesabla sifariş verməmisiniz. Qonaq sifarişləri hesab tarixçəsinə əlavə olunmur.</span>
+                <Link href="/collection" className="text-link" data-testid="link-account-empty-orders-shop">Eynəklərə bax <ArrowRight size={14} /></Link>
+              </div>
+            )}
+          </div>
+        </section>
       </main>
       <Footer />
     </>
@@ -1094,7 +1163,7 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
         <div className="mobile-drawer-body">
           <div className="mobile-drawer-account">
             <span className="mobile-drawer-avatar"><UserRound size={23} /></span>
-            <div><strong>Xoş gəlmisən!</strong><p>Seçdiklərini və səbətini bir yerdə gör.</p></div>
+            <div><strong>Xoş gəlmisiniz!</strong><p>Seçdiklərinizi və səbətinizi bir yerdə görün.</p></div>
             <Link href="/account" className="mobile-drawer-account-link" onClick={onClose}>Hesabıma bax <ArrowRight size={16} /></Link>
           </div>
           <div className="mobile-drawer-label">KƏŞF ET</div>
@@ -1105,13 +1174,12 @@ function MobileDrawer({ onClose }: { onClose: () => void }) {
             <Link href="/brands" onClick={onClose} data-testid="link-mobile-brands">Brendlər <ChevronRight size={18} /></Link>
             <Link href="/stores" onClick={onClose} data-testid="link-mobile-stores">Mağazalar <ChevronRight size={18} /></Link>
           </nav>
-          <div className="mobile-drawer-label mobile-drawer-label--secondary">SƏNİN ÜÇÜN</div>
+          <div className="mobile-drawer-label mobile-drawer-label--secondary">SİZİN ÜÇÜN</div>
           <nav className="mobile-drawer-links" aria-label="Şəxsi keçidlər">
             <Link href="/account" onClick={onClose} data-testid="link-mobile-account">Hesab <ChevronRight size={18} /></Link>
             <Link href="/destek" onClick={onClose} data-testid="link-mobile-help">Dəstək <ChevronRight size={18} /></Link>
-            <a href="mailto:info@eynek.store">info@eynek.store <ChevronRight size={18} /></a>
             <Link href="/wishlist" onClick={onClose}>Seçilmişlər <ChevronRight size={18} /></Link>
-            <Link href="/cart" onClick={onClose}>Səbətim <ChevronRight size={18} /></Link>
+            <Link href="/cart" onClick={onClose}>Səbətiniz <ChevronRight size={18} /></Link>
           </nav>
         </div>
       </aside>
@@ -1262,6 +1330,7 @@ function Storefront() {
         <Route path="/seller"><SellerPage /></Route>
         <Route path="/wishlist"><WishlistPage {...common} /></Route>
         <Route path="/cart"><CartPage items={cartItems} stores={stores} onRemove={removeFromCart} onCheckout={() => setLocation('/checkout')} /></Route>
+        <Route path="/account/orders"><AccountOrdersPage /></Route>
         <Route path="/account"><AccountPage /></Route>
         <Route path="/destek"><HelpPage /></Route>
         <Route path="/qaydalar"><LegalPage slug="qaydalar" /></Route>
@@ -1276,7 +1345,7 @@ function Storefront() {
       <MobileBottomNav onTryOn={openTintTryOn} />
       {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={(product) => openTintTryOn(product.id)} />}
       {toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}
-      {isLoaded && isSignedIn && (
+      {isLoaded && (
         <SellerSupportWidget enabled uploadMode="buyer" defaultName={user?.name ?? ''} defaultEmail={user?.email ?? ''} />
       )}
     </div>
