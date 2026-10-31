@@ -1409,25 +1409,6 @@ body { background: #f8faff; }
 }
 
 /* Marketplace header — mobile (must override editorial .nav flex/grid above) */
-@media (max-width: 720px) {
-  .mp-trust-bar .container {
-    width: min(1240px, calc(100% - 24px));
-  }
-  .mp-trust-inner {
-    flex-direction: column;
-    align-items: stretch;
-    flex-wrap: nowrap;
-    overflow-x: visible;
-    gap: 5px;
-    padding: 8px 0;
-    font-size: 10px;
-  }
-  .mp-trust-inner span {
-    justify-content: center;
-    white-space: nowrap;
-  }
-}
-
 @media (max-width: 980px) {
   .topbar.mp-topbar .container.nav {
     display: grid !important;
