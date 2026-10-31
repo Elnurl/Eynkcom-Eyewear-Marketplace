@@ -472,6 +472,29 @@ select:focus-visible {
 .haven-footer.mp-footer a:hover {
   color: var(--mp-lime);
 }
+.haven-footer-brand .haven-footer-logo {
+  display: inline-block;
+  line-height: 0;
+}
+.haven-footer-brand .haven-footer-logo .brand-image {
+  width: min(140px, 52vw);
+  height: auto;
+}
+.haven-footer-brand .haven-footer-email {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #b8b8b4;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.haven-footer-brand .haven-footer-email:hover {
+  color: var(--mp-lime);
+}
+.haven-footer-brand p {
+  margin-top: 14px;
+}
 
 /* Typography refresh */
 body {

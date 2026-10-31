@@ -422,7 +422,12 @@ function Footer() {
     <footer className="haven-footer mp-footer">
       <div className="haven-shell haven-footer-grid">
         <div className="haven-footer-brand">
-          <Link href="/" className="site-wordmark">EYNƏK</Link>
+          <Link href="/" className="haven-footer-logo" aria-label="EYNƏK ana səhifə">
+            <BrandLogo />
+          </Link>
+          <a href="mailto:info@eynek.store" className="haven-footer-email" data-testid="link-footer-email">
+            info@eynek.store
+          </a>
           <p>İstədiyin eynəklər bir platformada. Azərbaycandakı optikaları və çərçivələri bir yerdə kəşf et.</p>
           <NewsletterSignup />
       </div>
