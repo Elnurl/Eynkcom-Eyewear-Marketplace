@@ -42,6 +42,7 @@ import { SellerSupportWidget } from '@/components/seller-support-widget';
 import { TrustBar } from '@/components/marketplace/TrustBar';
 import { MegaNav } from '@/components/marketplace/MegaNav';
 import { MarketProductCard, productSupportsVto } from '@/components/marketplace/MarketProductCard';
+import { fetchVtoSkus, openEynekTryOn, waitForEynekVto } from '@/lib/eynek-vto';
 import { HomeMarketSections } from '@/components/marketplace/HomeMarketSections';
 import { VendorMark } from '@/components/marketplace/VendorMark';
 import { az } from '@/i18n/az';
@@ -115,6 +116,7 @@ type Product = {
   isAvailable: boolean;
   location: string;
   previewOnly?: boolean;
+  vtoReady?: boolean;
 };
 
 type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'since' | 'description' | 'logoPath'> & { count: number };
@@ -136,27 +138,6 @@ const materials = ['Asetat', 'Metal', 'Titanium', 'Bio-nylon'];
 
 function money(value: number) {
   return `${value.toFixed(0)} AZN`;
-}
-
-const TINT_TRY_ON_URL = 'https://tintvto.com/?q=Eb6iMswtR8R7';
-
-function openTintTryOn(variantId?: number | string) {
-  const sku = variantId != null && String(variantId) !== '' ? String(variantId) : '';
-  const widget = document.querySelector('tint-vto') as (HTMLElement & { open?: () => void }) | null;
-  if (widget?.open) {
-    widget.setAttribute('variant-id', sku);
-    try {
-      widget.open();
-      return;
-    } catch {
-      /* fall through to URL */
-    }
-  }
-  const url = sku
-    ? `https://tintvto.com/?customer_product_skus=${encodeURIComponent(sku)}`
-    : TINT_TRY_ON_URL;
-  const opened = window.open(url, '_blank', 'noopener,noreferrer');
-  if (!opened) window.location.assign(url);
 }
 
 function assetUrl(path: string) {
@@ -475,7 +456,7 @@ function ProductCard({ product, liked, onFavorite, onTryOn, onAdd }: { product: 
   );
 }
 
-type CommonProps = { products: Product[]; stores: Vendor[]; likedIds: Set<number | string>; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void; onAdd: (product: Product) => void };
+type CommonProps = { products: Product[]; stores: Vendor[]; likedIds: Set<number | string>; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product?: Product) => void; onAdd: (product: Product) => void };
 
 function frameSwatch(color: string) {
   const known: Record<string, string> = {
@@ -512,7 +493,7 @@ function HavenCard({ product, liked, onFavorite, onTryOn, onAdd, editorPick }: {
         >
           <Heart size={18} strokeWidth={1.6} fill={liked ? 'currentColor' : 'none'} />
         </button>
-        <button type="button" className="haven-card-action haven-card-action--try" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onTryOn(product); }} aria-label="Üzündə yoxla" data-testid={`button-try-on-${product.id}`}><ScanFace size={18} strokeWidth={1.6} /></button>
+        {product.vtoReady ? <button type="button" className="haven-card-action haven-card-action--try" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onTryOn(product); }} aria-label="Üzündə yoxla" data-testid={`button-try-on-${product.id}`}><ScanFace size={18} strokeWidth={1.6} /></button> : null}
         <button type="button" className="haven-card-action haven-card-action--cart" disabled={product.previewOnly || !product.isAvailable} onClick={(event) => { event.preventDefault(); event.stopPropagation(); onAdd(product); }} aria-label="Səbətə əlavə et" data-testid={`button-add-cart-${product.id}`}><ShoppingBag size={18} strokeWidth={1.6} /></button>
       </div>
       <div className="haven-card-copy">
@@ -536,7 +517,7 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
             <h1>{az.hero.titleLine1}<br />{az.hero.titleLine2}</h1>
             <div className="haven-hero-actions">
               <Link href="/collection" className="haven-btn" data-testid="link-hero-collection">{az.hero.ctaCollection} <ArrowRight size={16} /></Link>
-              <button className="haven-text-btn" onClick={() => openTintTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> {az.hero.ctaVto}</button>
+              <button className="haven-text-btn" onClick={() => onTryOn()} data-testid="button-hero-tryon"><ScanFace size={16} /> {az.hero.ctaVto}</button>
               </div>
             </div>
           <div className="haven-shell haven-hero-foot" aria-hidden="true" />
@@ -587,7 +568,7 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
               <div className="haven-tile haven-tile--dark haven-tile--virtual">
                 <img src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" />
                 <h3>Almazdan əvvəl üzündə yoxla.</h3>
-                <button type="button" className="haven-tile-btn" onClick={() => openTintTryOn()} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
+                <button type="button" className="haven-tile-btn" onClick={() => onTryOn()} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
           </div>
               <div className="haven-tile haven-tile--wide haven-tile--light haven-tile--store">
                 <img src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" />
@@ -800,7 +781,7 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
               <img className="detail-photo" draggable={false} src={galleryImage.startsWith('data:') || galleryImage.startsWith('http') ? galleryImage : assetUrl(galleryImage)} alt={`${product.name} — ${showSide ? 'yan' : 'ön'} görünüş`} />
               {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--prev" onClick={() => setShowSide((current) => !current)} aria-label="Əvvəlki şəkil" data-testid="button-gallery-prev"><ChevronLeft size={18} /></button>}
               {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--next" onClick={() => setShowSide((current) => !current)} aria-label="Növbəti şəkil" data-testid="button-gallery-next"><ChevronRight size={18} /></button>}
-              <button className="detail-try-on" onClick={() => onTryOn(product)} data-testid="button-try-on-detail"><ScanFace size={15} /> Virtual önizlə</button>
+              {product.vtoReady ? <button className="detail-try-on" onClick={() => onTryOn(product)} data-testid="button-try-on-detail"><ScanFace size={15} /> Virtual önizlə</button> : null}
             </div>
             {hasSecondImage && <div className="detail-gallery-dots" aria-label="Şəkil görünüşü"><button className={!showSide ? 'active' : ''} onClick={() => setShowSide(false)} aria-label="Ön görünüş" /><button className={showSide ? 'active' : ''} onClick={() => setShowSide(true)} aria-label="Yan görünüş" /></div>}
           </div>
@@ -846,7 +827,7 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
 }
 
 function QuickView({ product, onClose, onAdd, onTryOn }: { product: Product; onClose: () => void; onAdd: (product: Product, message?: string) => void; onTryOn: (product: Product) => void }) {
-  return <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Sürətli məhsul baxışı" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="tryon-modal quick-view-modal"><div className="tryon-top" style={{ borderBottom: '1px solid var(--line)', color: 'var(--navy)' }}><div><div className="eyebrow">{product.type}</div><h2>{product.name}</h2><p style={{ color: 'var(--muted)' }}>{product.vendor} · {product.location}</p></div><button className="icon-button" onClick={onClose} aria-label="Baxışı bağla" data-testid="button-close-quick-view"><X size={19} /></button></div><div className="quick-view-layout"><div className={`detail-art quick-view-art ${product.tone}`}><img className="detail-photo" src={product.image.startsWith('data:') || product.image.startsWith('http') ? product.image : assetUrl(product.image)} alt={`${product.name} məhsul fotosu`} /></div><div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div className="detail-price" style={{ marginTop: 0 }}>{money(product.price)}</div><p className="detail-copy">{product.description}</p><div className="spec-list" style={{ margin: '8px 0 17px' }}><div><dt>Forma</dt><dd>{product.shape}</dd></div><div><dt>Ölçü</dt><dd>{product.size}</dd></div><div><dt>Stok</dt><dd>{product.stock}</dd></div></div><button className="btn btn-full" disabled={!product.isAvailable} onClick={() => onAdd(product)} data-testid="button-add-cart-quick-view"><ShoppingBag size={14} /> {product.isAvailable ? 'Səbətə əlavə et' : 'Stokda yoxdur'}</button><button className="try-link" onClick={() => onTryOn(product)} data-testid="button-try-on-quick-view"><ScanFace size={14} /> Üzümdə yoxla</button></div></div></div></div>;
+  return <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Sürətli məhsul baxışı" onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="tryon-modal quick-view-modal"><div className="tryon-top" style={{ borderBottom: '1px solid var(--line)', color: 'var(--navy)' }}><div><div className="eyebrow">{product.type}</div><h2>{product.name}</h2><p style={{ color: 'var(--muted)' }}>{product.vendor} · {product.location}</p></div><button className="icon-button" onClick={onClose} aria-label="Baxışı bağla" data-testid="button-close-quick-view"><X size={19} /></button></div><div className="quick-view-layout"><div className={`detail-art quick-view-art ${product.tone}`}><img className="detail-photo" src={product.image.startsWith('data:') || product.image.startsWith('http') ? product.image : assetUrl(product.image)} alt={`${product.name} məhsul fotosu`} /></div><div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}><div className="detail-price" style={{ marginTop: 0 }}>{money(product.price)}</div><p className="detail-copy">{product.description}</p><div className="spec-list" style={{ margin: '8px 0 17px' }}><div><dt>Forma</dt><dd>{product.shape}</dd></div><div><dt>Ölçü</dt><dd>{product.size}</dd></div><div><dt>Stok</dt><dd>{product.stock}</dd></div></div><button className="btn btn-full" disabled={!product.isAvailable} onClick={() => onAdd(product)} data-testid="button-add-cart-quick-view"><ShoppingBag size={14} /> {product.isAvailable ? 'Səbətə əlavə et' : 'Stokda yoxdur'}</button>{product.vtoReady ? <button className="try-link" onClick={() => onTryOn(product)} data-testid="button-try-on-quick-view"><ScanFace size={14} /> Üzümdə yoxla</button> : null}</div></div></div></div>;
 }
 
 type SellerForm = { storeName: string; owner: string; phone: string; email: string; business: string; tax: string; address: string; instagram: string; website: string; categories: string };
@@ -1218,7 +1199,20 @@ function Storefront() {
       })),
     [productRows],
   );
-  const allProducts = catalogProducts.length > 0 ? catalogProducts : sampleCatalog;
+  const [vtoSkus, setVtoSkus] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      await waitForEynekVto();
+      const skus = await fetchVtoSkus();
+      if (!cancelled) setVtoSkus(skus);
+    })();
+    return () => { cancelled = true; };
+  }, [productRows]);
+  const allProducts = useMemo(() => {
+    const base = catalogProducts.length > 0 ? catalogProducts : sampleCatalog;
+    return base.map((product) => ({ ...product, vtoReady: vtoSkus.has(String(product.id)) }));
+  }, [catalogProducts, vtoSkus]);
   const stores = useMemo(
     () =>
       storeRows.map((store: SellerStore): Vendor => ({
@@ -1290,7 +1284,16 @@ function Storefront() {
     return [...grouped.values()];
   }, [cartItems]);
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
-  const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id)) { next.delete(id); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
+  const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id) || next.has(String(id))) { next.delete(id); next.delete(String(id)); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
+  const launchTryOn = (product?: Product) => {
+    openEynekTryOn({
+      product,
+      catalog: allProducts.filter((item) => item.vtoReady),
+      resolveImage: assetUrl,
+      onLike: toggleFavorite,
+      onViewLikes: () => setLocation('/wishlist'),
+    });
+  };
   const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); showToast(message); };
   const buyNow = (product: Product, quantity = 1) => {
     if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; }
@@ -1304,7 +1307,7 @@ function Storefront() {
     likedIds,
     onFavorite: toggleFavorite,
     onQuickView: (product) => setQuickProduct(product),
-    onTryOn: (product) => openTintTryOn(product.id),
+    onTryOn: launchTryOn,
     onAdd: addToCart,
   };
   const catalogError = productsQuery.error || storesQuery.error;
@@ -1332,12 +1335,12 @@ function Storefront() {
         <Route path="/qaytarma"><LegalPage slug="qaytarma" /></Route>
         <Route path="/satici-muqavilesi"><LegalPage slug="satici-muqavilesi" /></Route>
         <Route path="/vendor/:slug"><VendorPage {...common} /></Route>
-        <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={(product) => openTintTryOn(product.id)} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
+        <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={launchTryOn} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
         <Route path="/"><Home {...common} onAdd={addToCart} /></Route>
         <Route component={NotFound} />
       </Switch>
-      <MobileBottomNav onTryOn={openTintTryOn} />
-      {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={(product) => openTintTryOn(product.id)} />}
+      <MobileBottomNav onTryOn={launchTryOn} />
+      {quickProduct && <QuickView product={quickProduct} onClose={() => setQuickProduct(null)} onAdd={addToCart} onTryOn={launchTryOn} />}
       {toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}
       {isLoaded && (
         <SellerSupportWidget enabled uploadMode="buyer" defaultName={user?.name ?? ''} defaultEmail={user?.email ?? ''} />

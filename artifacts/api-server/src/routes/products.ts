@@ -19,7 +19,31 @@ import {
 import { db, sellerProductsTable, sellerStoresTable } from "@workspace/db";
 import { requireMarketplaceAdmin, requireUserEmail } from "./access";
 import { cleanupReplacedImages, imageBelongsToSeller, isUploadedImage } from "../lib/productImages";
+import { deleteSellerProductFromVto, syncSellerProductToVto, vtoConfigured } from "../lib/eynekVto";
 import { requireAuth } from "../middlewares/requireAuth";
+
+function queueVtoSync(
+  log: { info: (obj: object, msg: string) => void; warn: (obj: object, msg: string) => void },
+  product: { id: string; name: string; size: string; frontImage: string; sideImage: string },
+  seller: string,
+) {
+  if (!vtoConfigured()) return;
+  void syncSellerProductToVto({
+    id: product.id,
+    name: product.name,
+    size: product.size,
+    frontImage: product.frontImage,
+    sideImage: product.sideImage,
+    seller,
+  })
+    .then((result) => {
+      if (!result.ok) log.warn({ productId: product.id, error: result.error }, "VTO sync failed");
+      else log.info({ productId: product.id }, "VTO product synced");
+    })
+    .catch((error: unknown) => {
+      log.warn({ productId: product.id, error }, "VTO sync crashed");
+    });
+}
 
 const router: IRouter = Router();
 
@@ -144,6 +168,7 @@ router.post("/seller/products", requireAuth, async (req, res): Promise<void> => 
     })
     .returning();
   req.log.info({ productId: product.id, sellerId: store.id }, "Seller product created for review");
+  queueVtoSync(req.log, product, store.slug);
   res.status(201).json(CreateSellerProductResponse.parse(serializeSellerProduct(product)));
 });
 
@@ -197,6 +222,10 @@ router.patch("/seller/products/:id", requireAuth, async (req, res): Promise<void
   await cleanupReplacedImages(
     [existing.frontImage, existing.sideImage], [product.frontImage, product.sideImage], store.id,
   );
+  const vtoFieldsChanged = ["frontImage", "sideImage", "name", "size"].some(
+    (key) => key in parsed.data && parsed.data[key as keyof typeof parsed.data] !== existing[key as keyof typeof existing],
+  );
+  if (vtoFieldsChanged) queueVtoSync(req.log, product, store.slug);
   res.json(UpdateSellerProductResponse.parse(serializeSellerProduct(product)));
 });
 
@@ -224,6 +253,7 @@ router.delete("/seller/products/:id", requireAuth, async (req, res): Promise<voi
   }
   req.log.info({ productId: product.id }, "Seller product deleted");
   await cleanupReplacedImages([product.frontImage, product.sideImage], [], store.id);
+  void deleteSellerProductFromVto(product.id);
   res.sendStatus(204);
 });
 
@@ -267,6 +297,10 @@ router.patch("/admin/products/:id/approval", requireAuth, async (req, res): Prom
   if (!product) {
     res.status(404).json({ error: "Məhsul tapılmadı." });
     return;
+  }
+  if (body.data.approvalStatus === "approved") {
+    const [store] = await db.select().from(sellerStoresTable).where(eq(sellerStoresTable.id, product.sellerId)).limit(1);
+    if (store) queueVtoSync(req.log, product, store.slug);
   }
   res.json(ReviewSellerProductResponse.parse(serializeSellerProduct(product)));
 });

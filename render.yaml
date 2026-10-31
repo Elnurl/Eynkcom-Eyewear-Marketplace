@@ -60,6 +60,16 @@ services:
         sync: false
       - key: S3_REGION
         value: auto
+      - key: VTO_URL
+        value: https://tryon-wa.onrender.com
+      - key: VTO_STORE
+        value: eynek-store
+      - key: VTO_API_KEY
+        sync: false
+      - key: VITE_EYNEK_VTO_ORIGIN
+        value: https://tryon-wa.onrender.com
+      - key: VITE_EYNEK_VTO_STORE
+        value: eynek-store
 
 databases:
   - name: eynek-db

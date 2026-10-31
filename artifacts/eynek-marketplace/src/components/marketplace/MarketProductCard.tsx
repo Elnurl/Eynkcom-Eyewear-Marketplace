@@ -17,10 +17,11 @@ export type MarketProduct = {
   tone: string;
   previewOnly?: boolean;
   isAvailable: boolean;
+  vtoReady?: boolean;
 };
 
-export function productSupportsVto(product: Pick<MarketProduct, 'previewOnly' | 'isAvailable'>) {
-  return !product.previewOnly && product.isAvailable;
+export function productSupportsVto(product: Pick<MarketProduct, 'previewOnly' | 'vtoReady'>) {
+  return Boolean(product.vtoReady) && !product.previewOnly;
 }
 
 type HoverImage = { src: string; kind: 'worn' | 'side' } | null;

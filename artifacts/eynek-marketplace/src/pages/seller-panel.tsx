@@ -10,6 +10,7 @@ import {
 import { useSellerWorkspace, type SellerProduct, type SellerProductInput } from '@/hooks/use-seller-workspace';
 import { BrandLogo } from '@/components/brand-logo';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
+import { fetchVtoSkus } from '@/lib/eynek-vto';
 
 function imageUploadContentType(file: File): 'image/jpeg' | 'image/png' | null {
   const type = file.type.toLowerCase();
@@ -73,10 +74,19 @@ export default function SellerPanel() {
   
   // Search and Filter
   const [searchQuery, setSearchQuery] = useState('');
+  const [vtoSkus, setVtoSkus] = useState<Set<string>>(new Set());
   
   useEffect(() => {
     if (!isAuthLoading && !isAuthenticated) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-panel')}`);
   }, [isAuthLoading, isAuthenticated, setLocation]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchVtoSkus().then((skus) => {
+      if (!cancelled) setVtoSkus(skus);
+    });
+    return () => { cancelled = true; };
+  }, [products]);
 
   useEffect(() => {
     if (!store) return;
@@ -368,7 +378,7 @@ export default function SellerPanel() {
                             <div>
                               <strong>{product.name}</strong>
                               <span>{product.color}</span>
-                              <span className="product-tint-id">TINT kodu: {product.id}</span>
+                              <span className="product-tint-id">{vtoSkus.has(product.id) ? 'VTO hazırdır' : 'VTO qurulur — məhsul yadda saxlananda avtomatik'}</span>
                             </div>
                           </div>
                         </td>
@@ -660,7 +670,7 @@ function ProductFormModal({ product, onClose, onSave, isSaving, serverError }: {
         <form onSubmit={handleSubmit} className="seller-modal-body">
           <div className="auglio-instructions">
             <h3>VTO şəkil tələbləri</h3>
-            <p>Bu şəkillər virtual sınaq üçün hazırlanır. Məhsul yadda saxlanandan sonra siyahıdakı TINT kodunu TINT panelində Merchant Variant ID xanasına yaz.</p>
+            <p>Bu şəkillər virtual sınaq üçün istifadə olunur. Məhsul yadda saxlananda ön və yan fotolar avtomatik VTO-ya göndərilir — əlavə kod yazmağa ehtiyac yoxdur.</p>
             <ul>
               <li><strong>Ön görünüş:</strong> Tam düz (0°), tam çərçivə görünməlidir.</li>
               <li><strong>Yan görünüş:</strong> Tam yan (90°), sol və ya sağ tərəf, təmiz kəsim.</li>
