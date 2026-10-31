@@ -12,10 +12,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px 28px;
+  flex-wrap: nowrap;
+  gap: 20px;
   padding: 6px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.mp-trust-inner::-webkit-scrollbar { display: none; }
 .mp-trust-inner span {
   display: inline-flex;
   align-items: center;
@@ -183,15 +187,39 @@ select:focus-visible {
   text-underline-offset: 2px;
 }
 .mp-seller-link:hover { color: var(--mp-ink); }
-.mp-vto-btn {
+.mp-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
   width: 100%;
-  margin-top: 10px;
+}
+.mp-card-action {
+  flex: 1;
+  min-width: 44px;
   min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border-radius: var(--mp-radius-sm) !important;
+  border: 1px solid var(--mp-line);
+  border-radius: var(--mp-radius-sm);
+  background: var(--mp-white);
+  color: var(--mp-ink);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.mp-card-action:hover {
+  border-color: var(--mp-ink);
+  background: var(--mp-tile);
+}
+.mp-card-action--vto {
+  background: var(--mp-ink);
+  border-color: var(--mp-ink);
+  color: var(--mp-white);
+}
+.mp-card-action--vto:hover {
+  background: #2a2a28;
+  border-color: #2a2a28;
 }
 .mp-sample-tag {
   font-size: 11px;

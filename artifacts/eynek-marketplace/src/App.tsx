@@ -25,7 +25,6 @@ import {
   Trash2,
   UserRound,
   Video,
-  Wallet,
   X,
 } from 'lucide-react';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
@@ -456,7 +455,7 @@ function Footer() {
   );
 }
 
-function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void }) {
+function ProductCard({ product, liked, onFavorite, onTryOn, onAdd }: { product: Product; liked: boolean; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void; onAdd?: (product: Product) => void }) {
   const photoSrc = (path: string) => (path.startsWith('data:') || path.startsWith('http') ? path : assetUrl(path));
   const hover = productHoverImage(product);
   return (
@@ -465,6 +464,7 @@ function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product
       liked={liked}
       onFavorite={onFavorite}
       onTryOn={onTryOn}
+      onAdd={onAdd}
       photoSrc={photoSrc}
       hover={hover}
       swatchColor={frameSwatch(product.color)}
@@ -473,7 +473,7 @@ function ProductCard({ product, liked, onFavorite, onTryOn }: { product: Product
   );
 }
 
-type CommonProps = { products: Product[]; stores: Vendor[]; likedIds: Set<number | string>; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void };
+type CommonProps = { products: Product[]; stores: Vendor[]; likedIds: Set<number | string>; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product: Product) => void; onAdd: (product: Product) => void };
 
 function frameSwatch(color: string) {
   const known: Record<string, string> = {
@@ -539,11 +539,6 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
             </div>
           <div className="haven-shell haven-hero-foot" aria-hidden="true" />
         </section>
-        <div className="haven-shell haven-benefits mp-trust-inline">
-          <span><ScanFace size={16} strokeWidth={1.6} /> {az.trust.vto}</span>
-          <span><Wallet size={16} strokeWidth={1.6} /> {az.trust.cod}</span>
-          <span><Store size={16} strokeWidth={1.6} /> {az.trust.courier}</span>
-            </div>
         <section className="haven-shell haven-block haven-block--featured">
           <div className="haven-collection-bar">
             <div className="haven-tabs" role="tablist" aria-label="Kolleksiya">
@@ -555,7 +550,7 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
           </div>
           {featured.length ? (
             <div className="product-grid haven-grid">
-              {featured.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={() => {}} onTryOn={onTryOn} />)}
+              {featured.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={() => {}} onTryOn={onTryOn} onAdd={onAdd} />)}
             </div>
           ) : (
             <div className="empty-state">
@@ -601,7 +596,7 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
               </div>
             </div>
         </section>
-        <HomeMarketSections products={products} stores={stores} onTryOn={() => openTintTryOn()} />
+        <HomeMarketSections products={products} stores={stores} />
         <section className="haven-seller">
           <div className="haven-shell haven-seller-inner">
             <div>
@@ -721,7 +716,7 @@ function Collection({ products, stores, likedIds, onFavorite, onQuickView, onTry
       <main className="collection-page"><div className="container">
         <div className="collection-intro"><div><div className="eyebrow">Shop</div><h1>Eynəyini<br />burada tap.</h1></div><p>Təsdiqlənmiş optik mağazaların məhsullarını marka, model, forma, satıcı və ölçü ilə axtar.</p></div>
         <div className="collection-tools"><div className="search-box"><Search size={16} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setFocused(true)} placeholder="Eynək, marka və ya model axtar..." data-testid="input-search-products" />{focused && <div className="search-suggestions"><h4>Tez axtarış</h4><div className="suggestion-row"><button onClick={() => suggestion('Gün eynəyi')} data-testid="button-suggestion-sunglasses">Gün eynəyi</button><button onClick={() => suggestion('Aviator')} data-testid="button-suggestion-aviator">Aviator</button><button onClick={() => suggestion('Optika')} data-testid="button-suggestion-optika">Optika</button></div><h4 style={{ marginTop: 16 }}>Formalar</h4><div className="suggestion-row">{shapes.slice(0, 4).map((item) => <button key={item} onClick={() => suggestion(item)}>{item}</button>)}</div></div>}</div><button className="btn btn-secondary filter-toggle" onClick={() => setFilterOpen(!filterOpen)} data-testid="button-toggle-filters"><SlidersHorizontal size={14} /> Filtrlər</button><select className="select-control" value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sıralama" data-testid="select-sort"><option>Tövsiyə olunan</option><option>Qiymət: aşağıdan yuxarı</option><option>Qiymət: yuxarıdan aşağı</option><option>Ada görə</option></select></div>
-        <div className="catalog-layout"><Filters filters={filters} setFilters={setFilters} open={filterOpen} stores={stores} priceCeiling={priceCeiling} brands={brands} colors={colorOptions} /><section><div className="catalog-head"><span><strong>{filtered.length}</strong> {az.collection.results}</span><button className="text-link" onClick={clearFilters} data-testid="button-clear-filters">{az.collection.clearFilters} <X size={12} /></button></div>{activeChips.length > 0 && <div className="mp-filter-chips">{activeChips.map((chip) => <span key={chip.key} className="mp-filter-chip">{chip.label}<button type="button" aria-label={`${chip.label} filtrini sil`} onClick={() => removeChip(chip.key)}><X size={12} /></button></span>)}</div>}<div className="product-grid">{filtered.length ? filtered.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Search size={22} /><h3>Bu axtarışa uyğun eynək tapılmadı.</h3><p>Axtarışı və ya filtrləri bir az yumşalt.</p><button className="btn btn-secondary" onClick={clearFilters} data-testid="button-empty-reset">Filtrləri sıfırla</button></div>}</div></section></div>
+        <div className="catalog-layout"><Filters filters={filters} setFilters={setFilters} open={filterOpen} stores={stores} priceCeiling={priceCeiling} brands={brands} colors={colorOptions} /><section><div className="catalog-head"><span><strong>{filtered.length}</strong> {az.collection.results}</span><button className="text-link" onClick={clearFilters} data-testid="button-clear-filters">{az.collection.clearFilters} <X size={12} /></button></div>{activeChips.length > 0 && <div className="mp-filter-chips">{activeChips.map((chip) => <span key={chip.key} className="mp-filter-chip">{chip.label}<button type="button" aria-label={`${chip.label} filtrini sil`} onClick={() => removeChip(chip.key)}><X size={12} /></button></span>)}</div>}<div className="product-grid">{filtered.length ? filtered.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />) : <div className="empty-state"><Search size={22} /><h3>Bu axtarışa uyğun eynək tapılmadı.</h3><p>Axtarışı və ya filtrləri bir az yumşalt.</p><button className="btn btn-secondary" onClick={clearFilters} data-testid="button-empty-reset">Filtrləri sıfırla</button></div>}</div></section></div>
       </div></main><Footer />
     </>
   );
@@ -733,7 +728,7 @@ function StoresPage({ stores }: { stores: Vendor[] }) {
 
 function BrandsPage({ products, likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
   const brands = [...new Set(products.map((product) => product.brand.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  return <><main className="directory-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Brend kəşfi</div><h1>Brendlər.</h1></div><p>Mağazaların təsdiqlənmiş kataloqlarında olan brendlər və modellər.</p></div>{brands.length ? brands.map((brand) => <section className="section" style={{ paddingBottom: 0 }} key={brand}><div className="section-head"><div><div className="eyebrow">Brend</div><h2 className="section-title">{brand}</h2></div></div><div className="product-grid">{products.filter((product) => product.brand.trim() === brand).map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />)}</div></section>) : <div className="empty-state"><Info size={20} /><h3>Hələ məhsul brendləri yoxdur.</h3><p>Satıcılar məhsullarını təsdiq üçün göndərdikdən sonra brendlər burada görünəcək.</p><Link href="/collection" className="btn btn-secondary">Məhsullara bax <ArrowRight size={14} /></Link></div>}</div></main><Footer /></>;
+  return <><main className="directory-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Brend kəşfi</div><h1>Brendlər.</h1></div><p>Mağazaların təsdiqlənmiş kataloqlarında olan brendlər və modellər.</p></div>{brands.length ? brands.map((brand) => <section className="section" style={{ paddingBottom: 0 }} key={brand}><div className="section-head"><div><div className="eyebrow">Brend</div><h2 className="section-title">{brand}</h2></div></div><div className="product-grid">{products.filter((product) => product.brand.trim() === brand).map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />)}</div></section>) : <div className="empty-state"><Info size={20} /><h3>Hələ məhsul brendləri yoxdur.</h3><p>Satıcılar məhsullarını təsdiq üçün göndərdikdən sonra brendlər burada görünəcək.</p><Link href="/collection" className="btn btn-secondary">Məhsullara bax <ArrowRight size={14} /></Link></div>}</div></main><Footer /></>;
 }
 
 function VendorPage({ products, stores, likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
@@ -741,7 +736,7 @@ function VendorPage({ products, stores, likedIds, onFavorite, onQuickView, onTry
   const vendor = stores.find((item) => item.slug === slug);
   if (!vendor) return <NotFound />;
   const items = products.filter((product) => product.vendorSlug === vendor.slug);
-  return <><main className="vendor-page"><div className="container"><div className="vendor-hero"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}><BrandWord /> satıcısı</div><h1>{vendor.name}</h1><p>{vendor.description}</p></div><Link href="/stores" className="btn btn-secondary" data-testid="link-vendor-back">Bütün mağazalar</Link></div><div className="vendor-details"><span><MapPin size={14} /> {vendor.location}</span><span>{vendor.since}</span><span><ShoppingBag size={14} /> {vendor.count} model</span></div><section className="section" style={{ padding: '45px 0 0' }}><div className="section-head"><div><div className="eyebrow">Mağaza seçimi</div><h2 className="section-title">Bu vitrində</h2></div></div>{items.length ? <div className="product-grid">{items.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />)}</div> : <div className="empty-state"><Package size={22} /><h3>Hazırda təsdiqlənmiş məhsul yoxdur.</h3></div>}</section></div></main><Footer /></>;
+  return <><main className="vendor-page"><div className="container"><div className="vendor-hero"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}><BrandWord /> satıcısı</div><h1>{vendor.name}</h1><p>{vendor.description}</p></div><Link href="/stores" className="btn btn-secondary" data-testid="link-vendor-back">Bütün mağazalar</Link></div><div className="vendor-details"><span><MapPin size={14} /> {vendor.location}</span><span>{vendor.since}</span><span><ShoppingBag size={14} /> {vendor.count} model</span></div><section className="section" style={{ padding: '45px 0 0' }}><div className="section-head"><div><div className="eyebrow">Mağaza seçimi</div><h2 className="section-title">Bu vitrində</h2></div></div>{items.length ? <div className="product-grid">{items.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />)}</div> : <div className="empty-state"><Package size={22} /><h3>Hazırda təsdiqlənmiş məhsul yoxdur.</h3></div>}</section></div></main><Footer /></>;
 }
 
 function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView, onFavorite, likedIds }: { products: Product[]; stores: Vendor[]; onAdd: (product: Product, message?: string, quantity?: number) => void; onBuyNow: (product: Product, quantity: number) => void; onTryOn: (product: Product) => void; onQuickView: (product: Product) => void; onFavorite: (id: number | string) => void; likedIds: Set<number | string> }) {
@@ -845,7 +840,7 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
             <p className="detail-disclaimer">Mağaza sifarişi təsdiqlədikdən sonra çatdırılma haqqı dəqiqləşdirilir; ödəniş qapıda edilir.</p>
           </div>
         </div>
-        <section className="detail-related"><div className="section-head"><h2>Digər modellər</h2><Link href="/collection" className="home-count">Hamısına bax <ArrowRight size={14} /></Link></div><div className="product-grid">{related.map((item) => <ProductCard key={item.id} product={item} liked={likedIds.has(item.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />)}</div></section>
+        <section className="detail-related"><div className="section-head"><h2>Digər modellər</h2><Link href="/collection" className="home-count">Hamısına bax <ArrowRight size={14} /></Link></div><div className="product-grid">{related.map((item) => <ProductCard key={item.id} product={item} liked={likedIds.has(item.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />)}</div></section>
       </div>
     </main>
     <Footer />
@@ -913,7 +908,7 @@ function SellerPage() {
 
 function WishlistPage({ products, likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
   const items = products.filter((product) => likedIds.has(product.id));
-  return <><main className="collection-page"><div className="container"><div className="collection-intro"><div><div className="eyebrow">Seçilmişlər</div><h1>Saxladığınız<br />modellər.</h1></div></div><div className="product-grid wishlist-grid">{items.length ? items.map((product) => <ProductCard key={product.id} product={product} liked onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} />) : <div className="empty-state"><Heart size={22} /><h3>Hələ seçilmiş model yoxdur.</h3><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-wishlist">Eynəklərə bax</Link></div>}</div></div></main><Footer /></>;
+  return <><main className="collection-page"><div className="container"><div className="collection-intro"><div><div className="eyebrow">Seçilmişlər</div><h1>Saxladığınız<br />modellər.</h1></div></div><div className="product-grid wishlist-grid">{items.length ? items.map((product) => <ProductCard key={product.id} product={product} liked onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />) : <div className="empty-state"><Heart size={22} /><h3>Hələ seçilmiş model yoxdur.</h3><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-wishlist">Eynəklərə bax</Link></div>}</div></div></main><Footer /></>;
 }
 
 function CartPage({ items, stores, onRemove, onCheckout }: { items: Product[]; stores: Vendor[]; onRemove: (id: number | string) => void; onCheckout: () => void }) {
@@ -1312,6 +1307,7 @@ function Storefront() {
     onFavorite: toggleFavorite,
     onQuickView: (product) => setQuickProduct(product),
     onTryOn: (product) => openTintTryOn(product.id),
+    onAdd: addToCart,
   };
   const catalogError = productsQuery.error || storesQuery.error;
   if (location === '/checkout') {

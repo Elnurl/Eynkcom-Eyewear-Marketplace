@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { ArrowLeft, Check, ClipboardCheck, Package, RotateCcw, ShieldCheck, Store, X } from 'lucide-react';
+import { ArrowLeft, Check, ClipboardCheck, Copy, Package, RotateCcw, ShieldCheck, Store, X } from 'lucide-react';
 import { Link, useLocation, useParams } from 'wouter';
 import { useAuthSession } from '@/lib/auth-client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -47,7 +47,18 @@ export default function OrderPage() {
   const [returnFor, setReturnFor] = useState<string | null>(null);
   const [cancelNote, setCancelNote] = useState('');
   const [cancelError, setCancelError] = useState('');
+  const [trackingCopied, setTrackingCopied] = useState<string | null>(null);
   const accountAccess = isLoaded && Boolean(isSignedIn);
+
+  const copyTrackingCode = async (sellerOrderId: string, code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setTrackingCopied(sellerOrderId);
+      window.setTimeout(() => setTrackingCopied((current) => (current === sellerOrderId ? null : current)), 2000);
+    } catch {
+      /* ignore */
+    }
+  };
   const queryKey = useMemo(() => [...getGetGuestOrderQueryKey(orderId), accessToken], [orderId, accessToken]);
   const order = useGetGuestOrder(orderId, {
     query: { enabled: Boolean(orderId && (accessToken || accountAccess)), queryKey, retry: false },
@@ -178,22 +189,50 @@ export default function OrderPage() {
         <div className="commerce-grid" style={{ marginTop: 16 }}>
           <div>
             <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Sifariş mərhələləri</h2><p>Son yeniliklər mağazaların təsdiqləmələrinə əsasən yenilənir.</p></div><Package size={19} color="#5b719a" /></div><OrderTimeline events={order.data.timeline} orderStatus={order.data.status} /></section>
-            <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Mağaza sifarişləri</h2><p>Sifarişinizdəki mağazalar və məhsullar. Qaytarma sorğusu birbaşa mağazaya yox, EYNƏK-ə gedir.</p></div><Store size={19} color="#5b719a" /></div>            <div className="seller-summary">{order.data.sellerOrders.map((seller) => {
-              return <article key={seller.id} className="seller-order-card commerce-card" data-testid={`card-buyer-seller-order-${seller.id}`}>
-                <div className="seller-order-top"><div><strong>{seller.sellerName}</strong><small>{seller.items.length} məhsul</small></div><StatePill status={seller.status} label={sellerStatusLabel(seller.status, (order.data as BuyerOrder).fulfillmentMethod)} /></div>
-                <div className="order-items">{seller.items.map((item) => <OrderItemRow key={item.productId} item={item} />)}</div>
-                {seller.trackingCode && <span className="tracking-badge">İzləmə kodu: {seller.trackingCode}</span>}
-                {seller.returnRequest ? (
-                  <div className="return-box" data-testid={`status-return-request-${seller.id}`}>
-                    <strong>Qaytarma sorğusu</strong>
-                    <StatePill status={seller.returnRequest.status} label={returnStatusLabel(seller.returnRequest.status)} />
-                    <p>{seller.returnRequest.reason}</p>
-                    <small>Bu sorğu geri ödəniş yaratmır. EYNƏK mağaza ilə razılaşdırır.</small>
-                  </div>
-                ) : seller.status === 'delivered' ? (
-                  <button type="button" className="return-link" onClick={() => { setReturnError(''); setReturnFor(seller.id); }} data-testid={`button-open-return-${seller.id}`}>Qaytarma sorğusu</button>
-                ) : null}
-              </article>;
+            <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Mağaza sifarişləri</h2><p>Sifarişinizdəki mağazalar və məhsullar. Qaytarma sorğusu birbaşa mağazaya yox, EYNƏK-ə gedir.</p></div><Store size={19} color="#5b719a" /></div>
+            <div className="seller-summary">{order.data.sellerOrders.map((seller) => {
+              const statusLabel = sellerStatusLabel(seller.status, (order.data as BuyerOrder).fulfillmentMethod);
+              return (
+                <article key={seller.id} className="seller-order-card seller-order-card--buyer" data-testid={`card-buyer-seller-order-${seller.id}`}>
+                  <header className="seller-order-top">
+                    <div className="seller-order-head">
+                      <h3 className="seller-order-name">{seller.sellerName}</h3>
+                      <p className="seller-order-count">{seller.items.length} məhsul</p>
+                    </div>
+                    <StatePill status={seller.status} label={statusLabel} />
+                  </header>
+                  <div className="seller-order-items">{seller.items.map((item) => <OrderItemRow key={item.productId} item={item} />)}</div>
+                  {seller.trackingCode ? (
+                    <div className="seller-order-tracking" data-testid={`tracking-code-${seller.id}`}>
+                      <span className="seller-order-tracking-label">İzləmə kodu</span>
+                      <div className="seller-order-tracking-row">
+                        <code className="seller-order-tracking-code">{seller.trackingCode}</code>
+                        <button
+                          type="button"
+                          className="seller-order-tracking-copy"
+                          onClick={() => void copyTrackingCode(seller.id, seller.trackingCode!)}
+                          data-testid={`button-copy-tracking-${seller.id}`}
+                        >
+                          <Copy size={14} aria-hidden />
+                          {trackingCopied === seller.id ? 'Kopyalandı' : 'Kopyala'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                  <footer className="seller-order-foot">
+                    {seller.returnRequest ? (
+                      <div className="return-box" data-testid={`status-return-request-${seller.id}`}>
+                        <strong>Qaytarma sorğusu</strong>
+                        <StatePill status={seller.returnRequest.status} label={returnStatusLabel(seller.returnRequest.status)} />
+                        <p>{seller.returnRequest.reason}</p>
+                        <small>Bu sorğu geri ödəniş yaratmır. EYNƏK mağaza ilə razılaşdırır.</small>
+                      </div>
+                    ) : seller.status === 'delivered' ? (
+                      <button type="button" className="return-link" onClick={() => { setReturnError(''); setReturnFor(seller.id); }} data-testid={`button-open-return-${seller.id}`}>Qaytarma sorğusu</button>
+                    ) : null}
+                  </footer>
+                </article>
+              );
             })}</div></section>
           </div>
           <aside>

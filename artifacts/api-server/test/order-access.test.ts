@@ -312,3 +312,24 @@ test("settlement cannot be closed when the shop line is not payable", async () =
   })).status, 400);
   assert.equal(settlement.status, "reversed");
 });
+
+test("seller tracking code is persisted and returned on buyer order detail", async () => {
+  seedOrder("owned", "owner", "confirmed");
+  const sellerOrder = sellerOrders.find((row) => row.orderId === "owned");
+  assert.ok(sellerOrder);
+  assert.equal((await request(`/seller/orders/${sellerOrder.id}`, {
+    method: "PATCH",
+    body: { status: "preparing" },
+    session: "seller",
+  })).status, 200);
+  const shipped = await request(`/seller/orders/${sellerOrder.id}`, {
+    method: "PATCH",
+    body: { status: "out_for_delivery", trackingCode: "7845cr" },
+    session: "seller",
+  });
+  assert.equal(shipped.status, 200);
+  assert.equal(shipped.data.trackingCode, "7845cr");
+  assert.equal(sellerOrder.trackingCode, "7845cr");
+  const sellerList = await request("/seller/orders", { session: "seller" });
+  assert.equal(sellerList.data.find((row: { id: string }) => row.id === sellerOrder.id)?.trackingCode, "7845cr");
+});

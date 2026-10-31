@@ -23,6 +23,7 @@ export const az = {
   },
   product: {
     tryOn: 'Üzündə yoxla',
+    addToCart: 'Səbətə əlavə et',
     seller: 'Satıcı',
     sampleLabel: 'Nümunə vitrin',
   },

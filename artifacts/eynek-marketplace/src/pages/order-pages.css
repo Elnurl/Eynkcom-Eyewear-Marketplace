@@ -287,6 +287,95 @@
 .seller-order-tabs button.is-on { border-color: #1b232e; background: #1b232e; color: #fff; }
 .seller-order-list { margin-top: 0; }
 .seller-order-card { padding: 0; overflow: hidden; }
+.seller-order-card--buyer {
+  border: 1px solid #e4e8ef;
+  border-radius: 14px;
+  background: #fafbfc;
+  box-shadow: none;
+}
+.seller-order-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #edf0f4;
+  background: #fff;
+  border-radius: 14px 14px 0 0;
+}
+.seller-order-head { min-width: 0; flex: 1; }
+.seller-order-name {
+  margin: 0;
+  color: #1b232e;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.3;
+}
+.seller-order-count {
+  margin: 6px 0 0;
+  color: #7b8490;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.seller-order-items {
+  padding: 14px 18px;
+  background: #fff;
+  border-bottom: 1px solid #edf0f4;
+}
+.seller-order-items .order-items { padding: 0; }
+.seller-order-tracking {
+  display: grid;
+  gap: 8px;
+  padding: 14px 18px;
+  background: #fff;
+  border-bottom: 1px solid #edf0f4;
+}
+.seller-order-tracking-label {
+  color: #87909c;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.seller-order-tracking-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.seller-order-tracking-code {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #26313e;
+  letter-spacing: .04em;
+  word-break: break-all;
+}
+.seller-order-tracking-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #dfe4eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #3d4f63;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.seller-order-tracking-copy:hover { border-color: #b8c3d4; background: #f6f8fb; }
+.seller-order-foot {
+  padding: 12px 18px 16px;
+  background: #fff;
+  border-radius: 0 0 14px 14px;
+}
+.seller-order-foot .return-link { margin: 0 0 0 auto; }
+.seller-order-foot .return-box { margin: 0; }
 .seller-order-card.is-collapsed { border-color: #e8ebf0; }
 .seller-order-toggle { width: 100%; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 16px 20px; border: 0; background: transparent; text-align: left; cursor: pointer; font: inherit; }
 .seller-order-toggle:hover { background: #fafbfc; }
@@ -332,6 +421,7 @@
 .collection-check { display: inline-flex; align-items: center; gap: 8px; min-height: 41px; color: #475667; font-size: 10px; font-weight: 700; }
 .collection-check input { width: 15px; height: 15px; accent-color: #355d91; }
 .tracking-badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 11px; border-radius: 999px; padding: 7px 10px; background: #f4f6f9; color: #566475; font-size: 10px; }
+.seller-order-card--buyer .tracking-badge { margin-top: 0; }
 
 .management-layout { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 16px; }
 .management-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }

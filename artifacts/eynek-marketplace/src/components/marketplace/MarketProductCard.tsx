@@ -1,4 +1,4 @@
-import { Heart, ScanFace } from 'lucide-react';
+import { Heart, ScanFace, ShoppingBag } from 'lucide-react';
 import { Link } from 'wouter';
 import { az } from '@/i18n/az';
 
@@ -30,6 +30,7 @@ export function MarketProductCard({
   liked,
   onFavorite,
   onTryOn,
+  onAdd,
   photoSrc,
   hover,
   swatchColor,
@@ -39,13 +40,16 @@ export function MarketProductCard({
   liked: boolean;
   onFavorite: (id: number | string) => void;
   onTryOn: (product: MarketProduct) => void;
+  onAdd?: (product: MarketProduct) => void;
   photoSrc: (path: string) => string;
   hover: HoverImage;
   swatchColor: string;
   formatPrice: (value: number) => string;
 }) {
   const vto = productSupportsVto(product);
+  const canBuy = vto;
   const sellerHref = product.vendorSlug ? `/vendor/${product.vendorSlug}` : null;
+  const showActions = Boolean((canBuy && onAdd) || vto);
 
   return (
     <article className="product-card mp-product-card" data-testid={`card-product-${product.id}`}>
@@ -83,10 +87,31 @@ export function MarketProductCard({
             <span>{product.vendor}</span>
           )}
         </p>
-        {vto ? (
-          <button type="button" className="btn btn-primary mp-vto-btn" onClick={() => onTryOn(product)} data-testid={`button-try-on-${product.id}`}>
-            <ScanFace size={16} strokeWidth={1.8} aria-hidden /> {az.product.tryOn}
-          </button>
+        {showActions ? (
+          <div className="mp-card-actions">
+            {canBuy && onAdd ? (
+              <button
+                type="button"
+                className="mp-card-action mp-card-action--cart"
+                onClick={() => onAdd(product)}
+                aria-label={az.product.addToCart}
+                data-testid={`button-add-cart-${product.id}`}
+              >
+                <ShoppingBag size={18} strokeWidth={1.7} />
+              </button>
+            ) : null}
+            {vto ? (
+              <button
+                type="button"
+                className="mp-card-action mp-card-action--vto"
+                onClick={() => onTryOn(product)}
+                aria-label={az.product.tryOn}
+                data-testid={`button-try-on-${product.id}`}
+              >
+                <ScanFace size={18} strokeWidth={1.7} />
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </article>

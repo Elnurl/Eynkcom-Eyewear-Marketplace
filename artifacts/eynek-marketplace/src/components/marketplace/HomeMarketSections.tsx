@@ -1,4 +1,4 @@
-import { ArrowRight, ScanFace, ShoppingBag, Store } from 'lucide-react';
+import { ArrowRight, Store } from 'lucide-react';
 import { Link } from 'wouter';
 import { SectionLabel } from '@/components/marketplace/SectionLabel';
 import { az } from '@/i18n/az';
@@ -41,11 +41,9 @@ function frameSwatch(color: string) {
 export function HomeMarketSections({
   products,
   stores,
-  onTryOn,
 }: {
   products: MarketProduct[];
   stores: Vendor[];
-  onTryOn: () => void;
 }) {
   const colors = [...new Set(products.map((p) => p.color.trim()).filter(Boolean))].slice(0, 8);
   const brands = [...new Set(products.map((p) => p.brand.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)).slice(0, 12);
@@ -111,31 +109,6 @@ export function HomeMarketSections({
           </div>
         </section>
       )}
-
-      <section className="mp-vto-steps container">
-        <SectionLabel>{az.home.vtoTitle}</SectionLabel>
-        <h2 className="mp-section-title">3 addım.</h2>
-        <ol className="mp-steps">
-          <li>
-            <ScanFace size={22} strokeWidth={1.6} aria-hidden />
-            <strong>Modeli seç</strong>
-            <span>Kataloqdan sizə yaraşan çərçivəni tapın.</span>
-          </li>
-          <li>
-            <ScanFace size={22} strokeWidth={1.6} aria-hidden />
-            <strong>Üzündə yoxla</strong>
-            <span>«Üzündə yoxla» ilə virtual sınağı aç.</span>
-          </li>
-          <li>
-            <ShoppingBag size={22} strokeWidth={1.6} aria-hidden />
-            <strong>Sifariş ver</strong>
-            <span>Kartla və ya qapıda ödənişlə sifariş et.</span>
-          </li>
-        </ol>
-        <button type="button" className="btn btn-primary" onClick={onTryOn} data-testid="button-home-vto-steps">
-          Virtual sınaq
-        </button>
-      </section>
 
       <section className="mp-faq container">
         <SectionLabel>{az.home.faqTitle}</SectionLabel>
