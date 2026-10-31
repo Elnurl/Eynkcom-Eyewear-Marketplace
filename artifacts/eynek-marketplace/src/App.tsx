@@ -119,11 +119,6 @@ type Product = {
 
 type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'since' | 'description' | 'logoPath'> & { count: number };
 
-function uploadedStoreImageUrl(path: string) {
-  if (path.startsWith('/objects/')) return `/api/storage${path}`;
-  return path;
-}
-
 const sampleCatalog: Product[] = [
   { id: 'sample-merdekan-03', name: 'Mərdəkan 03', brand: 'EYNƏK', image: 'product-images/merdekan-03.jpg', wornImage: 'product-images/merdekan-03-worn.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Gün eynəyi', gender: 'Uniseks', shape: 'Square', material: 'Asetat', size: 'M', color: 'Qara', tone: 'tone-1', frameStyle: 'sunglass', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
   { id: 'sample-iceriseher-09', name: 'İçərişəhər 09', brand: 'EYNƏK', image: 'product-images/iceriseher-09.jpg', wornImage: 'product-images/iceriseher-09-worn.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Optik çərçivə', gender: 'Uniseks', shape: 'Rectangle', material: 'Metal', size: 'M', color: 'Gümüş', tone: 'tone-1', frameStyle: 'clear', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
@@ -778,7 +773,6 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
       <div className="container">
         <div className="detail-topline">
           <Link href="/collection" className="detail-back"><ArrowRight size={13} /> Eynəklərə qayıt</Link>
-          <BrandLogo className="detail-brand-image" />
         </div>
         <div className="detail-layout">
           <div className="detail-gallery">
@@ -825,14 +819,11 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
             <Link href={`/vendor/${product.vendorSlug}`} className="detail-seller" data-testid="link-detail-vendor">
               {(() => {
                 const vendor = stores.find((item) => item.slug === product.vendorSlug);
-                if (vendor?.logoPath) {
-                  return (
-                    <span className="seller-avatar seller-avatar--logo">
-                      <img src={uploadedStoreImageUrl(vendor.logoPath)} alt="" />
-                    </span>
-                  );
-                }
-                return <span className="seller-avatar">{vendor?.initials || 'S'}</span>;
+                return vendor ? (
+                  <VendorMark vendor={vendor} variant="detail" />
+                ) : (
+                  <span className="seller-avatar">S</span>
+                );
               })()}
               <span><strong>{product.vendor}</strong><small>Satıcının vitrininə bax · {product.location}</small></span>
               <ArrowRight size={16} />
