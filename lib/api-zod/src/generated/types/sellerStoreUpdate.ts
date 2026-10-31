@@ -19,6 +19,7 @@ export interface SellerStoreUpdate {
   location?: string;
   /** @maxLength 1000 */
   description?: string;
+  logoPath?: string | null;
   /** @maxLength 200 */
   instagram?: string;
   /** @maxLength 300 */

@@ -11,6 +11,7 @@ export const sellerStoresTable = pgTable(
     slug: text("slug").notNull(),
     location: text("location").notNull(),
     description: text("description").notNull().default(""),
+    logoPath: text("logo_path"),
     instagram: text("instagram").notNull().default(""),
     website: text("website").notNull().default(""),
     status: text("status").notNull().default("active"),

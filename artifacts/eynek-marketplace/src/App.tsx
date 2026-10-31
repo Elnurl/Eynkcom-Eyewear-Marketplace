@@ -111,7 +111,23 @@ type Product = {
   previewOnly?: boolean;
 };
 
-type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'since' | 'description'> & { count: number };
+type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'since' | 'description' | 'logoPath'> & { count: number };
+
+function uploadedStoreImageUrl(path: string) {
+  if (path.startsWith('/objects/')) return `/api/storage${path}`;
+  return path;
+}
+
+function VendorMark({ vendor }: { vendor: Pick<Vendor, 'initials' | 'logoPath' | 'name'> }) {
+  if (vendor.logoPath) {
+    return (
+      <span className="store-mark store-mark--logo">
+        <img src={uploadedStoreImageUrl(vendor.logoPath)} alt={`${vendor.name} loqosu`} />
+      </span>
+    );
+  }
+  return <span className="store-mark">{vendor.initials}</span>;
+}
 
 const sampleCatalog: Product[] = [
   { id: 'sample-merdekan-03', name: 'Mərdəkan 03', brand: 'EYNƏK', image: 'product-images/merdekan-03.jpg', wornImage: 'product-images/merdekan-03-worn.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Gün eynəyi', gender: 'Uniseks', shape: 'Square', material: 'Asetat', size: 'M', color: 'Qara', tone: 'tone-1', frameStyle: 'sunglass', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
@@ -671,7 +687,7 @@ function Collection({ products, stores, likedIds, onFavorite, onQuickView, onTry
 }
 
 function StoresPage({ stores }: { stores: Vendor[] }) {
-  return <><main className="directory-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Marketplace satıcıları</div><h1>Mağazalar.</h1></div><p><BrandWord />-də satışa təsdiqlənmiş optik mağazaları və onların vitrinlərini kəşf et.</p></div>{stores.length ? <div className="store-grid">{stores.map((vendor) => <Link href={`/vendor/${vendor.slug}`} className="store-card" key={vendor.slug} data-testid={`card-store-${vendor.slug}`}><span className="store-mark">{vendor.initials}</span><span><h3>{vendor.name}</h3><p>{vendor.description}</p><span className="store-meta"><span><MapPin size={12} /> {vendor.location}</span><span>{vendor.count} model</span></span></span><span className="text-link">Mağazaya bax <ArrowRight size={13} /></span></Link>)}</div> : <div className="empty-state"><Store size={22} /><h3>Hələ təsdiqlənmiş mağaza yoxdur.</h3><p>Yeni mağazalar təsdiqləndikcə burada görünəcək.</p></div>}</div></main><Footer /></>;
+  return <><main className="directory-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Marketplace satıcıları</div><h1>Mağazalar.</h1></div><p><BrandWord />-də satışa təsdiqlənmiş optik mağazaları və onların vitrinlərini kəşf et.</p></div>{stores.length ? <div className="store-grid">{stores.map((vendor) => <Link href={`/vendor/${vendor.slug}`} className="store-card" key={vendor.slug} data-testid={`card-store-${vendor.slug}`}><VendorMark vendor={vendor} /><span><h3>{vendor.name}</h3><p>{vendor.description}</p><span className="store-meta"><span><MapPin size={12} /> {vendor.location}</span><span>{vendor.count} model</span></span></span><span className="text-link">Mağazaya bax <ArrowRight size={13} /></span></Link>)}</div> : <div className="empty-state"><Store size={22} /><h3>Hələ təsdiqlənmiş mağaza yoxdur.</h3><p>Yeni mağazalar təsdiqləndikcə burada görünəcək.</p></div>}</div></main><Footer /></>;
 }
 
 function BrandsPage({ products, likedIds, onFavorite, onQuickView, onTryOn }: CommonProps) {
@@ -764,7 +780,17 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
               </div>
             ) : (
             <Link href={`/vendor/${product.vendorSlug}`} className="detail-seller" data-testid="link-detail-vendor">
-              <span className="seller-avatar">{stores.find((vendor) => vendor.slug === product.vendorSlug)?.initials || 'S'}</span>
+              {(() => {
+                const vendor = stores.find((item) => item.slug === product.vendorSlug);
+                if (vendor?.logoPath) {
+                  return (
+                    <span className="seller-avatar seller-avatar--logo">
+                      <img src={uploadedStoreImageUrl(vendor.logoPath)} alt="" />
+                    </span>
+                  );
+                }
+                return <span className="seller-avatar">{vendor?.initials || 'S'}</span>;
+              })()}
               <span><strong>{product.vendor}</strong><small>Satıcının vitrininə bax · {product.location}</small></span>
               <ArrowRight size={16} />
             </Link>
@@ -1141,6 +1167,7 @@ function Storefront() {
         location: store.location,
         since: store.since,
         description: store.description,
+        logoPath: store.logoPath ?? null,
         count: store.productCount,
       })),
     [storeRows],

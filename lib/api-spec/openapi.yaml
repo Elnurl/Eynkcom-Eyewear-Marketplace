@@ -1188,6 +1188,9 @@ components:
           type: string
         description:
           type: string
+        logoPath:
+          type: string
+          nullable: true
         instagram:
           type: string
         website:
@@ -1223,6 +1226,9 @@ components:
         description:
           type: string
           maxLength: 1000
+        logoPath:
+          type: string
+          nullable: true
         instagram:
           type: string
           maxLength: 200

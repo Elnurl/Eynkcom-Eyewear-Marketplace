@@ -13,6 +13,7 @@ export interface SellerStore {
   slug: string;
   location: string;
   description: string;
+  logoPath?: string | null;
   instagram: string;
   website: string;
   status: SellerStoreStatus;

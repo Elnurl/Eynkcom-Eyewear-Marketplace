@@ -312,6 +312,7 @@ export interface SellerStore {
   slug: string;
   location: string;
   description: string;
+  logoPath?: string | null;
   instagram: string;
   website: string;
   status: SellerStoreStatus;
@@ -336,6 +337,7 @@ export interface SellerStoreUpdate {
   location?: string;
   /** @maxLength 1000 */
   description?: string;
+  logoPath?: string | null;
   /** @maxLength 200 */
   instagram?: string;
   /** @maxLength 300 */

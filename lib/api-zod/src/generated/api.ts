@@ -1155,6 +1155,7 @@ export const ListStoresResponseItem = zod.object({
   "slug": zod.string(),
   "location": zod.string(),
   "description": zod.string(),
+  "logoPath": zod.string().nullish(),
   "instagram": zod.string(),
   "website": zod.string(),
   "status": zod.enum(['active', 'inactive']),
@@ -1180,6 +1181,7 @@ export const GetSellerStoreResponse = zod.object({
   "slug": zod.string(),
   "location": zod.string(),
   "description": zod.string(),
+  "logoPath": zod.string().nullish(),
   "instagram": zod.string(),
   "website": zod.string(),
   "status": zod.enum(['active', 'inactive']),
@@ -1210,6 +1212,7 @@ export const UpdateSellerStoreBody = zod.object({
   "name": zod.string().min(1).max(updateSellerStoreBodyNameMax).optional(),
   "location": zod.string().min(1).max(updateSellerStoreBodyLocationMax).optional(),
   "description": zod.string().max(updateSellerStoreBodyDescriptionMax).optional(),
+  "logoPath": zod.string().nullish(),
   "instagram": zod.string().max(updateSellerStoreBodyInstagramMax).optional(),
   "website": zod.string().max(updateSellerStoreBodyWebsiteMax).optional()
 })
@@ -1224,6 +1227,7 @@ export const UpdateSellerStoreResponse = zod.object({
   "slug": zod.string(),
   "location": zod.string(),
   "description": zod.string(),
+  "logoPath": zod.string().nullish(),
   "instagram": zod.string(),
   "website": zod.string(),
   "status": zod.enum(['active', 'inactive']),

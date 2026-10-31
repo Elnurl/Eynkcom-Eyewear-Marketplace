@@ -7,6 +7,7 @@ import {
   UpdateSellerStoreResponse,
 } from "@workspace/api-zod";
 import { db, sellerProductsTable, sellerStoresTable } from "@workspace/db";
+import { imageBelongsToSeller, UPLOADED_IMAGE_PATH } from "../lib/productImages";
 import { requireUserEmail } from "./access";
 import { requireAuth } from "../middlewares/requireAuth";
 
@@ -24,6 +25,7 @@ function formatStore(
     slug: store.slug,
     location: store.location,
     description: store.description,
+    logoPath: store.logoPath ?? null,
     instagram: store.instagram,
     website: store.website,
     status: store.status,
@@ -87,10 +89,35 @@ router.patch("/seller/store", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  const [existing] = await db
+    .select()
+    .from(sellerStoresTable)
+    .where(and(eq(sellerStoresTable.ownerEmail, email), eq(sellerStoresTable.status, "active")))
+    .limit(1);
+  if (!existing) {
+    res.status(403).json({ error: "Satıcı mağazası təsdiqlənməyib." });
+    return;
+  }
+
+  const updates: Record<string, unknown> = { ...parsed.data };
+  if (Object.prototype.hasOwnProperty.call(parsed.data, "logoPath")) {
+    const raw = parsed.data.logoPath;
+    const logoPath = typeof raw === "string" && raw.trim() ? raw.trim() : null;
+    if (logoPath && !UPLOADED_IMAGE_PATH.test(logoPath)) {
+      res.status(400).json({ error: "Loqo yolu düzgün deyil." });
+      return;
+    }
+    if (logoPath && !(await imageBelongsToSeller(logoPath, existing.id))) {
+      res.status(400).json({ error: "Loqo şəkli sizə aid deyil." });
+      return;
+    }
+    updates.logoPath = logoPath;
+  }
+
   const [store] = await db
     .update(sellerStoresTable)
-    .set(parsed.data)
-    .where(and(eq(sellerStoresTable.ownerEmail, email), eq(sellerStoresTable.status, "active")))
+    .set(updates)
+    .where(eq(sellerStoresTable.id, existing.id))
     .returning();
   if (!store) {
     res.status(403).json({ error: "Satıcı mağazası təsdiqlənməyib." });
