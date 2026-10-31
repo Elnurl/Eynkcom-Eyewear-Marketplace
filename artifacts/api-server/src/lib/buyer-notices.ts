@@ -51,8 +51,8 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): BuyerNoti
     case "placed":
       return {
         subject: `EYNƏK — sifariş ${orderNumber} qəbul olundu`,
-        sms: `EYNƏK: Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiqini gözləyir. Ödəniş qapıdadır.`,
-        intro: `Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiq edənə qədər hazırlanmır. Ödəniş məhsulu alanda edilir: kuryerdə və ya mağazadan götürəndə.`,
+        sms: `EYNƏK: Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiqini gözləyir.`,
+        intro: `Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiq edənə qədər hazırlanmır. Ödəniş üsulu sifarişdə göstərilir (online kart və ya qapıda).`,
         badge: "Sifariş qəbul olundu",
         headline: "Sifarişin qəbul olundu.",
         body: "Mağaza təsdiq edənə qədər sifariş hazırlanmır. Vəziyyəti istənilən vaxt yoxlaya bilərsən.",

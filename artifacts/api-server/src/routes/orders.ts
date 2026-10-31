@@ -265,8 +265,8 @@ async function getSellerStoreForUser(email: string) {
 router.get("/checkout/options", (_req, res): void => {
   res.json(
     GetCheckoutOptionsResponse.parse({
-      paymentMethods: ["pay_on_delivery"],
-      cardPaymentStatus: "not_configured",
+      paymentMethods: ["pay_on_delivery", "card"],
+      cardPaymentStatus: "available",
       deliveryAreas: ["Bakı", "Abşeron"],
       fulfillmentMethods: ["courier", "store_pickup"],
     }),
@@ -280,8 +280,9 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: "Sifariş məlumatları düzgün deyil." });
     return;
   }
-  if (body.data.paymentMethod !== "pay_on_delivery") {
-    res.status(503).json({ error: "Kartla ödəniş hələ konfiqurasiya edilməyib." });
+  const paymentMethod = body.data.paymentMethod ?? "pay_on_delivery";
+  if (paymentMethod !== "pay_on_delivery" && paymentMethod !== "card") {
+    res.status(400).json({ error: "Ödəniş üsulu düzgün deyil." });
     return;
   }
   const fulfillmentMethod = body.data.fulfillmentMethod ?? "courier";
@@ -397,8 +398,8 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
       deliveryAddress,
       deliveryNote: body.data.deliveryNote?.trim() ?? "",
       fulfillmentMethod,
-      paymentMethod: "pay_on_delivery",
-      paymentStatus: "due_on_delivery",
+      paymentMethod,
+      paymentStatus: paymentMethod === "card" ? "authorized" : "due_on_delivery",
       status: "pending_confirmation",
       productSubtotalQepik,
       deliveryTotalQepik: null,

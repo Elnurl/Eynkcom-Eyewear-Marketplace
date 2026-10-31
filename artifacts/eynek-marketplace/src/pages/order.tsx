@@ -225,7 +225,6 @@ export default function OrderPage() {
                         <strong>Qaytarma sorğusu</strong>
                         <StatePill status={seller.returnRequest.status} label={returnStatusLabel(seller.returnRequest.status)} />
                         <p>{seller.returnRequest.reason}</p>
-                        <small>Bu sorğu geri ödəniş yaratmır. EYNƏK mağaza ilə razılaşdırır.</small>
                       </div>
                     ) : seller.status === 'delivered' ? (
                       <button type="button" className="return-link" onClick={() => { setReturnError(''); setReturnFor(seller.id); }} data-testid={`button-open-return-${seller.id}`}>Qaytarma sorğusu</button>
@@ -248,7 +247,7 @@ export default function OrderPage() {
             <div className="tryon-backdrop" role="dialog" aria-modal="true" aria-label="Qaytarma sorğusu" onClick={(event) => { if (event.target === event.currentTarget) setReturnFor(null); }}>
               <form className="return-dialog" onSubmit={(event) => { event.preventDefault(); void submitReturn(seller); }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 12 }}>
-                  <div><h2>Qaytarma sorğusu</h2><p>Sorğunu EYNƏK-ə göndərin. Geri ödəniş müddəti hələ razılaşdırılmayıb.</p></div>
+                  <div><h2>Qaytarma sorğusu</h2></div>
                   <button type="button" className="icon-button" onClick={() => setReturnFor(null)} aria-label="Sorğunu bağla"><X size={18} /></button>
                 </div>
                 <div className="commerce-field"><label htmlFor={`return-reason-${seller.id}`}>Səbəb</label><textarea id={`return-reason-${seller.id}`} required minLength={8} maxLength={400} value={draft.reason} onChange={(event) => setReturnDrafts((current) => ({ ...current, [seller.id]: { ...draft, reason: event.target.value } }))} data-testid={`input-return-reason-${seller.id}`} /></div>

@@ -25,7 +25,7 @@ export function HelpPage() {
           <section id="suallar">
             <h2>Suallar</h2>
             <ul>
-              <li>Ödəniş məhsulu alanda nağddır: kuryerdə və ya mağazadan götürəndə. Kartla ödəniş hələ aktiv deyil.</li>
+              <li>Ödənişi sifariş zamanı bank kartı ilə online və ya məhsulu alarkən qapıda nağd edə bilərsiniz.</li>
               <li>Çatdırılma Bakı və Abşerondadır. Mağazadan götürmə pulsuzdur.</li>
               <li>Qaytarma sorğusu birbaşa mağazaya yox, EYNƏK-ə göndərilir. Geri ödəniş müddəti hələ razılaşdırılmayıb.</li>
             </ul>

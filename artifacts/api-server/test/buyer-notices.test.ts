@@ -19,9 +19,9 @@ test("seller status maps to a buyer notice, preparing stays quiet", () => {
   assert.equal(sent && buyerNotice("EYN-1", sent).sms.includes("çatdırılmaya verildi"), true);
 });
 
-test("a new order tells the buyer to wait and pay on delivery", () => {
+test("a new order tells the buyer to wait for store confirmation", () => {
   const copy = buyerNotice("EYN-AB12", { kind: "placed" });
   assert.match(copy.sms, /EYN-AB12/);
-  assert.match(copy.sms, /qapıdadır/);
+  assert.match(copy.sms, /təsdiqini gözləyir/);
   assert.match(copy.intro, /Ödəniş/);
 });

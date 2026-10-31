@@ -1,8 +1,14 @@
 export const az = {
   trust: {
     vto: 'Üzündə virtual yoxla',
-    cod: 'Qapıda ödəniş',
+    cod: 'Online və qapıda ödəniş',
     courier: 'Kuryerlə çatdırılma',
+  },
+  payment: {
+    productDisclaimer:
+      'Mağaza sifarişi təsdiqlədikdən sonra çatdırılma haqqı dəqiqləşdirilir; ödənişi online (bank kartı) və ya qapıda edə bilərsiniz.',
+    checkoutIntro:
+      'Sifariş zamanı bank kartı ilə online və ya məhsulu alarkən qapıda nağd ödəniş seçə bilərsiniz.',
   },
   nav: {
     sunglasses: 'Günəş eynəkləri',

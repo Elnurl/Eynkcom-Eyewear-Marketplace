@@ -47,9 +47,10 @@ export function MarketProductCard({
   formatPrice: (value: number) => string;
 }) {
   const vto = productSupportsVto(product);
-  const canBuy = vto;
+  const canBuy = !product.previewOnly && product.isAvailable;
   const sellerHref = product.vendorSlug ? `/vendor/${product.vendorSlug}` : null;
-  const showActions = Boolean((canBuy && onAdd) || vto);
+  const showCart = Boolean(canBuy && onAdd);
+  const showTry = vto;
 
   return (
     <article className="product-card mp-product-card" data-testid={`card-product-${product.id}`}>
@@ -62,6 +63,36 @@ export function MarketProductCard({
         <button type="button" className={`heart-button mp-heart ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} seçilmişlərə əlavə et`} data-testid={`button-favorite-${product.id}`}>
           <Heart size={18} strokeWidth={1.8} fill={liked ? 'currentColor' : 'none'} />
         </button>
+        {showTry ? (
+          <button
+            type="button"
+            className="haven-card-action haven-card-action--try"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onTryOn(product);
+            }}
+            aria-label={az.product.tryOn}
+            data-testid={`button-try-on-${product.id}`}
+          >
+            <ScanFace size={18} strokeWidth={1.6} />
+          </button>
+        ) : null}
+        {showCart ? (
+          <button
+            type="button"
+            className="haven-card-action haven-card-action--cart"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onAdd!(product);
+            }}
+            aria-label={az.product.addToCart}
+            data-testid={`button-add-cart-${product.id}`}
+          >
+            <ShoppingBag size={18} strokeWidth={1.6} />
+          </button>
+        ) : null}
       </div>
       <div className="product-info mp-product-info">
         {product.brand ? <span className="product-label mp-brand">{product.brand}</span> : null}
@@ -87,32 +118,6 @@ export function MarketProductCard({
             <span>{product.vendor}</span>
           )}
         </p>
-        {showActions ? (
-          <div className="mp-card-actions">
-            {canBuy && onAdd ? (
-              <button
-                type="button"
-                className="mp-card-action mp-card-action--cart"
-                onClick={() => onAdd(product)}
-                aria-label={az.product.addToCart}
-                data-testid={`button-add-cart-${product.id}`}
-              >
-                <ShoppingBag size={18} strokeWidth={1.7} />
-              </button>
-            ) : null}
-            {vto ? (
-              <button
-                type="button"
-                className="mp-card-action mp-card-action--vto"
-                onClick={() => onTryOn(product)}
-                aria-label={az.product.tryOn}
-                data-testid={`button-try-on-${product.id}`}
-              >
-                <ScanFace size={18} strokeWidth={1.7} />
-              </button>
-            ) : null}
-          </div>
-        ) : null}
       </div>
     </article>
   );

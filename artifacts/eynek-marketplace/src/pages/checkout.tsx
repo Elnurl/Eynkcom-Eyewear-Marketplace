@@ -10,6 +10,7 @@ import {
 } from '@workspace/api-client-react';
 import type { CheckoutOptions, GuestOrderInput } from '@workspace/api-client-react';
 import { BrandLogo } from '@/components/brand-logo';
+import { az } from '@/i18n/az';
 import { LoadingCard, QueryError, money } from './order-ui';
 import './order-pages.css';
 
@@ -210,10 +211,10 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
               )}
 
               <section className="commerce-card commerce-card-pad">
-                <div className="commerce-card-heading"><div><h2>Ödəniş üsulu</h2><p>{pickup ? 'Ödənişi məhsulu mağazadan götürəndə edin.' : 'Ödənişi məhsullar çatdırılan zaman edin.'}</p></div><CreditCard size={19} color="#5b719a" /></div>
+                <div className="commerce-card-heading"><div><h2>Ödəniş üsulu</h2><p>{az.payment.checkoutIntro}</p></div><CreditCard size={19} color="#5b719a" /></div>
                 <div style={{ paddingTop: 17 }}>
-                  <label className={`payment-choice ${paymentMethod === PaymentMethod.pay_on_delivery ? 'selected' : ''}`}><input type="radio" name="paymentMethod" checked={paymentMethod === PaymentMethod.pay_on_delivery} onChange={() => setPaymentMethod(PaymentMethod.pay_on_delivery)} /><span><strong>{pickup ? 'Götürəndə nağd ödəniş' : 'Çatdırılmada nağd ödəniş'}</strong><span>{pickup ? 'Məhsulu aldığınız zaman ödəyin. Mağazada ayrıca kassa razılaşması hələ yoxdur — bu, mövcud çatdırılmada ödəniş üsuludur.' : 'Sifariş qapınıza çatanda ödəyin.'}</span></span><CheckCircle2 size={17} color="#2a7045" /></label>
-                  <div className="payment-choice disabled" aria-disabled="true" data-testid="payment-card-unavailable"><CreditCard size={17} /><span><strong>Bank kartı</strong><span>Kartla ödəniş hələ aktiv deyil.</span></span><em>Konfiqurasiya olunmayıb</em></div>
+                  <label className={`payment-choice ${paymentMethod === PaymentMethod.pay_on_delivery ? 'selected' : ''}`}><input type="radio" name="paymentMethod" checked={paymentMethod === PaymentMethod.pay_on_delivery} onChange={() => setPaymentMethod(PaymentMethod.pay_on_delivery)} /><span><strong>{pickup ? 'Götürəndə nağd ödəniş' : 'Çatdırılmada nağd ödəniş'}</strong><span>{pickup ? 'Məhsulu mağazadan götürəndə nağd ödəyin.' : 'Sifariş qapınıza çatanda kuryerə nağd ödəyin.'}</span></span><CheckCircle2 size={17} color="#2a7045" /></label>
+                  <label className={`payment-choice ${paymentMethod === PaymentMethod.card ? 'selected' : ''}`} data-testid="choice-payment-card"><input type="radio" name="paymentMethod" checked={paymentMethod === PaymentMethod.card} onChange={() => setPaymentMethod(PaymentMethod.card)} /><span><strong>Bank kartı ilə online ödəniş</strong><span>Sifariş qəbul olunduqdan sonra online ödənişi tamamlayın.</span></span><CreditCard size={17} color="#5b719a" /></label>
                 </div>
               </section>
             </div>

@@ -249,12 +249,12 @@ export function AccountPaymentSection() {
       <div className="account-payment-list">
         <label className="account-payment-choice is-selected">
           <input type="radio" name="account-payment" checked readOnly data-testid="choice-pay-on-delivery" />
-          <span><strong>Çatdırılmada nağd ödəniş</strong><small>Sifariş qapınıza çatanda və ya mağazadan götürəndə ödəyirsiniz.</small></span>
+          <span><strong>Çatdırılmada nağd ödəniş</strong><small>Qapıda və ya mağazadan götürəndə nağd ödəyə bilərsiniz.</small></span>
         </label>
-        <div className="account-payment-choice is-disabled" data-testid="choice-card-unavailable">
-          <CreditCard size={16} />
-          <span><strong>Bank kartı</strong><small>Kartla ödəniş hələ aktiv deyil.</small></span>
-        </div>
+        <label className="account-payment-choice">
+          <input type="radio" name="account-payment" readOnly data-testid="choice-card" />
+          <span><strong>Bank kartı ilə online ödəniş</strong><small>Sifariş zamanı checkout-da seçə bilərsiniz.</small></span>
+        </label>
       </div>
     </section>
   );
