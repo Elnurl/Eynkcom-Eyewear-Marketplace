@@ -472,28 +472,48 @@ select:focus-visible {
 .haven-footer.mp-footer a:hover {
   color: var(--mp-lime);
 }
-.haven-footer-brand .haven-footer-logo {
-  display: inline-block;
-  line-height: 0;
+.haven-footer.mp-footer nav a {
+  color: #b0b0ac;
 }
-.haven-footer-brand .haven-footer-logo .brand-image {
-  width: min(140px, 52vw);
+.haven-footer-brand-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 280px;
+}
+.haven-footer-brand .haven-footer-logo {
+  display: block;
+  line-height: 0;
+  flex-shrink: 0;
+}
+.haven-footer.mp-footer .haven-footer-logo .brand-image {
+  display: block;
+  width: 118px;
+  max-width: 100%;
   height: auto;
+  filter: brightness(0) invert(1);
 }
 .haven-footer-brand .haven-footer-email {
-  display: inline-block;
-  margin-top: 12px;
+  display: block;
+  margin: 0;
+  padding: 0;
   font-size: 13px;
   font-weight: 500;
-  color: #b8b8b4;
+  line-height: 1.35;
+  color: #c4c4c0;
   text-decoration: none;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
 }
-.haven-footer-brand .haven-footer-email:hover {
+.haven-footer.mp-footer .haven-footer-email:hover {
   color: var(--mp-lime);
 }
 .haven-footer-brand p {
-  margin-top: 14px;
+  margin-top: 16px;
+}
+.haven-footer.mp-footer .haven-footer-bottom {
+  border-top-color: rgba(255, 255, 255, 0.12);
+  color: #9a9a96;
 }
 
 /* Typography refresh */
