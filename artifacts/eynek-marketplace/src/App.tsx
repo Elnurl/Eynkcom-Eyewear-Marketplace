@@ -1285,16 +1285,19 @@ function Storefront() {
   }, [cartItems]);
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id) || next.has(String(id))) { next.delete(id); next.delete(String(id)); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
+  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); showToast(message); };
   const launchTryOn = (product?: Product) => {
     openEynekTryOn({
       product,
       catalog: allProducts.filter((item) => item.vtoReady),
       resolveImage: assetUrl,
-      onLike: toggleFavorite,
-      onViewLikes: () => setLocation('/wishlist'),
+      onAddToCart: (sku) => {
+        const match = allProducts.find((item) => String(item.id) === sku);
+        if (match) addToCart(match);
+      },
+      onViewCart: () => setLocation('/cart'),
     });
   };
-  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); showToast(message); };
   const buyNow = (product: Product, quantity = 1) => {
     if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; }
     addUnits(product, quantity);

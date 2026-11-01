@@ -44,8 +44,8 @@ export function openEynekTryOn(opts: {
   product?: VtoProductInput | null;
   catalog?: VtoProductInput[];
   resolveImage: (path: string) => string;
-  onLike?: (sku: string) => void;
-  onViewLikes?: () => void;
+  onAddToCart?: (sku: string) => void;
+  onViewCart?: () => void;
 }) {
   const vto = api();
   if (!vto) return;
@@ -61,10 +61,10 @@ export function openEynekTryOn(opts: {
     lang: document.documentElement.lang || 'az',
     product: opts.product ? toVtoProduct(opts.product, opts.resolveImage) : undefined,
     products,
-    onAddToCart: ({ sku: liked }: { sku?: string }) => {
-      if (liked) opts.onLike?.(liked);
+    onAddToCart: ({ sku: added }: { sku?: string }) => {
+      if (added) opts.onAddToCart?.(added);
     },
-    onViewCart: () => opts.onViewLikes?.(),
+    onViewCart: () => opts.onViewCart?.(),
     termsUrl: '/mexfilik',
   });
 }
