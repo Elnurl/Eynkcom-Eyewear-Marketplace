@@ -2,6 +2,7 @@ import path from "node:path";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db } from "@workspace/db";
 import app from "./app";
+import { clearMissingStoreMedia } from "./lib/clearMissingStoreMedia";
 import { seedHorizonCatalogIfEnabled } from "./lib/horizonCatalogSeed";
 import { logger } from "./lib/logger";
 import { isObjectStorageConfigured } from "./lib/objectStorage";
@@ -31,6 +32,11 @@ async function start(): Promise<void> {
     await migrate(db, { migrationsFolder });
     logger.info({ migrationsFolder }, "Database migrations applied");
     await seedHorizonCatalogIfEnabled();
+    try {
+      await clearMissingStoreMedia();
+    } catch (err) {
+      logger.error({ err }, "Store media cleanup failed");
+    }
   }
 
   app.listen(port, (err) => {

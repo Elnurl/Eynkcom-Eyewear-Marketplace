@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Check, Copy, Link2, MapPin, ScanFace, ShoppingBag } from 'lucide-react';
 import { Link, useParams } from 'wouter';
 import type { VitrineTheme } from '@workspace/api-client-react';
@@ -108,7 +108,28 @@ export function VitrinePage({
   const sharePath = vendor ? `/v/${VITRINE_ALIASES[rawSlug.toLowerCase()] ? rawSlug.toLowerCase() : preferredAlias(vendor.slug)}` : `/v/${rawSlug}`;
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}${sharePath}` : sharePath;
   const ig = instagramHref(vendor?.instagram);
-  const heroUrl = theme.heroMediaPath ? photoSrc(theme.heroMediaPath) : '';
+  const heroCandidate = theme.heroMediaPath ? photoSrc(theme.heroMediaPath) : '';
+  const [heroUrl, setHeroUrl] = useState('');
+  useEffect(() => {
+    if (!heroCandidate) {
+      setHeroUrl('');
+      return;
+    }
+    let cancelled = false;
+    const probe = new Image();
+    probe.onload = () => {
+      if (!cancelled) setHeroUrl(heroCandidate);
+    };
+    probe.onerror = () => {
+      if (!cancelled) setHeroUrl('');
+    };
+    probe.src = heroCandidate;
+    return () => {
+      cancelled = true;
+      probe.onload = null;
+      probe.onerror = null;
+    };
+  }, [heroCandidate]);
   const pageStyle = {
     '--vt-bg': theme.bgColor,
     '--vt-card': theme.cardColor,

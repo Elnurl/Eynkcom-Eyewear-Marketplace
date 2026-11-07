@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Heart, ScanFace, ShoppingBag } from 'lucide-react';
 import { Link } from 'wouter';
 import { az } from '@/i18n/az';
@@ -53,14 +54,34 @@ export function MarketProductCard({
   const sellerHref = product.vendorSlug ? vitrinePublicPath(product.vendorSlug) : null;
   const showCart = Boolean(canBuy && onAdd);
   const showTry = vto;
+  const [mainFailed, setMainFailed] = useState(false);
+  const [hoverFailed, setHoverFailed] = useState(false);
+  useEffect(() => {
+    setMainFailed(false);
+    setHoverFailed(false);
+  }, [product.id, product.image, hover?.src]);
 
   return (
     <article className="product-card mp-product-card" data-testid={`card-product-${product.id}`}>
-      <div className={`product-image mp-product-tile ${product.tone}`}>
+      <div className={`product-image mp-product-tile ${product.tone}${mainFailed ? ' is-image-missing' : ''}`}>
         <Link href={`/product/${product.id}`} className="product-image-link" aria-label={`${product.name} məhsul səhifəsini aç`} data-testid={`link-product-image-${product.id}`}>
-          <img className="product-photo" src={photoSrc(product.image)} alt={`${product.name} — ${product.color} eynək modeli, ön görünüş`} loading="lazy" />
-          {hover?.kind === 'worn' && <img className="product-photo on-model" src={photoSrc(hover.src)} alt={`${product.name} modelin üzündə`} loading="lazy" />}
-          {hover?.kind === 'side' && <img className="product-photo side-view" src={photoSrc(hover.src)} alt={`${product.name} — ${product.color} eynək modeli, yan görünüş`} loading="lazy" />}
+          {!mainFailed ? (
+            <img
+              className="product-photo"
+              src={photoSrc(product.image)}
+              alt={`${product.name} — ${product.color} eynək modeli, ön görünüş`}
+              loading="lazy"
+              onError={() => setMainFailed(true)}
+            />
+          ) : (
+            <span className="product-photo-fallback" aria-hidden />
+          )}
+          {!hoverFailed && hover?.kind === 'worn' ? (
+            <img className="product-photo on-model" src={photoSrc(hover.src)} alt={`${product.name} modelin üzündə`} loading="lazy" onError={() => setHoverFailed(true)} />
+          ) : null}
+          {!hoverFailed && hover?.kind === 'side' ? (
+            <img className="product-photo side-view" src={photoSrc(hover.src)} alt={`${product.name} — ${product.color} eynək modeli, yan görünüş`} loading="lazy" onError={() => setHoverFailed(true)} />
+          ) : null}
         </Link>
         <button type="button" className={`heart-button mp-heart ${liked ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label={`${product.name} seçilmişlərə əlavə et`} data-testid={`button-favorite-${product.id}`}>
           <Heart size={18} strokeWidth={1.8} fill={liked ? 'currentColor' : 'none'} />

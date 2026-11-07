@@ -1206,7 +1206,7 @@ function Storefront() {
       if (!cancelled) setVtoSkus(skus);
     })();
     return () => { cancelled = true; };
-  }, [productRows]);
+  }, []);
   const allProducts = useMemo(() => {
     const base = catalogProducts.length > 0 ? catalogProducts : sampleCatalog;
     return base.map((product) => ({ ...product, vtoReady: vtoSkus.has(String(product.id)) }));

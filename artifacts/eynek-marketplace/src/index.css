@@ -205,6 +205,18 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .product-image.tone-1, .product-image.tone-2, .product-image.tone-3, .product-image.tone-4, .product-image.tone-5 { background: #fff; }
 .product-image::before { content: ''; position: absolute; z-index: 1; inset: 0; background: linear-gradient(180deg, transparent 70%, rgba(17,17,17,.035)); pointer-events: none; }
 .product-photo { width: 100%; height: 100%; display: block; object-fit: contain; padding: 28px 22px 54px; transition: transform .35s ease, opacity .25s ease; }
+.product-photo-fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  background:
+    linear-gradient(135deg, rgba(17, 18, 20, 0.04), rgba(17, 18, 20, 0.1));
+}
+.product-image.is-image-missing,
+.mp-product-tile.is-image-missing {
+  background: #f3f1ec;
+}
 .product-image-link { position: absolute; inset: 0; display: block; cursor: pointer; }
 .product-image-link:focus-visible { outline: 2px solid var(--navy); outline-offset: -4px; border-radius: inherit; }
 .product-photo.side-view, .product-photo.on-model { position: absolute; inset: 0; opacity: 0; }

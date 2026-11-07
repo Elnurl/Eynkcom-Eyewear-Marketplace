@@ -71,6 +71,23 @@ app.use("/api", (_req, res) => {
   res.status(404).json({ error: "Tapılmadı." });
 });
 
+const VENDOR_TO_VITRINE: Record<string, string> = {
+  "horizon-optic-3f209b": "horizon",
+  "horizon-optic": "horizon",
+  "horizon-optik": "horizon",
+};
+
+// Old marketplace links used /vendor/:slug; send browsers to the shareable vitrine.
+app.get("/vendor/:slug", (req, res, next) => {
+  const slug = String(req.params.slug || "").trim().toLowerCase();
+  if (!slug) {
+    next();
+    return;
+  }
+  const alias = VENDOR_TO_VITRINE[slug] ?? slug;
+  res.redirect(302, `/v/${encodeURIComponent(alias)}`);
+});
+
 // In production the same process serves the built storefront. `__dirname` is
 // the bundle directory (artifacts/api-server/dist), set by build.mjs.
 const webDir = process.env.WEB_DIST_DIR
