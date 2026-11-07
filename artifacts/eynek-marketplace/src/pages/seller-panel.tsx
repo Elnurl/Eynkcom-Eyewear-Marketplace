@@ -204,11 +204,6 @@ export default function SellerPanel() {
     const file = event.target.files?.[0];
     if (!file) return;
     event.target.value = '';
-    // Large animated GIFs make /v pages feel frozen on mobile.
-    if (file.size > 900 * 1024) {
-      setStoreSaveMessage('Hero fonu maksimum 900 KB olmalıdır. Kiçik JPG/PNG və ya qısa GIF seçin.');
-      return;
-    }
     setHeroUploading(true);
     setStoreSaveMessage('');
     try {
