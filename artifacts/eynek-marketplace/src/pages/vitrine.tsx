@@ -109,27 +109,11 @@ export function VitrinePage({
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}${sharePath}` : sharePath;
   const ig = instagramHref(vendor?.instagram);
   const heroCandidate = theme.heroMediaPath ? photoSrc(theme.heroMediaPath) : '';
-  const [heroUrl, setHeroUrl] = useState('');
+  const [heroFailed, setHeroFailed] = useState(false);
   useEffect(() => {
-    if (!heroCandidate) {
-      setHeroUrl('');
-      return;
-    }
-    let cancelled = false;
-    const probe = new Image();
-    probe.onload = () => {
-      if (!cancelled) setHeroUrl(heroCandidate);
-    };
-    probe.onerror = () => {
-      if (!cancelled) setHeroUrl('');
-    };
-    probe.src = heroCandidate;
-    return () => {
-      cancelled = true;
-      probe.onload = null;
-      probe.onerror = null;
-    };
+    setHeroFailed(false);
   }, [heroCandidate]);
+  const showHero = Boolean(heroCandidate) && !heroFailed;
   const pageStyle = {
     '--vt-bg': theme.bgColor,
     '--vt-card': theme.cardColor,
@@ -137,7 +121,6 @@ export function VitrinePage({
     '--vt-accent': theme.accentColor,
     '--vt-font': fontCss(theme.fontFamily),
     '--vt-overlay': String(theme.heroOverlay),
-    ...(heroUrl ? { '--vt-hero': `url("${heroUrl.replace(/"/g, '%22')}")` } : {}),
   } as CSSProperties;
 
   if (!vendor) {
@@ -165,7 +148,7 @@ export function VitrinePage({
   };
 
   return (
-    <main className={`vitrine-page${heroUrl ? ' has-hero-media' : ''}`} data-testid="page-vitrine" style={pageStyle}>
+    <main className={`vitrine-page${showHero ? ' has-hero-media' : ''}`} data-testid="page-vitrine" style={pageStyle}>
       <header className="vitrine-top">
         <Link href="/" className="vitrine-eynek" aria-label="EYNƏK ana səhifə">
           <BrandWord />
@@ -177,7 +160,18 @@ export function VitrinePage({
       </header>
 
       <section className="vitrine-hero">
-        {heroUrl ? <div className="vitrine-hero-media" aria-hidden /> : null}
+        {showHero ? (
+          <div className="vitrine-hero-media" aria-hidden>
+            <img
+              className="vitrine-hero-media-img"
+              src={heroCandidate}
+              alt=""
+              decoding="async"
+              fetchPriority="low"
+              onError={() => setHeroFailed(true)}
+            />
+          </div>
+        ) : null}
         <VendorMark vendor={vendor} variant="vitrine" />
         <div className="vitrine-hero-copy">
           <p className="vitrine-eyebrow">Virtual vitrin</p>

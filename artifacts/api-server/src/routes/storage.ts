@@ -280,6 +280,7 @@ router.get(
       if (error instanceof ObjectNotFoundError) {
         // Ticket exists in DB but the bytes are gone (ephemeral disk / missing S3 object).
         req.log.warn({ objectPath }, "Published image missing from object storage");
+        res.setHeader("Cache-Control", "no-store");
         res.status(404).json({
           error: "Şəkil faylı serverdə yoxdur. Satıcı panelindən şəkli yenidən yükləyin.",
         });

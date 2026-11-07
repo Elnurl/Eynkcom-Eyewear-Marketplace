@@ -603,9 +603,14 @@ body {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background-image: var(--vt-hero);
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
+}
+.vitrine-hero-media-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 .vitrine-hero-media::after {
   content: '';

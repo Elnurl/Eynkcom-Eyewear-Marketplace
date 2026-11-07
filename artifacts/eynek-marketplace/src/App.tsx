@@ -725,10 +725,12 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
   const product = products.find((item) => String(item.id) === id);
   const [quantity, setQuantity] = useState(1);
   const [showSide, setShowSide] = useState(false);
+  const [galleryFailed, setGalleryFailed] = useState(false);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     setQuantity(1);
     setShowSide(false);
+    setGalleryFailed(false);
   }, [id]);
   if (!product) return <NotFound />;
   const hasSecondImage = Boolean(product.sideImage && product.sideImage !== product.image);
@@ -776,12 +778,30 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
                 setShowSide((current) => !current);
               }}
             >
-              <img className="detail-photo" draggable={false} src={galleryImage.startsWith('data:') || galleryImage.startsWith('http') ? galleryImage : assetUrl(galleryImage)} alt={`${product.name} — ${showSide ? 'yan' : 'ön'} görünüş`} />
-              {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--prev" onClick={() => setShowSide((current) => !current)} aria-label="Əvvəlki şəkil" data-testid="button-gallery-prev"><ChevronLeft size={18} /></button>}
-              {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--next" onClick={() => setShowSide((current) => !current)} aria-label="Növbəti şəkil" data-testid="button-gallery-next"><ChevronRight size={18} /></button>}
+              {!galleryFailed ? (
+                <img
+                  className="detail-photo"
+                  draggable={false}
+                  src={galleryImage.startsWith('data:') || galleryImage.startsWith('http') ? galleryImage : assetUrl(galleryImage)}
+                  alt={`${product.name} — ${showSide ? 'yan' : 'ön'} görünüş`}
+                  decoding="async"
+                  onError={() => {
+                    if (hasSecondImage && !showSide) {
+                      setShowSide(true);
+                      setGalleryFailed(false);
+                      return;
+                    }
+                    setGalleryFailed(true);
+                  }}
+                />
+              ) : (
+                <div className="detail-photo detail-photo--missing" aria-label="Şəkil yüklənmədi" />
+              )}
+              {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--prev" onClick={() => { setGalleryFailed(false); setShowSide((current) => !current); }} aria-label="Əvvəlki şəkil" data-testid="button-gallery-prev"><ChevronLeft size={18} /></button>}
+              {hasSecondImage && <button type="button" className="detail-gallery-arrow detail-gallery-arrow--next" onClick={() => { setGalleryFailed(false); setShowSide((current) => !current); }} aria-label="Növbəti şəkil" data-testid="button-gallery-next"><ChevronRight size={18} /></button>}
               {product.vtoReady ? <button className="detail-try-on" onClick={() => onTryOn(product)} data-testid="button-try-on-detail"><ScanFace size={15} /> Virtual önizlə</button> : null}
             </div>
-            {hasSecondImage && <div className="detail-gallery-dots" aria-label="Şəkil görünüşü"><button className={!showSide ? 'active' : ''} onClick={() => setShowSide(false)} aria-label="Ön görünüş" /><button className={showSide ? 'active' : ''} onClick={() => setShowSide(true)} aria-label="Yan görünüş" /></div>}
+            {hasSecondImage && <div className="detail-gallery-dots" aria-label="Şəkil görünüşü"><button className={!showSide ? 'active' : ''} onClick={() => { setGalleryFailed(false); setShowSide(false); }} aria-label="Ön görünüş" /><button className={showSide ? 'active' : ''} onClick={() => { setGalleryFailed(false); setShowSide(true); }} aria-label="Yan görünüş" /></div>}
           </div>
           <div className="detail-info">
             <div className="detail-heading">
