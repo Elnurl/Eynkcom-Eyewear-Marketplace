@@ -68,6 +68,10 @@ services:
         sync: false
       - key: S3_REGION
         value: auto
+      - key: EPOINT_PUBLIC_KEY
+        value: i7448
+      - key: EPOINT_PRIVATE_KEY
+        sync: false
       - key: VTO_URL
         value: https://tryon-wa.onrender.com
       - key: VTO_STORE
