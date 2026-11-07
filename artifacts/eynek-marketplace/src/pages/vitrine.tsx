@@ -157,7 +157,7 @@ export function VitrinePage({
 
       <section className="vitrine-hero">
         {heroUrl ? <div className="vitrine-hero-media" aria-hidden /> : null}
-        <VendorMark vendor={vendor} variant="detail" />
+        <VendorMark vendor={vendor} variant="vitrine" />
         <div className="vitrine-hero-copy">
           <p className="vitrine-eyebrow">Virtual vitrin</p>
           <h1>{vendor.name}</h1>

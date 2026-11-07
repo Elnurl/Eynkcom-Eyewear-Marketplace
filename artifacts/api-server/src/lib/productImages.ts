@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, or } from "drizzle-orm";
+import { and, eq, isNotNull, or, sql } from "drizzle-orm";
 import { db, productImageUploadsTable, sellerProductsTable, sellerStoresTable, sellerSupportTicketsTable, supportImageUploadsTable } from "@workspace/db";
 import { ObjectNotFoundError, ObjectStorageService } from "./objectStorage";
 import { logger } from "./logger";
@@ -59,7 +59,13 @@ export async function isPublishedImage(path: string): Promise<boolean> {
     .from(sellerStoresTable)
     .where(eq(sellerStoresTable.logoPath, path))
     .limit(1);
-  return Boolean(storeLogo);
+  if (storeLogo) return true;
+  const [heroMedia] = await db
+    .select({ id: sellerStoresTable.id })
+    .from(sellerStoresTable)
+    .where(sql`${sellerStoresTable.vitrineTheme}->>'heroMediaPath' = ${path}`)
+    .limit(1);
+  return Boolean(heroMedia);
 }
 
 export async function removeUnusedImage(path: string, sellerId: string): Promise<void> {
@@ -76,6 +82,12 @@ export async function removeUnusedImage(path: string, sellerId: string): Promise
     .where(eq(sellerStoresTable.logoPath, path))
     .limit(1);
   if (storeLogo) return;
+  const [heroMedia] = await db
+    .select({ id: sellerStoresTable.id })
+    .from(sellerStoresTable)
+    .where(sql`${sellerStoresTable.vitrineTheme}->>'heroMediaPath' = ${path}`)
+    .limit(1);
+  if (heroMedia) return;
   try {
     try {
       await storage.delete(path);

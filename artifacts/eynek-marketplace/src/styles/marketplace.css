@@ -617,6 +617,23 @@ body {
   position: relative;
   z-index: 1;
 }
+.vitrine-hero .seller-avatar--vitrine {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  font-size: 22px;
+  border: 1px solid color-mix(in srgb, var(--vt-text) 12%, transparent);
+  background: color-mix(in srgb, var(--vt-card) 92%, #fff);
+  box-shadow: 0 8px 22px rgba(17, 18, 20, 0.1);
+}
+@media (max-width: 720px) {
+  .vitrine-hero .seller-avatar--vitrine {
+    width: 76px;
+    height: 76px;
+    flex-basis: 76px;
+    font-size: 18px;
+  }
+}
 .vitrine-hero-copy h1 {
   margin: 4px 0 8px;
   font-size: clamp(28px, 5vw, 40px);

@@ -9,15 +9,20 @@ type Vendor = {
 
 type VendorMarkProps = {
   vendor: Vendor;
-  /** `detail` matches product page seller row (38px). */
-  variant?: 'card' | 'detail';
+  /** `detail` = product seller row; `vitrine` = storefront hero (larger). */
+  variant?: 'card' | 'detail' | 'vitrine';
 };
 
 export function VendorMark({ vendor, variant = 'card' }: VendorMarkProps) {
   const [logoFailed, setLogoFailed] = useState(false);
-  const isDetail = variant === 'detail';
-  const markClass = isDetail ? 'seller-avatar' : 'store-mark mp-store-mark';
-  const logoClass = isDetail ? 'seller-avatar seller-avatar--logo' : 'store-mark store-mark--logo mp-store-mark';
+  const isVitrine = variant === 'vitrine';
+  const isDetail = variant === 'detail' || isVitrine;
+  const markClass = isVitrine ? 'seller-avatar seller-avatar--vitrine' : isDetail ? 'seller-avatar' : 'store-mark mp-store-mark';
+  const logoClass = isVitrine
+    ? 'seller-avatar seller-avatar--logo seller-avatar--vitrine'
+    : isDetail
+      ? 'seller-avatar seller-avatar--logo'
+      : 'store-mark store-mark--logo mp-store-mark';
   const showLogo = Boolean(vendor.logoPath) && !logoFailed;
 
   if (showLogo && vendor.logoPath) {
