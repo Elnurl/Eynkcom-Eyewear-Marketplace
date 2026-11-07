@@ -217,6 +217,7 @@ export async function loadSellerOrder(sellerOrderId: string) {
   return {
     ...group.summary,
     orderNumber: row.order.orderNumber,
+    orderStatus: row.order.status,
     ...sellerBuyerContact(row.order, row.sellerOrder.status),
     deliveryArea: row.order.deliveryArea,
     deliveryAddress: row.order.deliveryAddress,
@@ -281,6 +282,7 @@ export async function listSellerOrders(sellerId: string) {
       ? { returnRequest: toReturnRequest(returnsBySellerOrder.get(sellerOrder.id)!) }
       : {}),
     orderNumber: order.orderNumber,
+    orderStatus: order.status,
     ...sellerBuyerContact(order, sellerOrder.status),
     deliveryArea: order.deliveryArea,
     deliveryAddress: order.deliveryAddress,

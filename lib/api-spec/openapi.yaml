@@ -1626,10 +1626,12 @@ components:
       allOf:
         - $ref: "#/components/schemas/SellerOrderSummary"
         - type: object
-          required: [orderNumber, customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, deliveryNote, fulfillmentMethod, paymentMethod, paymentStatus, updatedAt]
+          required: [orderNumber, orderStatus, customerName, customerEmail, customerPhone, deliveryArea, deliveryAddress, deliveryNote, fulfillmentMethod, paymentMethod, paymentStatus, updatedAt]
           properties:
             orderNumber:
               type: string
+            orderStatus:
+              $ref: "#/components/schemas/OrderStatus"
             customerName:
               type: string
             customerEmail:

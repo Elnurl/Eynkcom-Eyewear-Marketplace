@@ -585,6 +585,7 @@ export const ListSellerOrdersResponseItem = zod.object({
 }).optional()
 }).and(zod.object({
   "orderNumber": zod.string(),
+  "orderStatus": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -663,6 +664,7 @@ export const UpdateSellerOrderResponse = zod.object({
 }).optional()
 }).and(zod.object({
   "orderNumber": zod.string(),
+  "orderStatus": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),

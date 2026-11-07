@@ -959,6 +959,9 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
           .where(eq(marketplaceSellerOrdersTable.id, other.id));
       }
     } else {
+      if (parent.status === "awaiting_buyer_approval") {
+        return { kind: "awaiting-buyer" as const };
+      }
       if (parent.status !== "confirmed" && parent.status !== "preparing" && parent.status !== "out_for_delivery") {
         return { kind: "invalid-state" as const };
       }
@@ -1058,6 +1061,12 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
   }
   if (result.kind === "invalid-fee") {
     res.status(400).json({ error: "Çatdırılma haqqı qəpik dəqiqliyində və sıfırdan böyük olmayan rəqəm olmalıdır." });
+    return;
+  }
+  if (result.kind === "awaiting-buyer") {
+    res.status(400).json({
+      error: "Alıcı çatdırılma haqqını təsdiqləyəndən sonra hazırlanmağa keçə bilərsiniz.",
+    });
     return;
   }
   if (result.kind === "invalid-state") {

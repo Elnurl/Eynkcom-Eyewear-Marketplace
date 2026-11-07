@@ -31,6 +31,7 @@ function statusesFor(order: SellerOrder): SellerOrderUpdateStatus[] {
 }
 
 function forwardStatuses(order: SellerOrder): SellerOrderUpdateStatus[] {
+  if (order.orderStatus === 'awaiting_buyer_approval') return [];
   return statusesFor(order).filter((status) => status !== order.status);
 }
 
@@ -211,6 +212,11 @@ export default function SellerOrdersPage() {
                             ) : !isClosedSellerOrder(order.status) ? (
                               <div className="seller-status-log" data-testid={`log-seller-order-${order.id}`}>
                                 <div><strong>{sellerStatusLabel(order.status, order.fulfillmentMethod)}</strong><span>{dateLabel(order.updatedAt)}</span></div>
+                                {order.orderStatus === 'awaiting_buyer_approval' ? (
+                                  <p className="seller-buyer-pending" data-testid={`awaiting-buyer-${order.id}`}>
+                                    Alıcı çatdırılma haqqını təsdiqləyəndən sonra «Hazırlanmağa keç» aktiv olacaq.
+                                  </p>
+                                ) : null}
                                 {forwardStatuses(order).length > 0 && (
                                   <div className="order-next-steps">
                                     {order.paymentMethod === 'pay_on_delivery' && forwardStatuses(order).includes(SellerOrderUpdateStatus.delivered) && order.settlementStatus === 'not_eligible' && <label className="collection-check"><input type="checkbox" checked={draft.collectedAtDelivery} onChange={(event) => setDraft(order.id, { collectedAtDelivery: event.target.checked })} data-testid={`checkbox-collected-at-delivery-${order.id}`} /><span>Nağd ödənişi almışam</span></label>}

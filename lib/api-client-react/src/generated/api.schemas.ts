@@ -763,6 +763,7 @@ export const SellerOrderDeliveryArea = {
 
 export type SellerOrder = SellerOrderSummary & ({
   orderNumber: string;
+  orderStatus: OrderStatus;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
