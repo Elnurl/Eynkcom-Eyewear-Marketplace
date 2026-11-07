@@ -539,14 +539,23 @@ body {
 /* Standalone seller vitrine (/v/:slug) — Instagram / QR share */
 .vitrine-shell {
   min-height: 100dvh;
-  background:
-    radial-gradient(1200px 480px at 10% -10%, #eef2e4 0%, transparent 55%),
-    linear-gradient(180deg, #f7f6f2 0%, #f1efe8 100%);
+  background: #f7f6f2;
 }
 .vitrine-page {
-  width: min(1120px, calc(100% - 28px));
-  margin: 0 auto;
-  padding: 18px 0 48px;
+  --vt-bg: #f7f6f2;
+  --vt-card: #ffffff;
+  --vt-text: #161614;
+  --vt-accent: #bfd630;
+  --vt-font: "Manrope", system-ui, sans-serif;
+  --vt-overlay: 0.28;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100dvh;
+  margin: 0;
+  padding: 18px max(14px, calc((100% - 1120px) / 2)) 48px;
+  color: var(--vt-text);
+  font-family: var(--vt-font);
+  background: var(--vt-bg);
 }
 .vitrine-top {
   display: flex;
@@ -559,7 +568,7 @@ body {
   font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.04em;
-  color: var(--mp-ink);
+  color: var(--vt-text);
   text-decoration: none;
 }
 .vitrine-share {
@@ -568,24 +577,45 @@ body {
   gap: 8px;
   min-height: 40px;
   padding: 0 14px;
-  border: 1px solid #d8d6ce;
+  border: 1px solid color-mix(in srgb, var(--vt-text) 18%, transparent);
   border-radius: 999px;
-  background: #fff;
-  color: var(--mp-ink);
+  background: var(--vt-card);
+  color: var(--vt-text);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
 .vitrine-hero {
+  position: relative;
+  overflow: hidden;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 18px 22px;
   align-items: center;
   padding: 22px 22px 20px;
-  border: 1px solid #e4e2da;
+  border: 1px solid color-mix(in srgb, var(--vt-text) 12%, transparent);
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--vt-card);
   box-shadow: 0 18px 40px rgba(28, 28, 24, 0.06);
+  isolation: isolate;
+}
+.vitrine-hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--vt-hero);
+  background-size: cover;
+  background-position: center;
+}
+.vitrine-hero-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--vt-card) calc((1 - var(--vt-overlay)) * 100%), transparent);
+}
+.vitrine-page.has-hero-media .vitrine-hero > :not(.vitrine-hero-media) {
+  position: relative;
+  z-index: 1;
 }
 .vitrine-hero-copy h1 {
   margin: 4px 0 8px;
@@ -596,7 +626,7 @@ body {
 }
 .vitrine-eyebrow {
   margin: 0;
-  color: #6f6f68;
+  color: color-mix(in srgb, var(--vt-text) 62%, transparent);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -605,7 +635,7 @@ body {
 .vitrine-desc {
   margin: 0;
   max-width: 46ch;
-  color: #5c5c56;
+  color: color-mix(in srgb, var(--vt-text) 78%, transparent);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -614,7 +644,7 @@ body {
   flex-wrap: wrap;
   gap: 10px 16px;
   margin-top: 14px;
-  color: #4a4a45;
+  color: color-mix(in srgb, var(--vt-text) 86%, transparent);
   font-size: 13px;
   font-weight: 600;
 }
@@ -625,7 +655,7 @@ body {
   gap: 6px;
 }
 .vitrine-ig {
-  color: var(--mp-ink);
+  color: var(--vt-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -634,10 +664,46 @@ body {
   align-items: center;
   gap: 7px;
   margin: 14px 0 0;
-  color: #7a7a74;
+  color: color-mix(in srgb, var(--vt-text) 55%, transparent);
   font-size: 12px;
   font-weight: 600;
   word-break: break-all;
+}
+.vitrine-skin-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.vitrine-skin-chip {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+.vitrine-skin-chip.active {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+.seller-hero-preview {
+  width: 140px;
+  height: 88px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.seller-hero-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.seller-settings-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
 }
 .vitrine-grid-wrap {
   margin-top: 28px;

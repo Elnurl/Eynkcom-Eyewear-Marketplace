@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { Check, Copy, Link2, MapPin, ScanFace, ShoppingBag } from 'lucide-react';
 import { Link, useParams } from 'wouter';
+import type { VitrineTheme } from '@workspace/api-client-react';
 import { BrandWord } from '@/components/brand-logo';
 import { VendorMark } from '@/components/marketplace/VendorMark';
 import { MarketProductCard, type MarketProduct } from '@/components/marketplace/MarketProductCard';
+import { fontCss, normalizeVitrineTheme } from '@/lib/vitrine-theme';
 
 /** Short Instagram-friendly aliases → real store slug on eynek.store */
 export const VITRINE_ALIASES: Record<string, string> = {
@@ -23,6 +25,7 @@ export type VitrineVendor = {
   count: number;
   instagram?: string;
   website?: string;
+  vitrineTheme?: VitrineTheme | null;
 };
 
 type VitrineProduct = MarketProduct & {
@@ -101,9 +104,20 @@ export function VitrinePage({
     () => products.filter((product) => product.vendorSlug === resolved && !product.previewOnly),
     [products, resolved],
   );
+  const theme = normalizeVitrineTheme(vendor?.vitrineTheme);
   const sharePath = vendor ? `/v/${VITRINE_ALIASES[rawSlug.toLowerCase()] ? rawSlug.toLowerCase() : preferredAlias(vendor.slug)}` : `/v/${rawSlug}`;
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}${sharePath}` : sharePath;
   const ig = instagramHref(vendor?.instagram);
+  const heroUrl = theme.heroMediaPath ? photoSrc(theme.heroMediaPath) : '';
+  const pageStyle = {
+    '--vt-bg': theme.bgColor,
+    '--vt-card': theme.cardColor,
+    '--vt-text': theme.textColor,
+    '--vt-accent': theme.accentColor,
+    '--vt-font': fontCss(theme.fontFamily),
+    '--vt-overlay': String(theme.heroOverlay),
+    ...(heroUrl ? { '--vt-hero': `url("${heroUrl.replace(/"/g, '%22')}")` } : {}),
+  } as CSSProperties;
 
   if (!vendor) {
     return (
@@ -130,7 +144,7 @@ export function VitrinePage({
   };
 
   return (
-    <main className="vitrine-page" data-testid="page-vitrine">
+    <main className={`vitrine-page${heroUrl ? ' has-hero-media' : ''}`} data-testid="page-vitrine" style={pageStyle}>
       <header className="vitrine-top">
         <Link href="/" className="vitrine-eynek" aria-label="EYNƏK ana səhifə">
           <BrandWord />
@@ -142,6 +156,7 @@ export function VitrinePage({
       </header>
 
       <section className="vitrine-hero">
+        {heroUrl ? <div className="vitrine-hero-media" aria-hidden /> : null}
         <VendorMark vendor={vendor} variant="detail" />
         <div className="vitrine-hero-copy">
           <p className="vitrine-eyebrow">Virtual vitrin</p>

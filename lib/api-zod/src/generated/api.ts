@@ -1145,6 +1145,19 @@ export const DeleteSellerProductResponse = zod.void()
 /**
  * @summary List public approved stores
  */
+export const listStoresResponseVitrineThemeOneBgColorMax = 32;
+
+export const listStoresResponseVitrineThemeOneCardColorMax = 32;
+
+export const listStoresResponseVitrineThemeOneTextColorMax = 32;
+
+export const listStoresResponseVitrineThemeOneAccentColorMax = 32;
+
+export const listStoresResponseVitrineThemeOneHeroMediaPathMax = 500;
+
+export const listStoresResponseVitrineThemeOneHeroOverlayMin = 0;
+export const listStoresResponseVitrineThemeOneHeroOverlayMax = 0.85;
+
 export const listStoresResponseProductCountMin = 0;
 
 
@@ -1158,6 +1171,16 @@ export const ListStoresResponseItem = zod.object({
   "logoPath": zod.string().nullish(),
   "instagram": zod.string(),
   "website": zod.string(),
+  "vitrineTheme": zod.object({
+  "skin": zod.enum(['minimal', 'dark', 'ink', 'blush']).optional(),
+  "bgColor": zod.string().max(listStoresResponseVitrineThemeOneBgColorMax).optional(),
+  "cardColor": zod.string().max(listStoresResponseVitrineThemeOneCardColorMax).optional(),
+  "textColor": zod.string().max(listStoresResponseVitrineThemeOneTextColorMax).optional(),
+  "accentColor": zod.string().max(listStoresResponseVitrineThemeOneAccentColorMax).optional(),
+  "fontFamily": zod.enum(['manrope', 'playfair', 'bebas', 'space']).optional(),
+  "heroMediaPath": zod.string().max(listStoresResponseVitrineThemeOneHeroMediaPathMax).nullish(),
+  "heroOverlay": zod.number().min(listStoresResponseVitrineThemeOneHeroOverlayMin).max(listStoresResponseVitrineThemeOneHeroOverlayMax).optional()
+}).nullish(),
   "status": zod.enum(['active', 'inactive']),
   "productCount": zod.number().int().min(listStoresResponseProductCountMin),
   "initials": zod.string(),
@@ -1171,6 +1194,19 @@ export const ListStoresResponse = zod.array(ListStoresResponseItem)
 /**
  * @summary Get the authenticated seller's approved store
  */
+export const getSellerStoreResponseVitrineThemeOneBgColorMax = 32;
+
+export const getSellerStoreResponseVitrineThemeOneCardColorMax = 32;
+
+export const getSellerStoreResponseVitrineThemeOneTextColorMax = 32;
+
+export const getSellerStoreResponseVitrineThemeOneAccentColorMax = 32;
+
+export const getSellerStoreResponseVitrineThemeOneHeroMediaPathMax = 500;
+
+export const getSellerStoreResponseVitrineThemeOneHeroOverlayMin = 0;
+export const getSellerStoreResponseVitrineThemeOneHeroOverlayMax = 0.85;
+
 export const getSellerStoreResponseProductCountMin = 0;
 
 
@@ -1184,6 +1220,16 @@ export const GetSellerStoreResponse = zod.object({
   "logoPath": zod.string().nullish(),
   "instagram": zod.string(),
   "website": zod.string(),
+  "vitrineTheme": zod.object({
+  "skin": zod.enum(['minimal', 'dark', 'ink', 'blush']).optional(),
+  "bgColor": zod.string().max(getSellerStoreResponseVitrineThemeOneBgColorMax).optional(),
+  "cardColor": zod.string().max(getSellerStoreResponseVitrineThemeOneCardColorMax).optional(),
+  "textColor": zod.string().max(getSellerStoreResponseVitrineThemeOneTextColorMax).optional(),
+  "accentColor": zod.string().max(getSellerStoreResponseVitrineThemeOneAccentColorMax).optional(),
+  "fontFamily": zod.enum(['manrope', 'playfair', 'bebas', 'space']).optional(),
+  "heroMediaPath": zod.string().max(getSellerStoreResponseVitrineThemeOneHeroMediaPathMax).nullish(),
+  "heroOverlay": zod.number().min(getSellerStoreResponseVitrineThemeOneHeroOverlayMin).max(getSellerStoreResponseVitrineThemeOneHeroOverlayMax).optional()
+}).nullish(),
   "status": zod.enum(['active', 'inactive']),
   "productCount": zod.number().int().min(getSellerStoreResponseProductCountMin),
   "initials": zod.string(),
@@ -1206,6 +1252,19 @@ export const updateSellerStoreBodyInstagramMax = 200;
 
 export const updateSellerStoreBodyWebsiteMax = 300;
 
+export const updateSellerStoreBodyVitrineThemeOneBgColorMax = 32;
+
+export const updateSellerStoreBodyVitrineThemeOneCardColorMax = 32;
+
+export const updateSellerStoreBodyVitrineThemeOneTextColorMax = 32;
+
+export const updateSellerStoreBodyVitrineThemeOneAccentColorMax = 32;
+
+export const updateSellerStoreBodyVitrineThemeOneHeroMediaPathMax = 500;
+
+export const updateSellerStoreBodyVitrineThemeOneHeroOverlayMin = 0;
+export const updateSellerStoreBodyVitrineThemeOneHeroOverlayMax = 0.85;
+
 
 
 export const UpdateSellerStoreBody = zod.object({
@@ -1214,8 +1273,31 @@ export const UpdateSellerStoreBody = zod.object({
   "description": zod.string().max(updateSellerStoreBodyDescriptionMax).optional(),
   "logoPath": zod.string().nullish(),
   "instagram": zod.string().max(updateSellerStoreBodyInstagramMax).optional(),
-  "website": zod.string().max(updateSellerStoreBodyWebsiteMax).optional()
+  "website": zod.string().max(updateSellerStoreBodyWebsiteMax).optional(),
+  "vitrineTheme": zod.object({
+  "skin": zod.enum(['minimal', 'dark', 'ink', 'blush']).optional(),
+  "bgColor": zod.string().max(updateSellerStoreBodyVitrineThemeOneBgColorMax).optional(),
+  "cardColor": zod.string().max(updateSellerStoreBodyVitrineThemeOneCardColorMax).optional(),
+  "textColor": zod.string().max(updateSellerStoreBodyVitrineThemeOneTextColorMax).optional(),
+  "accentColor": zod.string().max(updateSellerStoreBodyVitrineThemeOneAccentColorMax).optional(),
+  "fontFamily": zod.enum(['manrope', 'playfair', 'bebas', 'space']).optional(),
+  "heroMediaPath": zod.string().max(updateSellerStoreBodyVitrineThemeOneHeroMediaPathMax).nullish(),
+  "heroOverlay": zod.number().min(updateSellerStoreBodyVitrineThemeOneHeroOverlayMin).max(updateSellerStoreBodyVitrineThemeOneHeroOverlayMax).optional()
+}).nullish()
 })
+
+export const updateSellerStoreResponseVitrineThemeOneBgColorMax = 32;
+
+export const updateSellerStoreResponseVitrineThemeOneCardColorMax = 32;
+
+export const updateSellerStoreResponseVitrineThemeOneTextColorMax = 32;
+
+export const updateSellerStoreResponseVitrineThemeOneAccentColorMax = 32;
+
+export const updateSellerStoreResponseVitrineThemeOneHeroMediaPathMax = 500;
+
+export const updateSellerStoreResponseVitrineThemeOneHeroOverlayMin = 0;
+export const updateSellerStoreResponseVitrineThemeOneHeroOverlayMax = 0.85;
 
 export const updateSellerStoreResponseProductCountMin = 0;
 
@@ -1230,6 +1312,16 @@ export const UpdateSellerStoreResponse = zod.object({
   "logoPath": zod.string().nullish(),
   "instagram": zod.string(),
   "website": zod.string(),
+  "vitrineTheme": zod.object({
+  "skin": zod.enum(['minimal', 'dark', 'ink', 'blush']).optional(),
+  "bgColor": zod.string().max(updateSellerStoreResponseVitrineThemeOneBgColorMax).optional(),
+  "cardColor": zod.string().max(updateSellerStoreResponseVitrineThemeOneCardColorMax).optional(),
+  "textColor": zod.string().max(updateSellerStoreResponseVitrineThemeOneTextColorMax).optional(),
+  "accentColor": zod.string().max(updateSellerStoreResponseVitrineThemeOneAccentColorMax).optional(),
+  "fontFamily": zod.enum(['manrope', 'playfair', 'bebas', 'space']).optional(),
+  "heroMediaPath": zod.string().max(updateSellerStoreResponseVitrineThemeOneHeroMediaPathMax).nullish(),
+  "heroOverlay": zod.number().min(updateSellerStoreResponseVitrineThemeOneHeroOverlayMin).max(updateSellerStoreResponseVitrineThemeOneHeroOverlayMax).optional()
+}).nullish(),
   "status": zod.enum(['active', 'inactive']),
   "productCount": zod.number().int().min(updateSellerStoreResponseProductCountMin),
   "initials": zod.string(),
@@ -1476,7 +1568,7 @@ export const requestUploadUrlBodySizeMax = 10485760;
 export const RequestUploadUrlBody = zod.object({
   "name": zod.string().min(1),
   "size": zod.number().int().min(1).max(requestUploadUrlBodySizeMax),
-  "contentType": zod.enum(['image/jpeg', 'image/png'])
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/gif'])
 })
 
 
@@ -1490,7 +1582,7 @@ export const RequestUploadUrlResponse = zod.object({
   "metadata": zod.object({
   "name": zod.string().min(1),
   "size": zod.number().int().min(1).max(requestUploadUrlResponseMetadataSizeMax),
-  "contentType": zod.enum(['image/jpeg', 'image/png'])
+  "contentType": zod.enum(['image/jpeg', 'image/png', 'image/gif'])
 })
 })
 

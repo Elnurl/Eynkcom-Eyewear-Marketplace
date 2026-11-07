@@ -120,7 +120,7 @@ type Product = {
   vtoReady?: boolean;
 };
 
-type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'since' | 'description' | 'logoPath' | 'instagram' | 'website'> & { count: number };
+type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'since' | 'description' | 'logoPath' | 'instagram' | 'website' | 'vitrineTheme'> & { count: number };
 
 const sampleCatalog: Product[] = [
   { id: 'sample-merdekan-03', name: 'Mərdəkan 03', brand: 'EYNƏK', image: 'product-images/merdekan-03.jpg', wornImage: 'product-images/merdekan-03-worn.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Gün eynəyi', gender: 'Uniseks', shape: 'Square', material: 'Asetat', size: 'M', color: 'Qara', tone: 'tone-1', frameStyle: 'sunglass', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
@@ -1226,6 +1226,7 @@ function Storefront() {
         logoPath: store.logoPath ?? null,
         instagram: store.instagram,
         website: store.website,
+        vitrineTheme: store.vitrineTheme ?? null,
         count: store.productCount,
       })),
     [storeRows],

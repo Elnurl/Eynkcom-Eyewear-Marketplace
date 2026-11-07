@@ -12,17 +12,25 @@ import { BrandLogo } from '@/components/brand-logo';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
 import { fetchVtoSkus } from '@/lib/eynek-vto';
 import { vitrinePublicPath } from '@/pages/vitrine';
+import {
+  DEFAULT_VITRINE_THEME,
+  VITRINE_FONTS,
+  VITRINE_SKINS,
+  normalizeVitrineTheme,
+  type VitrineThemeForm,
+} from '@/lib/vitrine-theme';
 
-function imageUploadContentType(file: File): 'image/jpeg' | 'image/png' | null {
+function imageUploadContentType(file: File): 'image/jpeg' | 'image/png' | 'image/gif' | null {
   const type = file.type.toLowerCase();
   if (type === 'image/png') return 'image/png';
   if (type === 'image/jpeg' || type === 'image/jpg') return 'image/jpeg';
+  if (type === 'image/gif') return 'image/gif';
   return null;
 }
 
 async function uploadProductImage(file: File): Promise<string> {
   const contentType = imageUploadContentType(file);
-  if (!contentType) throw new Error('Yalnız JPG və ya PNG qəbul olunur.');
+  if (!contentType) throw new Error('Yalnız JPG, PNG və ya GIF qəbul olunur.');
   const response = await fetch('/api/storage/uploads/direct', {
     method: 'POST',
     credentials: 'include',
@@ -65,9 +73,12 @@ export default function SellerPanel() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'store'>('products');
   const [storeForm, setStoreForm] = useState({ name: '', location: '', description: '', instagram: '', website: '' });
+  const [themeForm, setThemeForm] = useState<VitrineThemeForm>(DEFAULT_VITRINE_THEME);
   const [storeSaveMessage, setStoreSaveMessage] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
+  const [heroUploading, setHeroUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
   
   // Product Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -98,6 +109,7 @@ export default function SellerPanel() {
       instagram: store.instagram,
       website: store.website,
     });
+    setThemeForm(normalizeVitrineTheme(store.vitrineTheme));
   }, [store]);
 
   const filteredProducts = useMemo(() => {
@@ -167,10 +179,47 @@ export default function SellerPanel() {
         description: storeForm.description.trim(),
         instagram: storeForm.instagram.trim(),
         website: storeForm.website.trim(),
+        vitrineTheme: {
+          skin: themeForm.skin,
+          bgColor: themeForm.bgColor,
+          cardColor: themeForm.cardColor,
+          textColor: themeForm.textColor,
+          accentColor: themeForm.accentColor,
+          fontFamily: themeForm.fontFamily,
+          heroMediaPath: themeForm.heroMediaPath,
+          heroOverlay: themeForm.heroOverlay,
+        },
       });
-      setStoreSaveMessage('Mağaza məlumatları yadda saxlanıldı.');
+      setStoreSaveMessage('Mağaza və vitrin dizaynı yadda saxlanıldı.');
     } catch {
       setStoreSaveMessage(errorMessage || 'Mağaza məlumatları saxlanmadı.');
+    }
+  };
+
+  const applySkin = (skin: VitrineThemeForm['skin']) => {
+    setThemeForm((current) => ({ ...current, skin, ...VITRINE_SKINS[skin] }));
+  };
+
+  const onPickHeroMedia = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = '';
+    setHeroUploading(true);
+    setStoreSaveMessage('');
+    try {
+      const heroMediaPath = await uploadProductImage(file);
+      setThemeForm((current) => ({ ...current, heroMediaPath }));
+      await updateStore({
+        vitrineTheme: {
+          ...normalizeVitrineTheme({ ...themeForm, heroMediaPath }),
+          heroMediaPath,
+        },
+      });
+      setStoreSaveMessage('Hero fonu yadda saxlanıldı.');
+    } catch (error) {
+      setStoreSaveMessage(error instanceof Error ? error.message : 'Hero fonu yüklənmədi.');
+    } finally {
+      setHeroUploading(false);
     }
   };
 
@@ -488,8 +537,78 @@ export default function SellerPanel() {
                 <div className="field full"><label htmlFor="store-profile-description">Haqqında</label><textarea id="store-profile-description" value={storeForm.description} onChange={(event) => setStoreForm((form) => ({ ...form, description: event.target.value }))} data-testid="input-store-description" /></div>
                 <div className="field"><label htmlFor="store-profile-instagram">Instagram</label><input id="store-profile-instagram" value={storeForm.instagram} onChange={(event) => setStoreForm((form) => ({ ...form, instagram: event.target.value }))} data-testid="input-store-instagram" /></div>
                 <div className="field"><label htmlFor="store-profile-website">Veb-sayt</label><input id="store-profile-website" value={storeForm.website} onChange={(event) => setStoreForm((form) => ({ ...form, website: event.target.value }))} data-testid="input-store-website" /></div>
+
+                <h2 className="seller-settings-section-title" style={{ gridColumn: '1 / -1', marginTop: 8 }}>Vitrin dizaynı</h2>
+                <p className="field-help" style={{ gridColumn: '1 / -1', marginTop: -8 }}>
+                  Instagram linkindəki vitrinin rəngi, fontu və hero fonu (şəkil/GIF). Dəyişikliklər <Link href={vitrinePublicPath(store.slug)}>{vitrinePublicPath(store.slug)}</Link> səhifəsində görünür.
+                </p>
+                <div className="field full">
+                  <span className="seller-settings-label">Skin / tema</span>
+                  <div className="vitrine-skin-grid">
+                    {(Object.keys(VITRINE_SKINS) as Array<VitrineThemeForm['skin']>).map((skin) => (
+                      <button
+                        key={skin}
+                        type="button"
+                        className={`vitrine-skin-chip ${themeForm.skin === skin ? 'active' : ''}`}
+                        style={{ background: VITRINE_SKINS[skin].bgColor, color: VITRINE_SKINS[skin].textColor, borderColor: VITRINE_SKINS[skin].accentColor }}
+                        onClick={() => applySkin(skin)}
+                        data-testid={`button-vitrine-skin-${skin}`}
+                      >
+                        {skin}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="field"><label htmlFor="theme-bg">Fon rəngi</label><input id="theme-bg" type="color" value={themeForm.bgColor} onChange={(event) => setThemeForm((form) => ({ ...form, bgColor: event.target.value, skin: 'minimal' }))} data-testid="input-theme-bg" /></div>
+                <div className="field"><label htmlFor="theme-card">Kart rəngi</label><input id="theme-card" type="color" value={themeForm.cardColor} onChange={(event) => setThemeForm((form) => ({ ...form, cardColor: event.target.value }))} data-testid="input-theme-card" /></div>
+                <div className="field"><label htmlFor="theme-text">Yazı rəngi</label><input id="theme-text" type="color" value={themeForm.textColor} onChange={(event) => setThemeForm((form) => ({ ...form, textColor: event.target.value }))} data-testid="input-theme-text" /></div>
+                <div className="field"><label htmlFor="theme-accent">Accent</label><input id="theme-accent" type="color" value={themeForm.accentColor} onChange={(event) => setThemeForm((form) => ({ ...form, accentColor: event.target.value }))} data-testid="input-theme-accent" /></div>
+                <div className="field"><label htmlFor="theme-font">Font</label>
+                  <select id="theme-font" value={themeForm.fontFamily} onChange={(event) => setThemeForm((form) => ({ ...form, fontFamily: event.target.value as VitrineThemeForm['fontFamily'] }))} data-testid="select-theme-font">
+                    {VITRINE_FONTS.map((font) => <option key={font.id} value={font.id}>{font.label}</option>)}
+                  </select>
+                </div>
+                <div className="field"><label htmlFor="theme-overlay">Hero overlay ({Math.round(themeForm.heroOverlay * 100)}%)</label>
+                  <input id="theme-overlay" type="range" min={0} max={0.85} step={0.05} value={themeForm.heroOverlay} onChange={(event) => setThemeForm((form) => ({ ...form, heroOverlay: Number(event.target.value) }))} data-testid="input-theme-overlay" />
+                </div>
+                <div className="field full">
+                  <span className="seller-settings-label">Hero fon (şəkil / GIF)</span>
+                  <div className="seller-logo-card-inner" style={{ marginTop: 8 }}>
+                    <div className="seller-logo-preview seller-hero-preview">
+                      {themeForm.heroMediaPath ? (
+                        <img src={sellerImageUrl(themeForm.heroMediaPath)} alt="Hero fon önbaxışı" />
+                      ) : (
+                        <div className="seller-logo-placeholder"><ImagePlus size={28} strokeWidth={1.5} /></div>
+                      )}
+                    </div>
+                    <div className="seller-logo-copy">
+                      <p>Yazıların arxasındakı blok. JPG, PNG və ya GIF, maksimum 10 MB.</p>
+                      <div className="seller-logo-actions">
+                        <input ref={heroInputRef} type="file" accept="image/jpeg,image/png,image/gif" hidden onChange={(event) => void onPickHeroMedia(event)} />
+                        <button type="button" className="btn btn-blue" disabled={heroUploading || isSaving} onClick={() => heroInputRef.current?.click()} data-testid="button-upload-hero-media">
+                          {heroUploading ? <Loader2 size={16} className="spin" /> : <ImagePlus size={16} />}
+                          {themeForm.heroMediaPath ? 'Fonu dəyiş' : 'Fon əlavə et'}
+                        </button>
+                        {themeForm.heroMediaPath ? (
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            disabled={heroUploading || isSaving}
+                            onClick={() => {
+                              setThemeForm((form) => ({ ...form, heroMediaPath: null }));
+                            }}
+                            data-testid="button-remove-hero-media"
+                          >
+                            Fonu sil
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {storeSaveMessage ? <div className="field-help" role="status">{storeSaveMessage}</div> : null}
-                <div className="form-actions"><button className="btn btn-blue" disabled={isSaving || logoUploading} type="submit" data-testid="button-save-store-profile">{isSaving ? 'Yadda saxlanılır...' : 'Məlumatları saxla'}</button></div>
+                <div className="form-actions"><button className="btn btn-blue" disabled={isSaving || logoUploading || heroUploading} type="submit" data-testid="button-save-store-profile">{isSaving ? 'Yadda saxlanılır...' : 'Məlumatları saxla'}</button></div>
               </form>
             </div>
           </div>

@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { VitrineTheme } from './vitrineTheme';
 
 export interface SellerStoreUpdate {
   /**
@@ -24,4 +25,5 @@ export interface SellerStoreUpdate {
   instagram?: string;
   /** @maxLength 300 */
   website?: string;
+  vitrineTheme?: VitrineTheme | null;
 }

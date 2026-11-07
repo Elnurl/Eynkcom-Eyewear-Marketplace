@@ -80,3 +80,6 @@ export * from './uploadCompleteResponse';
 export * from './uploadUrlRequest';
 export * from './uploadUrlRequestContentType';
 export * from './uploadUrlResponse';
+export * from './vitrineTheme';
+export * from './vitrineThemeFontFamily';
+export * from './vitrineThemeSkin';

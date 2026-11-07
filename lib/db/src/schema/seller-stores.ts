@@ -1,6 +1,17 @@
 import { createInsertSchema } from "drizzle-zod";
-import { index, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, jsonb, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
+
+export type StoreVitrineTheme = {
+  skin?: "minimal" | "dark" | "ink" | "blush";
+  bgColor?: string;
+  cardColor?: string;
+  textColor?: string;
+  accentColor?: string;
+  fontFamily?: "manrope" | "playfair" | "bebas" | "space";
+  heroMediaPath?: string | null;
+  heroOverlay?: number;
+};
 
 export const sellerStoresTable = pgTable(
   "seller_stores",
@@ -14,6 +25,7 @@ export const sellerStoresTable = pgTable(
     logoPath: text("logo_path"),
     instagram: text("instagram").notNull().default(""),
     website: text("website").notNull().default(""),
+    vitrineTheme: jsonb("vitrine_theme").$type<StoreVitrineTheme | null>(),
     status: text("status").notNull().default("active"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })

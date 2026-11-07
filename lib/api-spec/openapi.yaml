@@ -1174,6 +1174,36 @@ components:
           type: string
         isAvailable:
           type: boolean
+    VitrineTheme:
+      type: object
+      additionalProperties: false
+      properties:
+        skin:
+          type: string
+          enum: [minimal, dark, ink, blush]
+        bgColor:
+          type: string
+          maxLength: 32
+        cardColor:
+          type: string
+          maxLength: 32
+        textColor:
+          type: string
+          maxLength: 32
+        accentColor:
+          type: string
+          maxLength: 32
+        fontFamily:
+          type: string
+          enum: [manrope, playfair, bebas, space]
+        heroMediaPath:
+          type: string
+          nullable: true
+          maxLength: 500
+        heroOverlay:
+          type: number
+          minimum: 0
+          maximum: 0.85
     SellerStore:
       type: object
       required: [id, name, slug, location, description, instagram, website, status, productCount, initials, since, createdAt, updatedAt]
@@ -1195,6 +1225,10 @@ components:
           type: string
         website:
           type: string
+        vitrineTheme:
+          allOf:
+            - $ref: "#/components/schemas/VitrineTheme"
+          nullable: true
         status:
           type: string
           enum: [active, inactive]
@@ -1235,6 +1269,10 @@ components:
         website:
           type: string
           maxLength: 300
+        vitrineTheme:
+          allOf:
+            - $ref: "#/components/schemas/VitrineTheme"
+          nullable: true
     SellerApplicationStatus:
       type: string
       enum: [pending, approved, rejected, needs_changes]
@@ -1775,7 +1813,7 @@ components:
           maximum: 10485760
         contentType:
           type: string
-          enum: [image/jpeg, image/png]
+          enum: [image/jpeg, image/png, image/gif]
     UploadUrlResponse:
       type: object
       required: [uploadURL, objectPath, metadata]

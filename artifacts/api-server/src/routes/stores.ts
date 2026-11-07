@@ -28,6 +28,7 @@ function formatStore(
     logoPath: store.logoPath ?? null,
     instagram: store.instagram,
     website: store.website,
+    vitrineTheme: store.vitrineTheme ?? null,
     status: store.status,
     productCount,
     initials: initials || "S",
@@ -112,6 +113,33 @@ router.patch("/seller/store", requireAuth, async (req, res): Promise<void> => {
       return;
     }
     updates.logoPath = logoPath;
+  }
+  if (Object.prototype.hasOwnProperty.call(parsed.data, "vitrineTheme")) {
+    const theme = parsed.data.vitrineTheme;
+    if (theme === null) {
+      updates.vitrineTheme = null;
+    } else if (theme && typeof theme === "object") {
+      const heroMediaPath =
+        typeof theme.heroMediaPath === "string" && theme.heroMediaPath.trim()
+          ? theme.heroMediaPath.trim()
+          : theme.heroMediaPath === null
+            ? null
+            : undefined;
+      if (heroMediaPath) {
+        if (!UPLOADED_IMAGE_PATH.test(heroMediaPath)) {
+          res.status(400).json({ error: "Vitrin fon faylının yolu düzgün deyil." });
+          return;
+        }
+        if (!(await imageBelongsToSeller(heroMediaPath, existing.id))) {
+          res.status(400).json({ error: "Vitrin fon faylı sizə aid deyil." });
+          return;
+        }
+      }
+      updates.vitrineTheme = {
+        ...theme,
+        ...(heroMediaPath !== undefined ? { heroMediaPath } : {}),
+      };
+    }
   }
 
   const [store] = await db

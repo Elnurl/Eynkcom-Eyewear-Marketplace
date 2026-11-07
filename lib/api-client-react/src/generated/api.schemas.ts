@@ -298,6 +298,46 @@ export interface PublicProduct {
   isAvailable: boolean;
 }
 
+export type VitrineThemeSkin = typeof VitrineThemeSkin[keyof typeof VitrineThemeSkin];
+
+
+export const VitrineThemeSkin = {
+  minimal: 'minimal',
+  dark: 'dark',
+  ink: 'ink',
+  blush: 'blush',
+} as const;
+
+export type VitrineThemeFontFamily = typeof VitrineThemeFontFamily[keyof typeof VitrineThemeFontFamily];
+
+
+export const VitrineThemeFontFamily = {
+  manrope: 'manrope',
+  playfair: 'playfair',
+  bebas: 'bebas',
+  space: 'space',
+} as const;
+
+export interface VitrineTheme {
+  skin?: VitrineThemeSkin;
+  /** @maxLength 32 */
+  bgColor?: string;
+  /** @maxLength 32 */
+  cardColor?: string;
+  /** @maxLength 32 */
+  textColor?: string;
+  /** @maxLength 32 */
+  accentColor?: string;
+  fontFamily?: VitrineThemeFontFamily;
+  /** @maxLength 500 */
+  heroMediaPath?: string | null;
+  /**
+     * @minimum 0
+     * @maximum 0.85
+     */
+  heroOverlay?: number;
+}
+
 export type SellerStoreStatus = typeof SellerStoreStatus[keyof typeof SellerStoreStatus];
 
 
@@ -315,6 +355,7 @@ export interface SellerStore {
   logoPath?: string | null;
   instagram: string;
   website: string;
+  vitrineTheme?: VitrineTheme | null;
   status: SellerStoreStatus;
   /** @minimum 0 */
   productCount: number;
@@ -342,6 +383,7 @@ export interface SellerStoreUpdate {
   instagram?: string;
   /** @maxLength 300 */
   website?: string;
+  vitrineTheme?: VitrineTheme | null;
 }
 
 export type SellerApplicationStatus = typeof SellerApplicationStatus[keyof typeof SellerApplicationStatus];
@@ -848,6 +890,7 @@ export type UploadUrlRequestContentType = typeof UploadUrlRequestContentType[key
 export const UploadUrlRequestContentType = {
   'image/jpeg': 'image/jpeg',
   'image/png': 'image/png',
+  'image/gif': 'image/gif',
 } as const;
 
 export interface UploadUrlRequest {

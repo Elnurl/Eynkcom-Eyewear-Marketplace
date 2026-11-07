@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { SellerStoreStatus } from './sellerStoreStatus';
+import type { VitrineTheme } from './vitrineTheme';
 
 export interface SellerStore {
   id: string;
@@ -16,6 +17,7 @@ export interface SellerStore {
   logoPath?: string | null;
   instagram: string;
   website: string;
+  vitrineTheme?: VitrineTheme | null;
   status: SellerStoreStatus;
   /** @minimum 0 */
   productCount: number;

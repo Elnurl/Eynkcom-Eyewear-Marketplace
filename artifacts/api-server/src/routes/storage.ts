@@ -16,17 +16,23 @@ const router: IRouter = Router();
 const storage = new ObjectStorageService();
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
-function imageContentType(header: string | undefined): "image/jpeg" | "image/png" | null {
+type UploadImageType = "image/jpeg" | "image/png" | "image/gif";
+
+function imageContentType(header: string | undefined): UploadImageType | null {
   const value = header?.split(";")[0]?.trim().toLowerCase();
   if (value === "image/jpeg" || value === "image/jpg") return "image/jpeg";
   if (value === "image/png") return "image/png";
+  if (value === "image/gif") return "image/gif";
   return null;
 }
 
-function matchesImageMagic(contentType: "image/jpeg" | "image/png", header: Buffer): boolean {
+function matchesImageMagic(contentType: UploadImageType, header: Buffer): boolean {
   const isJpeg = header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
   const isPng = header.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-  return contentType === "image/jpeg" ? isJpeg : isPng;
+  const isGif = header.subarray(0, 6).equals(Buffer.from("GIF87a")) || header.subarray(0, 6).equals(Buffer.from("GIF89a"));
+  if (contentType === "image/jpeg") return isJpeg;
+  if (contentType === "image/png") return isPng;
+  return isGif;
 }
 
 async function approvedStore(req: Request, res: Response) {
@@ -51,7 +57,7 @@ router.post(
     if (!store) return;
     const contentType = imageContentType(req.headers["content-type"]);
     if (!contentType) {
-      res.status(400).json({ error: "Yalnız JPG və ya PNG qəbul olunur." });
+      res.status(400).json({ error: "Yalnız JPG, PNG və ya GIF qəbul olunur." });
       return;
     }
     const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
@@ -64,7 +70,7 @@ router.post(
       return;
     }
     if (!matchesImageMagic(contentType, body.subarray(0, 8))) {
-      res.status(400).json({ error: "Fayl JPG və ya PNG şəkli deyil." });
+      res.status(400).json({ error: "Fayl JPG, PNG və ya GIF şəkli deyil." });
       return;
     }
     try {
@@ -99,7 +105,7 @@ router.post(
     if (!email) return;
     const contentType = imageContentType(req.headers["content-type"]);
     if (!contentType) {
-      res.status(400).json({ error: "Yalnız JPG və ya PNG qəbul olunur." });
+      res.status(400).json({ error: "Yalnız JPG, PNG və ya GIF qəbul olunur." });
       return;
     }
     const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
@@ -112,7 +118,7 @@ router.post(
       return;
     }
     if (!matchesImageMagic(contentType, body.subarray(0, 8))) {
-      res.status(400).json({ error: "Fayl JPG və ya PNG şəkli deyil." });
+      res.status(400).json({ error: "Fayl JPG, PNG və ya GIF şəkli deyil." });
       return;
     }
     try {
@@ -206,10 +212,9 @@ router.post(
         return;
       }
       const header = await storage.readHeader(ticket.objectPath, 8);
-      const isJpeg = header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
-      const isPng = header.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-      if (!(ticket.contentType === "image/jpeg" ? isJpeg : isPng)) {
-        res.status(400).json({ error: "Fayl JPG və ya PNG şəkli deyil." });
+      const contentType = imageContentType(ticket.contentType);
+      if (!contentType || !matchesImageMagic(contentType, header)) {
+        res.status(400).json({ error: "Fayl JPG, PNG və ya GIF şəkli deyil." });
         return;
       }
       await db.update(productImageUploadsTable).set({ finalizedAt: new Date() })

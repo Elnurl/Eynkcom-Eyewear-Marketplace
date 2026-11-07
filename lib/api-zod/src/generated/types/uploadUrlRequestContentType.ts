@@ -12,4 +12,5 @@ export type UploadUrlRequestContentType = typeof UploadUrlRequestContentType[key
 export const UploadUrlRequestContentType = {
   'image/jpeg': 'image/jpeg',
   'image/png': 'image/png',
+  'image/gif': 'image/gif',
 } as const;
