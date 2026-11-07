@@ -1331,6 +1331,7 @@ body { background: #f8faff; }
   background: #f3f2ec;
   color: #2a2c28;
   overflow: hidden;
+  font-family: Manrope, sans-serif;
 }
 .vto-stage-kicker {
   display: inline-flex;
@@ -1354,11 +1355,12 @@ body { background: #f8faff; }
 .vto-stage h2 {
   margin: 0;
   max-width: 520px;
-  color: #24261f;
-  font-size: clamp(40px, 4.6vw, 64px);
-  font-weight: 600;
-  line-height: .98;
-  letter-spacing: -.04em;
+  color: #1c1c1a;
+  font-family: Manrope, sans-serif;
+  font-size: clamp(36px, 4.2vw, 52px);
+  font-weight: 500;
+  line-height: 1.14;
+  letter-spacing: 0;
 }
 .vto-stage h2 span { color: #7d8468; }
 .vto-stage ul {
@@ -1383,8 +1385,8 @@ body { background: #f8faff; }
   color: #5e6256;
   box-sizing: border-box;
 }
-.vto-stage li strong { display: block; color: #24261f; font-size: 16px; font-weight: 650; }
-.vto-stage li span { display: block; margin-top: 3px; max-width: 420px; color: #6d6f68; font-size: 14px; line-height: 1.45; }
+.vto-stage li strong { display: block; color: #1c1c1a; font-size: 15px; font-weight: 600; }
+.vto-stage li span { display: block; margin-top: 3px; max-width: 420px; color: #5c5c58; font-size: 14px; font-weight: 400; line-height: 1.5; }
 .vto-stage-cta {
   margin-top: 28px;
   min-height: 48px;
@@ -1394,10 +1396,11 @@ body { background: #f8faff; }
   padding: 0 22px;
   border: 0;
   border-radius: 999px;
-  background: #1c1e1a;
-  color: #f7f6f2;
-  font-size: 15px;
-  font-weight: 700;
+  background: #1c1c1a;
+  color: #fff;
+  font-family: Manrope, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
 }
 .vto-stage-cta:hover { background: #2c2f29; }
@@ -1474,11 +1477,11 @@ body { background: #f8faff; }
   .haven-shell { width: min(1320px, calc(100% - 32px)); }
   .haven-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
   .haven-mosaic-row, .haven-mosaic-row--flip, .haven-mosaic--trio { grid-template-columns: 1fr; }
-  .vto-stage { grid-template-columns: 1fr; min-height: 0; padding: 28px 20px 32px; margin-bottom: 28px; overflow: hidden; }
-  .vto-stage-visual { height: auto; min-height: 0; margin-top: 18px; padding-bottom: 8px; }
-  .vto-stage-phone { height: auto; width: min(250px, 70vw); }
-  .vto-stage-glow { width: min(270px, 76vw); height: min(270px, 76vw); }
-  .vto-stage h2 { font-size: clamp(34px, 8vw, 48px); }
+  .vto-stage { grid-template-columns: 1fr; min-height: 0; padding: 28px 20px 24px; margin-bottom: 28px; overflow: hidden; }
+  .vto-stage-visual { height: auto; min-height: 0; margin-top: 16px; padding-bottom: 0; }
+  .vto-stage-phone { height: auto; width: min(168px, 46vw); animation: none; }
+  .vto-stage-glow { width: min(196px, 54vw); height: min(196px, 54vw); }
+  .vto-stage h2 { font-size: clamp(30px, 7.2vw, 36px); }
   .haven-mosaic--trio { margin-top: 4px; }
   .haven-benefits { grid-template-columns: 1fr 1fr; gap: 12px 16px; padding: 16px 0; font-size: 13px; }
   .haven-heading { align-items: flex-end; }

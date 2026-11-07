@@ -554,7 +554,6 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
               </div>
           <section className="vto-stage" aria-labelledby="vto-stage-title">
             <div className="vto-stage-copy">
-              <p className="vto-stage-kicker"><i /> Virtual sınama · Önizləmə</p>
               <h2 id="vto-stage-title">Eynəyi almazdan əvvəl<br /><span>virtual yoxla.</span></h2>
               <ul>
                 <li>
