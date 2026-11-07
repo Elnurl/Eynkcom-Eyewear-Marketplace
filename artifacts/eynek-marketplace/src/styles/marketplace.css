@@ -313,7 +313,7 @@ select:focus-visible {
 
 /* Home sections */
 .mp-home-section {
-  padding: 48px 0 0;
+  padding: 64px 0 8px;
 }
 .mp-shape-grid {
   display: grid;
@@ -434,7 +434,8 @@ select:focus-visible {
   line-height: 1.45;
 }
 .mp-faq {
-  padding-bottom: 56px;
+  padding-top: 28px;
+  padding-bottom: 72px;
 }
 .mp-accordion-item {
   border-top: 1px solid var(--mp-line);

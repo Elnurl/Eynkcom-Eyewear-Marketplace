@@ -552,33 +552,60 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
               <h2>Hər baxışın bir hekayəsi var.</h2>
               </div>
               </div>
-          <div className="haven-mosaic">
-            <div className="haven-mosaic-row">
-              <Link href="/collection?type=sunglasses" className="haven-tile haven-tile--wide haven-tile--dark haven-tile--sun" data-testid="link-category-sunglasses">
-                <img src={`${import.meta.env.BASE_URL}haven-sunglasses.webp`} alt="" />
-                <h3>Gün eynəkləri</h3>
-                <p>Formanı, ölçünü və satıcını müqayisə et.</p>
-              </Link>
-              <Link href="/collection?type=optical" className="haven-tile haven-tile--light" data-testid="link-category-optical">
-                <img src={`${import.meta.env.BASE_URL}haven-optical.webp`} alt="" />
-                <h3>Optik çərçivələr</h3>
-                <p>Gündəlik istifadə üçün modelləri kəşf et.</p>
-              </Link>
+          <section className="vto-stage" aria-labelledby="vto-stage-title">
+            <div className="vto-stage-copy">
+              <p className="vto-stage-kicker"><i /> Virtual sınama · Önizləmə</p>
+              <h2 id="vto-stage-title">Eynəyi almazdan əvvəl<br /><span>virtual yoxla.</span></h2>
+              <ul>
+                <li>
+                  <Glasses size={18} />
+                  <div>
+                    <strong>Model seç</strong>
+                    <span>İstənilən məhsul kartında «Üzündə önizlə» düyməsinə toxun.</span>
+                  </div>
+                </li>
+                <li>
+                  <ScanFace size={18} />
+                  <div>
+                    <strong>Modellər arasında keçid et</strong>
+                    <span>Bir toxunuşla başqa çərçivəyə bax və müqayisə et.</span>
+                  </div>
+                </li>
+                <li>
+                  <ShieldCheck size={18} />
+                  <div>
+                    <strong>Əmin qərar ver</strong>
+                    <span>Bəyəndiyini səbətə at.</span>
+                  </div>
+                </li>
+              </ul>
+              <button type="button" className="vto-stage-cta" onClick={() => onTryOn()} data-testid="button-home-vto">
+                Önizləməni aç <ArrowRight size={16} />
+              </button>
             </div>
-            <div className="haven-mosaic-row haven-mosaic-row--flip">
-              <div className="haven-tile haven-tile--dark haven-tile--virtual">
-                <img src={`${import.meta.env.BASE_URL}feature-images/virtual-preview.webp`} alt="" />
-                <h3>Almazdan əvvəl üzündə yoxla.</h3>
-                <button type="button" className="haven-tile-btn" onClick={() => onTryOn()} data-testid="button-home-vto">VTO görünüşünü aç <Video size={14} /></button>
+            <div className="vto-stage-visual" aria-hidden="true">
+              <div className="vto-stage-glow" />
+              <img className="vto-stage-phone" src={`${import.meta.env.BASE_URL}home-redesign/virtual-tryon-phone.png`} alt="" />
+            </div>
+          </section>
+          <div className="haven-mosaic haven-mosaic--trio">
+            <Link href="/collection?type=sunglasses" className="haven-tile haven-tile--dark haven-tile--sun" data-testid="link-category-sunglasses">
+              <img src={`${import.meta.env.BASE_URL}haven-sunglasses.webp`} alt="" />
+              <h3>Gün eynəkləri</h3>
+              <p>Formanı, ölçünü və satıcını müqayisə et.</p>
+            </Link>
+            <Link href="/collection?type=optical" className="haven-tile haven-tile--light" data-testid="link-category-optical">
+              <img src={`${import.meta.env.BASE_URL}haven-optical.webp`} alt="" />
+              <h3>Optik çərçivələr</h3>
+              <p>Gündəlik istifadə üçün modelləri kəşf et.</p>
+            </Link>
+            <div className="haven-tile haven-tile--light haven-tile--store">
+              <img src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" />
+              <h3>Yerli optikalar</h3>
+              <p>Mağazaları və məhsullarını kəşf et.</p>
+              <Link className="haven-tile-btn haven-tile-btn--solid" href="/stores" data-testid="link-feature-stores">Mağazalara bax <ArrowRight size={14} /></Link>
+            </div>
           </div>
-              <div className="haven-tile haven-tile--wide haven-tile--light haven-tile--store">
-                <img src={`${import.meta.env.BASE_URL}feature-images/optical-store.webp`} alt="" />
-                <h3>Optikaları bir-bir kəşf etmə.</h3>
-                <p>Mağazaları, satıcıları və təsdiqlənmiş məhsullarını bir yerdə gör.</p>
-                <Link className="haven-tile-btn haven-tile-btn--solid" href="/stores" data-testid="link-feature-stores">Mağazalara bax <ArrowRight size={14} /></Link>
-              </div>
-              </div>
-            </div>
         </section>
         <HomeMarketSections products={products} stores={stores} />
         <section className="haven-seller">
