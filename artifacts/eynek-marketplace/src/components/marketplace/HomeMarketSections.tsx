@@ -4,6 +4,7 @@ import { SectionLabel } from '@/components/marketplace/SectionLabel';
 import { az } from '@/i18n/az';
 import type { MarketProduct } from '@/components/marketplace/MarketProductCard';
 import { VendorMark } from '@/components/marketplace/VendorMark';
+import { vitrinePublicPath } from '@/pages/vitrine';
 
 type Vendor = {
   slug: string;
@@ -98,7 +99,7 @@ export function HomeMarketSections({
           <SectionLabel>{az.home.storesStrip}</SectionLabel>
           <div className="mp-store-strip">
             {stores.slice(0, 8).map((vendor) => (
-              <Link key={vendor.slug} href={`/vendor/${vendor.slug}`} className="mp-store-chip" data-testid={`link-home-store-${vendor.slug}`}>
+              <Link key={vendor.slug} href={vitrinePublicPath(vendor.slug)} className="mp-store-chip" data-testid={`link-home-store-${vendor.slug}`}>
                 <VendorMark vendor={vendor} />
                 <span>{vendor.name}</span>
               </Link>

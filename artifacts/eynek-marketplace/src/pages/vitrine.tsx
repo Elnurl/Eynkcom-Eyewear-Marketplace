@@ -220,7 +220,7 @@ export function VitrinePage({
         <span>
           Bu vitrin <BrandWord /> üzərində işləyir
         </span>
-        <Link href={`/vendor/${vendor.slug}`}>Eynek.store mağazası</Link>
+        <Link href="/stores">Bütün mağazalar</Link>
       </footer>
     </main>
   );

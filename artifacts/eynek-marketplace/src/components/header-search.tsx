@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { ArrowRight, History, Search, Store, X } from 'lucide-react';
+import { vitrinePublicPath } from '@/pages/vitrine';
 
 export type SearchProduct = {
   id: number | string;
@@ -86,14 +87,14 @@ export function HeaderSearch({ products, stores }: { products: SearchProduct[]; 
   ];
   const featured: SearchItem[] = [
     ...categories,
-    ...stores.slice(0, 2).map((store) => ({ label: store.name, description: 'Optika mağazası', href: `/vendor/${store.slug}`, store: true })),
+    ...stores.slice(0, 2).map((store) => ({ label: store.name, description: 'Optika mağazası', href: vitrinePublicPath(store.slug), store: true })),
     ...products.slice(0, 2).map((product) => ({ label: product.name, description: `${product.type} · ${product.vendor}`, href: `/product/${product.id}`, imageUrl: product.imageUrl })),
   ];
   const normalized = term.trim().toLocaleLowerCase('az');
   const results: SearchItem[] = normalized
     ? [
         ...categories.filter((item) => item.label.toLocaleLowerCase('az').includes(normalized)),
-        ...stores.filter((store) => store.name.toLocaleLowerCase('az').includes(normalized)).map((store) => ({ label: store.name, description: 'Optika mağazası', href: `/vendor/${store.slug}`, store: true })),
+        ...stores.filter((store) => store.name.toLocaleLowerCase('az').includes(normalized)).map((store) => ({ label: store.name, description: 'Optika mağazası', href: vitrinePublicPath(store.slug), store: true })),
         ...products.filter((product) => `${product.name} ${product.vendor} ${product.type} ${product.shape} ${product.color}`.toLocaleLowerCase('az').includes(normalized))
           .slice(0, 5).map((product) => ({ label: product.name, description: `${product.type} · ${product.vendor}`, href: `/product/${product.id}`, imageUrl: product.imageUrl })),
       ].slice(0, 6)

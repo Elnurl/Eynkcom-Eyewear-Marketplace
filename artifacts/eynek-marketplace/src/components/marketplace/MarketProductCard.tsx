@@ -1,6 +1,7 @@
 import { Heart, ScanFace, ShoppingBag } from 'lucide-react';
 import { Link } from 'wouter';
 import { az } from '@/i18n/az';
+import { vitrinePublicPath } from '@/pages/vitrine';
 
 export type MarketProduct = {
   id: number | string;
@@ -49,7 +50,7 @@ export function MarketProductCard({
 }) {
   const vto = productSupportsVto(product);
   const canBuy = !product.previewOnly && product.isAvailable;
-  const sellerHref = product.vendorSlug ? `/vendor/${product.vendorSlug}` : null;
+  const sellerHref = product.vendorSlug ? vitrinePublicPath(product.vendorSlug) : null;
   const showCart = Boolean(canBuy && onAdd);
   const showTry = vto;
 

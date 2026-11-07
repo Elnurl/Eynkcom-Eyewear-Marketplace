@@ -55,7 +55,7 @@ import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
 import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/pages/auth-pages';
 import { dateLabel, money as formatOrderMoney, orderStatusLabel } from '@/pages/order-ui';
-import { VitrinePage } from '@/pages/vitrine';
+import { VitrinePage, vitrinePublicPath } from '@/pages/vitrine';
 import './account.css';
 import {
   getGetSellerStoreQueryKey,
@@ -707,7 +707,7 @@ function Collection({ products, stores, likedIds, onFavorite, onQuickView, onTry
 }
 
 function StoresPage({ stores }: { stores: Vendor[] }) {
-  return <><main className="directory-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Marketplace satıcıları</div><h1>Mağazalar.</h1></div><p><BrandWord />-də satışa təsdiqlənmiş optik mağazaları və onların vitrinlərini kəşf et.</p></div>{stores.length ? <div className="store-grid">{stores.map((vendor) => <Link href={`/vendor/${vendor.slug}`} className="store-card" key={vendor.slug} data-testid={`card-store-${vendor.slug}`}><VendorMark vendor={vendor} /><span><h3>{vendor.name}</h3><p>{vendor.description}</p><span className="store-meta"><span><MapPin size={12} /> {vendor.location}</span><span>{vendor.count} model</span></span></span><span className="text-link">Mağazaya bax <ArrowRight size={13} /></span></Link>)}</div> : <div className="empty-state"><Store size={22} /><h3>Hələ təsdiqlənmiş mağaza yoxdur.</h3><p>Yeni mağazalar təsdiqləndikcə burada görünəcək.</p></div>}</div></main><Footer /></>;
+  return <><main className="directory-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Marketplace satıcıları</div><h1>Mağazalar.</h1></div><p><BrandWord />-də satışa təsdiqlənmiş optik mağazaları və onların vitrinlərini kəşf et.</p></div>{stores.length ? <div className="store-grid">{stores.map((vendor) => <Link href={vitrinePublicPath(vendor.slug)} className="store-card" key={vendor.slug} data-testid={`card-store-${vendor.slug}`}><VendorMark vendor={vendor} /><span><h3>{vendor.name}</h3><p>{vendor.description}</p><span className="store-meta"><span><MapPin size={12} /> {vendor.location}</span><span>{vendor.count} model</span></span></span><span className="text-link">Vitrinə bax <ArrowRight size={13} /></span></Link>)}</div> : <div className="empty-state"><Store size={22} /><h3>Hələ təsdiqlənmiş mağaza yoxdur.</h3><p>Yeni mağazalar təsdiqləndikcə burada görünəcək.</p></div>}</div></main><Footer /></>;
 }
 
 function BrandsPage({ products, likedIds, onFavorite, onQuickView, onTryOn, onAdd }: CommonProps) {
@@ -715,12 +715,9 @@ function BrandsPage({ products, likedIds, onFavorite, onQuickView, onTryOn, onAd
   return <><main className="directory-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Brend kəşfi</div><h1>Brendlər.</h1></div><p>Mağazaların təsdiqlənmiş kataloqlarında olan brendlər və modellər.</p></div>{brands.length ? brands.map((brand) => <section className="section" style={{ paddingBottom: 0 }} key={brand}><div className="section-head"><div><div className="eyebrow">Brend</div><h2 className="section-title">{brand}</h2></div></div><div className="product-grid">{products.filter((product) => product.brand.trim() === brand).map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />)}</div></section>) : <div className="empty-state"><Info size={20} /><h3>Hələ məhsul brendləri yoxdur.</h3><p>Satıcılar məhsullarını təsdiq üçün göndərdikdən sonra brendlər burada görünəcək.</p><Link href="/collection" className="btn btn-secondary">Məhsullara bax <ArrowRight size={14} /></Link></div>}</div></main><Footer /></>;
 }
 
-function VendorPage({ products, stores, likedIds, onFavorite, onQuickView, onTryOn, onAdd }: CommonProps) {
+function VendorPage() {
   const { slug = '' } = useParams<{ slug: string }>();
-  const vendor = stores.find((item) => item.slug === slug);
-  if (!vendor) return <NotFound />;
-  const items = products.filter((product) => product.vendorSlug === vendor.slug);
-  return <><main className="vendor-page"><div className="container"><div className="vendor-hero"><div><div className="eyebrow" style={{ color: '#B7B9C9' }}><BrandWord /> satıcısı</div><h1>{vendor.name}</h1><p>{vendor.description}</p></div><Link href="/stores" className="btn btn-secondary" data-testid="link-vendor-back">Bütün mağazalar</Link></div><div className="vendor-details"><span><MapPin size={14} /> {vendor.location}</span><span>{vendor.since}</span><span><ShoppingBag size={14} /> {vendor.count} model</span></div><section className="section" style={{ padding: '45px 0 0' }}><div className="section-head"><div><div className="eyebrow">Mağaza seçimi</div><h2 className="section-title">Bu vitrində</h2></div></div>{items.length ? <div className="product-grid">{items.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />)}</div> : <div className="empty-state"><Package size={22} /><h3>Hazırda təsdiqlənmiş məhsul yoxdur.</h3></div>}</section></div></main><Footer /></>;
+  return <Redirect to={vitrinePublicPath(slug)} />;
 }
 
 function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView, onFavorite, likedIds }: { products: Product[]; stores: Vendor[]; onAdd: (product: Product, message?: string, quantity?: number) => void; onBuyNow: (product: Product, quantity: number) => void; onTryOn: (product: Product) => void; onQuickView: (product: Product) => void; onFavorite: (id: number | string) => void; likedIds: Set<number | string> }) {
@@ -798,7 +795,7 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
                 <span><strong>Nümunə vitrin</strong><small>Satış üçün deyil · təsdiqlənmiş mağaza məhsulu gələndə əvəz olunur</small></span>
               </div>
             ) : (
-            <Link href={`/vendor/${product.vendorSlug}`} className="detail-seller" data-testid="link-detail-vendor">
+            <Link href={vitrinePublicPath(product.vendorSlug)} className="detail-seller" data-testid="link-detail-vendor">
               {(() => {
                 const vendor = stores.find((item) => item.slug === product.vendorSlug);
                 return vendor ? (
@@ -1379,7 +1376,7 @@ function Storefront() {
         <Route path="/mexfilik"><LegalPage slug="mexfilik" /></Route>
         <Route path="/qaytarma"><LegalPage slug="qaytarma" /></Route>
         <Route path="/satici-muqavilesi"><LegalPage slug="satici-muqavilesi" /></Route>
-        <Route path="/vendor/:slug"><VendorPage {...common} /></Route>
+        <Route path="/vendor/:slug"><VendorPage /></Route>
         <Route path="/product/:id"><ProductDetail products={allProducts} stores={stores} onAdd={addToCart} onBuyNow={buyNow} onTryOn={launchTryOn} onQuickView={(product) => setQuickProduct(product)} onFavorite={toggleFavorite} likedIds={likedIds} /></Route>
         <Route path="/"><Home {...common} onAdd={addToCart} /></Route>
         <Route component={NotFound} />

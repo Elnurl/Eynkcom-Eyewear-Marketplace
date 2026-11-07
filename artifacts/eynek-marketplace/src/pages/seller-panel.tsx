@@ -358,7 +358,7 @@ export default function SellerPanel() {
             <div className="seller-panel-section mt-10" style={{ marginBottom: 24 }}>
               <h2>Virtual vitrin linki</h2>
               <p style={{ margin: '6px 0 12px', color: 'var(--muted)', fontSize: 14 }}>
-                Instagram bio, WhatsApp və QR üçün ayrıca vitrin. Eynek mağazası ilə eyni məhsullardır.
+                Eynek-də mağazaya basanda və Instagram/WhatsApp linkində eyni vitrin açılır.
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
                 <code style={{ padding: '10px 12px', borderRadius: 10, background: '#f3f3f1', fontSize: 13 }}>
@@ -366,9 +366,6 @@ export default function SellerPanel() {
                 </code>
                 <Link href={vitrinePublicPath(store.slug)} className="btn btn-secondary" data-testid="link-seller-vitrine">
                   Vitrini aç
-                </Link>
-                <Link href={`/vendor/${store.slug}`} className="btn btn-secondary" data-testid="link-seller-eynek-store">
-                  Eynek mağazası
                 </Link>
               </div>
             </div>
