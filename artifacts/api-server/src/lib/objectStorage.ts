@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createReadStream, promises as fs } from "node:fs";
 import path from "node:path";
-import type { Readable } from "node:stream";
+import { Readable } from "node:stream";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -11,6 +11,7 @@ import {
   S3ServiceException,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { pool } from "@workspace/db";
 
 /**
  * S3-compatible storage (Cloudflare R2, AWS S3, Backblaze B2, MinIO).
@@ -86,13 +87,46 @@ function localFilePath(objectPath: string): string {
   return path.join(localRoot(), keyFor(objectPath));
 }
 
+type StoredBlob = { body: Buffer; contentType: string; size: number };
+
+/** Postgres copy so uploads survive Render deploys when S3 is not configured. */
+async function saveDurableBlob(objectPath: string, body: Buffer, contentType: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO stored_objects (object_path, content_type, size, body)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (object_path) DO UPDATE
+       SET content_type = EXCLUDED.content_type, size = EXCLUDED.size, body = EXCLUDED.body`,
+    [objectPath, contentType, body.length, body],
+  );
+}
+
+async function readDurableBlob(objectPath: string): Promise<StoredBlob | null> {
+  const result = await pool.query<{ content_type: string; size: number; body: Buffer }>(
+    `SELECT content_type, size, body FROM stored_objects WHERE object_path = $1`,
+    [objectPath],
+  );
+  const row = result.rows[0];
+  if (!row) return null;
+  const body = Buffer.isBuffer(row.body) ? row.body : Buffer.from(row.body);
+  return { body, contentType: row.content_type || "application/octet-stream", size: Number(row.size) || body.length };
+}
+
+async function deleteDurableBlob(objectPath: string): Promise<void> {
+  await pool.query(`DELETE FROM stored_objects WHERE object_path = $1`, [objectPath]);
+}
+
 async function writeLocalUpload(body: Buffer, contentType: string): Promise<{ objectPath: string }> {
   const key = `uploads/${randomUUID()}`;
   const objectPath = `/objects/${key}`;
-  const dir = path.join(localRoot(), "uploads");
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(localFilePath(objectPath), body);
-  await fs.writeFile(`${localFilePath(objectPath)}.meta`, contentType, "utf8");
+  await saveDurableBlob(objectPath, body, contentType);
+  try {
+    const dir = path.join(localRoot(), "uploads");
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(localFilePath(objectPath), body);
+    await fs.writeFile(`${localFilePath(objectPath)}.meta`, contentType, "utf8");
+  } catch {
+    // Disk is optional. The database row is the durable copy.
+  }
   return { objectPath };
 }
 
@@ -131,6 +165,8 @@ export class ObjectStorageService {
 
   async stat(objectPath: string): Promise<{ size: number; contentType: string }> {
     if (!isObjectStorageConfigured()) {
+      const blob = await readDurableBlob(objectPath);
+      if (blob) return { size: blob.size, contentType: blob.contentType };
       try {
         const file = await fs.stat(localFilePath(objectPath));
         return { size: file.size, contentType: await readLocalMeta(objectPath) };
@@ -149,6 +185,8 @@ export class ObjectStorageService {
 
   async readHeader(objectPath: string, bytes: number): Promise<Buffer> {
     if (!isObjectStorageConfigured()) {
+      const blob = await readDurableBlob(objectPath);
+      if (blob) return blob.body.subarray(0, bytes);
       try {
         const handle = await fs.open(localFilePath(objectPath), "r");
         try {
@@ -178,6 +216,14 @@ export class ObjectStorageService {
 
   async open(objectPath: string): Promise<StoredObject> {
     if (!isObjectStorageConfigured()) {
+      const blob = await readDurableBlob(objectPath);
+      if (blob) {
+        return {
+          body: Readable.from(blob.body),
+          contentType: blob.contentType,
+          contentLength: blob.size,
+        };
+      }
       try {
         const file = await fs.stat(localFilePath(objectPath));
         return {
@@ -205,11 +251,13 @@ export class ObjectStorageService {
 
   async delete(objectPath: string): Promise<void> {
     if (!isObjectStorageConfigured()) {
+      const blob = await readDurableBlob(objectPath);
+      await deleteDurableBlob(objectPath);
       try {
         await fs.unlink(localFilePath(objectPath));
         await fs.unlink(`${localFilePath(objectPath)}.meta`);
       } catch {
-        throw new ObjectNotFoundError();
+        if (!blob) throw new ObjectNotFoundError();
       }
       return;
     }

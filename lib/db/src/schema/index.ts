@@ -26,3 +26,4 @@ export * from "./marketplace-orders";
 export * from "./newsletter-subscribers";
 export * from "./seller-support-tickets";
 export * from "./support-image-uploads";
+export * from "./stored-objects";
