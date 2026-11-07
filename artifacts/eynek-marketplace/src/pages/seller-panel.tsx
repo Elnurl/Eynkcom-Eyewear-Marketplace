@@ -11,6 +11,7 @@ import { useSellerWorkspace, type SellerProduct, type SellerProductInput } from 
 import { BrandLogo } from '@/components/brand-logo';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
 import { fetchVtoSkus } from '@/lib/eynek-vto';
+import { vitrinePublicPath } from '@/pages/vitrine';
 
 function imageUploadContentType(file: File): 'image/jpeg' | 'image/png' | null {
   const type = file.type.toLowerCase();
@@ -302,6 +303,24 @@ export default function SellerPanel() {
                   <h3>Bitmiş Stok</h3>
                   <strong className={outOfStockCount > 0 ? 'text-danger' : ''}>{outOfStockCount}</strong>
                 </div>
+              </div>
+            </div>
+
+            <div className="seller-panel-section mt-10" style={{ marginBottom: 24 }}>
+              <h2>Virtual vitrin linki</h2>
+              <p style={{ margin: '6px 0 12px', color: 'var(--muted)', fontSize: 14 }}>
+                Instagram bio, WhatsApp və QR üçün ayrıca vitrin. Eynek mağazası ilə eyni məhsullardır.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+                <code style={{ padding: '10px 12px', borderRadius: 10, background: '#f3f3f1', fontSize: 13 }}>
+                  {typeof window !== 'undefined' ? `${window.location.origin}${vitrinePublicPath(store.slug)}` : vitrinePublicPath(store.slug)}
+                </code>
+                <Link href={vitrinePublicPath(store.slug)} className="btn btn-secondary" data-testid="link-seller-vitrine">
+                  Vitrini aç
+                </Link>
+                <Link href={`/vendor/${store.slug}`} className="btn btn-secondary" data-testid="link-seller-eynek-store">
+                  Eynek mağazası
+                </Link>
               </div>
             </div>
 

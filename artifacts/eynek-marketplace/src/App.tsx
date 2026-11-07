@@ -55,6 +55,7 @@ import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
 import { ForgotPasswordPage, ResetPasswordPage, SignInPage, SignUpPage } from '@/pages/auth-pages';
 import { dateLabel, money as formatOrderMoney, orderStatusLabel } from '@/pages/order-ui';
+import { VitrinePage } from '@/pages/vitrine';
 import './account.css';
 import {
   getGetSellerStoreQueryKey,
@@ -119,7 +120,7 @@ type Product = {
   vtoReady?: boolean;
 };
 
-type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'since' | 'description' | 'logoPath'> & { count: number };
+type Vendor = Pick<SellerStore, 'slug' | 'name' | 'initials' | 'location' | 'since' | 'description' | 'logoPath' | 'instagram' | 'website'> & { count: number };
 
 const sampleCatalog: Product[] = [
   { id: 'sample-merdekan-03', name: 'Mərdəkan 03', brand: 'EYNƏK', image: 'product-images/merdekan-03.jpg', wornImage: 'product-images/merdekan-03-worn.jpg', vendor: 'Nümunə vitrin', vendorSlug: '', price: 0, type: 'Gün eynəyi', gender: 'Uniseks', shape: 'Square', material: 'Asetat', size: 'M', color: 'Qara', tone: 'tone-1', frameStyle: 'sunglass', description: 'Vitrin nümunəsidir. Satış yalnız təsdiqlənmiş mağaza məhsulu ilə açılır.', stock: 0, isAvailable: false, location: 'Bakı', previewOnly: true },
@@ -1223,6 +1224,8 @@ function Storefront() {
         since: store.since,
         description: store.description,
         logoPath: store.logoPath ?? null,
+        instagram: store.instagram,
+        website: store.website,
         count: store.productCount,
       })),
     [storeRows],
@@ -1285,19 +1288,34 @@ function Storefront() {
   }, [cartItems]);
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id) || next.has(String(id))) { next.delete(id); next.delete(String(id)); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
-  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); showToast(message); };
+  const setFavorite = (id: number | string, liked: boolean) => {
+    setLikedIds((current) => {
+      const next = new Set(current);
+      const key = String(id);
+      const has = next.has(id) || next.has(key);
+      if (liked && !has) {
+        next.add(id);
+        showToast('Seçilmişlərə əlavə edildi');
+      } else if (!liked && has) {
+        next.delete(id);
+        next.delete(key);
+        showToast('Seçilmişlərdən çıxarıldı');
+      }
+      return next;
+    });
+  };
   const launchTryOn = (product?: Product) => {
     openEynekTryOn({
       product,
       catalog: allProducts.filter((item) => item.vtoReady),
       resolveImage: assetUrl,
-      onAddToCart: (sku) => {
-        const match = allProducts.find((item) => String(item.id) === sku);
-        if (match) addToCart(match);
-      },
+      likedIds,
+      onAddToCart: (item) => addToCart(item as Product),
+      onLike: (sku, liked) => setFavorite(sku, liked),
       onViewCart: () => setLocation('/cart'),
     });
   };
+  const addToCart = (product: Product, message = `${product.name} səbətə əlavə edildi`, quantity = 1) => { if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; } addUnits(product, quantity); setQuickProduct(null); showToast(message); };
   const buyNow = (product: Product, quantity = 1) => {
     if (product.previewOnly || !product.isAvailable) { showToast(product.previewOnly ? 'Bu nümunə modeldir' : 'Bu məhsul hazırda stokda yoxdur'); return; }
     addUnits(product, quantity);
@@ -1318,6 +1336,29 @@ function Storefront() {
     return <CheckoutPage items={checkoutItems} stores={stores} onClearCart={() => setCartIds([])} />;
   }
   if (location.startsWith('/order/')) return <OrderPage />;
+  const photoSrc = (path: string) => (path.startsWith('data:') || path.startsWith('http') ? path : assetUrl(path));
+  if (location.startsWith('/v/') || location === '/v') {
+    return (
+      <div className="app-shell vitrine-shell">
+        {catalogError && <div className="container" role="status" style={{ paddingTop: 12, color: 'var(--muted)' }}>Kataloq yüklənmədi. Səhifəni yeniləyib yenidən cəhd edin.</div>}
+        <Switch>
+          <Route path="/v/:slug">
+            <VitrinePage
+              products={allProducts}
+              stores={stores}
+              likedIds={likedIds}
+              onFavorite={toggleFavorite}
+              onTryOn={(product) => launchTryOn(product as Product)}
+              onAdd={(product) => addToCart(product as Product)}
+              photoSrc={photoSrc}
+            />
+          </Route>
+          <Route><Redirect to="/stores" /></Route>
+        </Switch>
+        {toast && <div className="toast" role="status" data-testid="status-toast"><Check size={16} /><span>{toast}</span></div>}
+      </div>
+    );
+  }
   return (
     <div className="app-shell">
       <Header cartCount={cartCount} products={allProducts} stores={stores} menuOpen={mobileMenu} onMenu={() => setMobileMenu((open) => !open)} />

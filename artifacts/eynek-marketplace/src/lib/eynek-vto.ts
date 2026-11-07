@@ -44,7 +44,9 @@ export function openEynekTryOn(opts: {
   product?: VtoProductInput | null;
   catalog?: VtoProductInput[];
   resolveImage: (path: string) => string;
-  onAddToCart?: (sku: string) => void;
+  likedIds?: Set<number | string>;
+  onAddToCart?: (product: VtoProductInput) => void;
+  onLike?: (sku: string, liked: boolean) => void;
   onViewCart?: () => void;
 }) {
   const vto = api();
@@ -55,14 +57,28 @@ export function openEynekTryOn(opts: {
   const products = (opts.product ? [opts.product, ...related.filter((item) => String(item.id) !== sku)] : related)
     .slice(0, 12)
     .map((item) => toVtoProduct(item, opts.resolveImage));
+
+  const findBySku = (id?: string) => {
+    if (!id) return undefined;
+    return pool.find((item) => String(item.id) === String(id)) || (opts.product && String(opts.product.id) === String(id) ? opts.product : undefined);
+  };
+
+  const likedSkus = opts.likedIds ? [...opts.likedIds].map(String) : [];
+
   vto.open({
     store: EYNEK_VTO_STORE,
     sku,
     lang: document.documentElement.lang || 'az',
     product: opts.product ? toVtoProduct(opts.product, opts.resolveImage) : undefined,
     products,
-    onAddToCart: ({ sku: added }: { sku?: string }) => {
-      if (added) opts.onAddToCart?.(added);
+    likedSkus,
+    onAddToCart: ({ sku: cartSku, product: detail }: { sku?: string; product?: { sku?: string } }) => {
+      const id = cartSku ?? detail?.sku;
+      const product = findBySku(id != null ? String(id) : undefined);
+      if (product) opts.onAddToCart?.(product);
+    },
+    onLike: ({ sku: likeSku, liked }: { sku?: string; liked?: boolean }) => {
+      if (likeSku != null && typeof liked === 'boolean') opts.onLike?.(String(likeSku), liked);
     },
     onViewCart: () => opts.onViewCart?.(),
     termsUrl: '/mexfilik',
