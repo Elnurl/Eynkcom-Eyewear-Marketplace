@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import app from "./app";
 import { seedHorizonCatalogIfEnabled } from "./lib/horizonCatalogSeed";
 import { logger } from "./lib/logger";
+import { isObjectStorageConfigured } from "./lib/objectStorage";
 
 const rawPort = process.env["PORT"];
 
@@ -38,6 +39,15 @@ async function start(): Promise<void> {
       process.exit(1);
     }
 
+    if (isObjectStorageConfigured()) {
+      logger.info("Product images use S3-compatible object storage");
+    } else {
+      const uploadDir = process.env.PRODUCT_UPLOAD_DIR?.trim() || path.join(process.cwd(), ".product-uploads");
+      logger.warn(
+        { uploadDir },
+        "S3 is not configured; product images use local disk. Mount a persistent volume on PRODUCT_UPLOAD_DIR or set S3_* env vars.",
+      );
+    }
     logger.info({ port }, "Server listening");
   });
 }
