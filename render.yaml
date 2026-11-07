@@ -14,7 +14,15 @@ services:
     buildCommand: COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NODE_ENV=development pnpm install --frozen-lockfile --prod=false && pnpm run build
     startCommand: NODE_ENV=production node --enable-source-maps artifacts/api-server/dist/index.mjs
     healthCheckPath: /api/healthz
+    # Uploads used to die on every deploy (ephemeral disk). Keep local files here
+    # until S3/R2 credentials are filled in below.
+    disk:
+      name: product-uploads
+      mountPath: /var/data/product-uploads
+      sizeGB: 5
     envVars:
+      - key: PRODUCT_UPLOAD_DIR
+        value: /var/data/product-uploads
       - key: NODE_VERSION
         value: "24"
       - key: DATABASE_URL

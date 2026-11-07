@@ -278,7 +278,11 @@ router.get(
       object.body.pipe(res);
     } catch (error) {
       if (error instanceof ObjectNotFoundError) {
-        res.status(404).json({ error: "Şəkil tapılmadı." });
+        // Ticket exists in DB but the bytes are gone (ephemeral disk / missing S3 object).
+        req.log.warn({ objectPath }, "Published image missing from object storage");
+        res.status(404).json({
+          error: "Şəkil faylı serverdə yoxdur. Satıcı panelindən şəkli yenidən yükləyin.",
+        });
         return;
       }
       throw error;
