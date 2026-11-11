@@ -9,10 +9,12 @@ import type { FulfillmentMethod } from './fulfillmentMethod';
 import type { PaymentMethod } from './paymentMethod';
 import type { PaymentStatus } from './paymentStatus';
 import type { SellerOrderDeliveryArea } from './sellerOrderDeliveryArea';
+import type { OrderStatus } from './orderStatus';
 import type { SellerOrderSummary } from './sellerOrderSummary';
 
 export type SellerOrder = SellerOrderSummary & ({
   orderNumber: string;
+  orderStatus: OrderStatus;
   customerName: string;
   customerEmail: string;
   customerPhone: string;

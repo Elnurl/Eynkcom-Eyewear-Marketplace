@@ -21,6 +21,7 @@ import { requireMarketplaceAdmin, requireUserEmail } from "./access";
 import { cleanupReplacedImages, imageBelongsToSeller, isUploadedImage } from "../lib/productImages";
 import { deleteSellerProductFromVto, syncSellerProductToVto, vtoConfigured } from "../lib/eynekVto";
 import { requireAuth } from "../middlewares/requireAuth";
+import { BULK_IMPORT_MAX_ROWS, type BulkImportFailure } from "../lib/bulkProductImport";
 
 function queueVtoSync(
   log: { info: (obj: object, msg: string) => void; warn: (obj: object, msg: string) => void },
@@ -66,7 +67,7 @@ async function validImages(
     if (path === old) continue;
     if (isUploadedImage(path) && path !== old && !(await imageBelongsToSeller(path, sellerId))) return false;
     if (path.startsWith("/objects/") && !/^\/objects\/uploads\/[a-f0-9-]{36}$/.test(path)) return false;
-    if (!isUploadedImage(path) && !/^product-images\/[a-z0-9-]+\.jpg$/.test(path)) return false;
+    if (!isUploadedImage(path) && !/^product-images\/.+\.(jpg|jpeg|png|webp)$/i.test(path)) return false;
   }
   return true;
 }
@@ -170,6 +171,84 @@ router.post("/seller/products", requireAuth, async (req, res): Promise<void> => 
   req.log.info({ productId: product.id, sellerId: store.id }, "Seller product created for review");
   queueVtoSync(req.log, product, store.slug);
   res.status(201).json(CreateSellerProductResponse.parse(serializeSellerProduct(product)));
+});
+
+router.post("/seller/products/bulk", requireAuth, async (req, res): Promise<void> => {
+  const email = requireUserEmail(req, res);
+  if (!email) return;
+  const store = await findApprovedStore(email);
+  if (!store) {
+    res.status(403).json({ error: "Satıcı mağazası təsdiqlənməyib." });
+    return;
+  }
+  const raw = req.body as { products?: unknown; skipDuplicates?: boolean };
+  if (!Array.isArray(raw.products) || raw.products.length < 1 || raw.products.length > BULK_IMPORT_MAX_ROWS) {
+    res.status(400).json({ error: `Toplu import 1–${BULK_IMPORT_MAX_ROWS} məhsul sətri qəbul edir.` });
+    return;
+  }
+  const products = [];
+  for (const item of raw.products) {
+    const parsed = CreateSellerProductBody.safeParse(item);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Məhsul sətirlərindən biri düzgün deyil." });
+      return;
+    }
+    products.push(parsed.data);
+  }
+  const skipDuplicates = raw.skipDuplicates !== false;
+
+  const existing = await db
+    .select({ name: sellerProductsTable.name })
+    .from(sellerProductsTable)
+    .where(eq(sellerProductsTable.sellerId, store.id));
+  const existingNames = new Set(existing.map((row) => row.name.trim().toLocaleLowerCase("az")));
+
+  let created = 0;
+  let skipped = 0;
+  const failed: BulkImportFailure[] = [];
+
+  for (let index = 0; index < products.length; index += 1) {
+    const rowNumber = index + 1;
+    const item = products[index];
+    const key = item.name.trim().toLocaleLowerCase("az");
+    if (skipDuplicates && existingNames.has(key)) {
+      skipped += 1;
+      continue;
+    }
+    if (!(await validImages(item.frontImage, item.sideImage, store.id))) {
+      failed.push({
+        row: rowNumber,
+        name: item.name,
+        error: "Şəkil yolu düzgün deyil və ya bu mağazaya məxsus deyil.",
+      });
+      continue;
+    }
+
+    try {
+      const [product] = await db
+        .insert(sellerProductsTable)
+        .values({
+          id: randomUUID(),
+          sellerId: store.id,
+          ...item,
+          approvalStatus: "pending",
+          moderationNote: null,
+        })
+        .returning();
+      existingNames.add(key);
+      created += 1;
+      queueVtoSync(req.log, product, store.slug);
+    } catch (error) {
+      req.log.warn({ err: error, row: rowNumber, name: item.name }, "Bulk product insert failed");
+      failed.push({ row: rowNumber, name: item.name, error: "Məhsul bazaya yazılmadı." });
+    }
+  }
+
+  req.log.info(
+    { sellerId: store.id, created, skipped, failed: failed.length },
+    "Seller bulk product import finished",
+  );
+  res.status(201).json({ created, skipped, failed });
 });
 
 router.patch("/seller/products/:id", requireAuth, async (req, res): Promise<void> => {

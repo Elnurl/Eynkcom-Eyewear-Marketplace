@@ -86,5 +86,6 @@ export function useSellerWorkspace() {
     isLoading: !isLoaded || (isSignedIn && storeQuery.isLoading) || (storeQuery.isSuccess && productsQuery.isLoading),
     isSaving: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || updateStoreMutation.isPending,
     errorMessage: error ? getErrorMessage(error) : '',
+    refreshCatalog,
   };
 }

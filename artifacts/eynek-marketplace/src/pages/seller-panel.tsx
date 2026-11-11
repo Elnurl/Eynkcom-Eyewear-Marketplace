@@ -5,11 +5,12 @@ import { useAuthSession } from '@/lib/auth-client';
 import { 
   LogOut, Plus, Search, MoreVertical, Edit2, Trash2, 
   Image as ImageIcon, ArrowLeft, Store, Settings, 
-  Package, LayoutDashboard, X, Check, AlertCircle, Truck, Loader2, ImagePlus
+  Package, LayoutDashboard, X, Check, AlertCircle, Truck, Loader2, ImagePlus, Upload
 } from 'lucide-react';
 import { useSellerWorkspace, type SellerProduct, type SellerProductInput } from '@/hooks/use-seller-workspace';
 import { BrandLogo } from '@/components/brand-logo';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
+import { SellerBulkImport } from '@/components/SellerBulkImport';
 import { fetchVtoSkus } from '@/lib/eynek-vto';
 import { vitrinePublicPath } from '@/pages/vitrine';
 import {
@@ -69,6 +70,7 @@ export default function SellerPanel() {
     isLoading,
     isSaving,
     errorMessage,
+    refreshCatalog,
   } = useSellerWorkspace();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'store'>('products');
@@ -82,6 +84,7 @@ export default function SellerPanel() {
   
   // Product Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
   // Search and Filter
@@ -401,9 +404,14 @@ export default function SellerPanel() {
                 <h1>Məhsullar</h1>
                 <p>İnventarınızı idarə edin, yeni məhsullar əlavə edin və stokları yeniləyin.</p>
               </div>
-              <button className="btn btn-blue" onClick={openAddForm} data-testid="button-create-product">
-                <Plus size={16} /> Yeni Məhsul
-              </button>
+              <div className="seller-header-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setBulkImportOpen(true)} data-testid="button-bulk-import">
+                  <Upload size={16} /> Toplu import
+                </button>
+                <button className="btn btn-blue" onClick={openAddForm} data-testid="button-create-product">
+                  <Plus size={16} /> Yeni Məhsul
+                </button>
+              </div>
             </header>
 
             <div className="seller-toolbar">
@@ -613,6 +621,12 @@ export default function SellerPanel() {
       </main>
 
       {/* Product Form Modal */}
+      {bulkImportOpen ? (
+        <SellerBulkImport
+          onClose={() => setBulkImportOpen(false)}
+          onDone={refreshCatalog}
+        />
+      ) : null}
       {isFormOpen && (
         <ProductFormModal 
           product={editingId ? products.find(p => p.id === editingId) : undefined}
