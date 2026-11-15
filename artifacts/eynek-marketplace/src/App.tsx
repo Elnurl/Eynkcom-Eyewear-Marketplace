@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { type CSSProperties, type FormEvent, type ReactNode, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { signOutAndGo, useAuthSession, useClearQueriesOnUserChange } from '@/lib/auth-client';
 import {
@@ -507,7 +507,41 @@ function HavenCard({ product, liked, onFavorite, onTryOn, onAdd, editorPick }: {
   );
 }
 
+const HERO_SLIDE_MS = 5500;
+
 function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & { onAdd: (product: Product) => void }) {
+  const heroSlides = useMemo(
+    () => [
+      {
+        id: 'campaign',
+        image: `${import.meta.env.BASE_URL}eynek-campaign.jpg`,
+        imageClass: 'haven-hero-image--campaign',
+        alt: 'Qara gün eynəyində EYNƏK kolleksiyasının müasir üslubu',
+        line1: az.hero.titleLine1,
+        line2: az.hero.titleLine2,
+        tone: 'editorial' as const,
+      },
+      {
+        id: 'hand',
+        image: `${import.meta.env.BASE_URL}home-redesign/hero-hand-glasses.jpg`,
+        imageClass: 'haven-hero-image--hand',
+        alt: 'Əldə tutulan optik eynək — EYNƏK kolleksiyası',
+        line1: az.hero.slide2Line1,
+        line2: az.hero.slide2Line2,
+        tone: 'warm' as const,
+      },
+    ],
+    [],
+  );
+  const [heroIndex, setHeroIndex] = useState(0);
+  useEffect(() => {
+    if (heroSlides.length < 2) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) return;
+    const timer = window.setInterval(() => setHeroIndex((index) => (index + 1) % heroSlides.length), HERO_SLIDE_MS);
+    return () => window.clearInterval(timer);
+  }, [heroSlides.length, heroIndex]);
+  const heroSlide = heroSlides[heroIndex] ?? heroSlides[0];
   const renderProduct = (product: Product) => (
     <ProductCard
       key={product.id}
@@ -522,13 +556,49 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
   return (
     <>
       <main className="haven-home">
-        <section className="haven-hero haven-hero--editorial">
-          <img className="haven-hero-image" src={`${import.meta.env.BASE_URL}eynek-campaign.jpg`} alt="Qara gün eynəyində EYNƏK kolleksiyasının müasir üslubu" />
+        <section
+          className={`haven-hero haven-hero--editorial haven-hero--tone-${heroSlide.tone}`}
+          style={{ '--hero-index': heroIndex, '--hero-count': heroSlides.length } as CSSProperties}
+          aria-roledescription="carousel"
+          data-testid="hero-carousel"
+        >
+          <div className="haven-hero-slides" aria-hidden="true">
+            <div className="haven-hero-slides-track">
+              {heroSlides.map((slide, index) => (
+                <div className="haven-hero-slide" key={slide.id}>
+                  <img
+                    className={`haven-hero-image ${slide.imageClass}`}
+                    src={slide.image}
+                    alt={index === heroIndex ? slide.alt : ''}
+                    decoding="async"
+                    fetchPriority={index === 0 ? 'high' : 'low'}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="haven-hero-pager" role="tablist" aria-label="Hero slaydları">
+            {heroSlides.map((slide, index) => (
+              <button
+                key={slide.id}
+                type="button"
+                role="tab"
+                aria-selected={index === heroIndex}
+                aria-label={`Slayd ${index + 1}`}
+                className={`haven-hero-pager-dash${index === heroIndex ? ' is-active' : ''}`}
+                onClick={() => setHeroIndex(index)}
+                data-testid={`button-hero-slide-${index + 1}`}
+              />
+            ))}
+          </div>
           <div className="haven-shell haven-hero-layout">
             <div className="haven-hero-copy">
-              <h1 className="haven-hero-title">
-                <span className="haven-hero-title-line haven-hero-title-line--light">{az.hero.titleLine1}</span>
-                <span className="haven-hero-title-line haven-hero-title-line--strong">{az.hero.titleLine2}</span>
+              <h1
+                className={`haven-hero-title${heroSlide.tone === 'warm' ? ' haven-hero-title--statement' : ''}`}
+                key={heroSlide.id}
+              >
+                <span className="haven-hero-title-line haven-hero-title-line--light">{heroSlide.line1}</span>
+                <span className="haven-hero-title-line haven-hero-title-line--strong">{heroSlide.line2}</span>
               </h1>
               <div className="haven-hero-actions">
                 <Link href="/collection" className="haven-btn" data-testid="link-hero-collection">{az.hero.ctaCollection} <ArrowRight size={16} /></Link>
@@ -574,7 +644,6 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
               </button>
             </div>
             <div className="vto-stage-visual" aria-hidden="true">
-              <div className="vto-stage-glow" />
               <img className="vto-stage-phone" src={`${import.meta.env.BASE_URL}home-redesign/virtual-tryon-phone.png`} alt="" />
             </div>
           </section>

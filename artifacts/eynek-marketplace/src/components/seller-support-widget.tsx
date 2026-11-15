@@ -177,7 +177,7 @@ export function SellerSupportWidget({ enabled, uploadMode = 'buyer', defaultName
             </div>
           ) : phase === 'intro' ? (
             <div className="seller-support-intro">
-              <p className="seller-support-welcome">Xoş gəldiniz! Söhbətə başlamaq üçün zəhmət olmasa formu doldurun.</p>
+              <p className="seller-support-welcome">Xoş gəldiniz! Mesaj göndərmək üçün əlaqə məlumatlarınızı doldurun.</p>
               <div className="seller-support-fields">
                 <label className="seller-support-field">
                   <span>Ad <em>*</em></span>
@@ -194,7 +194,7 @@ export function SellerSupportWidget({ enabled, uploadMode = 'buyer', defaultName
               </div>
               {error ? <p className="seller-support-error" role="alert">{error}</p> : null}
               <button type="button" className="btn btn-full seller-support-intro-submit" onClick={startCompose} data-testid="button-support-start">
-                Çata başlayın
+                Mesaj göndər
               </button>
             </div>
           ) : (

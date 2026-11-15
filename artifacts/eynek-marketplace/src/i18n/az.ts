@@ -24,6 +24,8 @@ export const az = {
   hero: {
     titleLine1: 'Sizə yaraşan',
     titleLine2: 'çərçivəni tapın.',
+    slide2Line1: 'Yalnız eynək deyil',
+    slide2Line2: 'Gündəlik aydınlığın.',
     ctaCollection: 'Kolleksiyanı kəşf et',
     ctaVto: 'Virtual sınaq',
   },
