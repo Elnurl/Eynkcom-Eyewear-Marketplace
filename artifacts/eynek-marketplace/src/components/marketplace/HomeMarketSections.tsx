@@ -74,7 +74,6 @@ export function HomeMarketSections({
       {colors.length > 0 && (
         <section className="mp-home-section container">
           <SectionLabel>{az.home.shopByColor}</SectionLabel>
-          <h2 className="mp-section-title">Rəngə görə.</h2>
           <div className="mp-color-grid">
             {colors.map((color) => (
               <Link key={color} href={`/collection?q=${encodeURIComponent(color)}`} className="mp-color-chip">

@@ -1336,6 +1336,11 @@ body { background: #f8faff; }
 
 /* Optic Haven storefront: Manrope, full-bleed campaign, quiet catalog. */
 .site-wordmark { color: #171717; font-size: 31px; font-weight: 500; letter-spacing: -.04em; line-height: 1; }
+.topbar.mp-topbar .brand .brand-image {
+  width: auto;
+  height: 31px;
+  max-width: min(140px, 38vw);
+}
 .topbar { border-bottom: 0; background: #fff; }
 .nav-links a, .nav-category-trigger { color: #1c1c1a; font-weight: 500; }
 .nav-category-trigger:hover, .nav-category-trigger.active, .nav-category-trigger[aria-expanded="true"] { border-color: transparent; background: transparent; color: #111; }
@@ -1555,6 +1560,9 @@ body { background: #f8faff; }
   margin: 0;
   padding: 0;
   list-style: none;
+}
+@media (min-width: 981px) {
+  .home-appeal-circles { gap: 32px 58px; }
 }
 .home-appeal-circle {
   display: flex;
@@ -1881,6 +1889,11 @@ body { background: #f8faff; }
   filter: drop-shadow(0 40px 50px rgba(0, 0, 0, .5));
   animation: vto-float 5.5s ease-in-out infinite;
 }
+@media (min-width: 981px) {
+  .vto-stage-visual {
+    height: 560px;
+  }
+}
 @keyframes vto-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-14px); }
@@ -2106,15 +2119,18 @@ body { background: #f8faff; }
     height: 40px;
     flex-shrink: 0;
   }
-  .topbar.mp-topbar .brand.site-wordmark {
+  .topbar.mp-topbar .brand {
     grid-column: 2;
     grid-row: 1;
     min-width: 0;
-    font-size: clamp(18px, 5.5vw, 26px);
-    letter-spacing: -0.03em;
+    max-width: 42vw;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  }
+  .topbar.mp-topbar .brand .brand-image {
+    height: clamp(22px, 5.5vw, 28px);
+    max-width: 100%;
+    object-fit: contain;
+    object-position: left center;
   }
   .topbar.mp-topbar .mp-mega-nav,
   .topbar.mp-topbar .nav-links {

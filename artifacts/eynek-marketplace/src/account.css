@@ -36,6 +36,7 @@
   letter-spacing: -.065em;
 }
 .account-hero-sub { max-width: 460px; margin: 0 0 18px; color: #505c65; font-size: 13px; line-height: 1.55; word-break: break-word; }
+.account-overline + .account-hero-sub { margin-top: 16px; }
 .account-hero-actions { display: flex; align-items: center; gap: 18px; }
 /* Scoped to beat the global .btn rules, which load after this file. */
 .account-page .account-cta { min-height: 44px; border-radius: 999px; border-color: #142232; background: #142232; color: #fff; padding: 0 22px; font-weight: 800; }

@@ -324,7 +324,9 @@ function Header({ cartCount, onMenu, menuOpen, products, stores }: { cartCount: 
       <header className="topbar mp-topbar">
         <div className="container nav">
           <button className="icon-button mobile-menu" onClick={onMenu} aria-label="Menyunu aç" aria-expanded={menuOpen} aria-controls="mobile-drawer" data-testid="button-menu"><Menu size={19} /></button>
-          <Link href="/" className="brand site-wordmark" data-testid="link-brand">EYNƏK</Link>
+          <Link href="/" className="brand" data-testid="link-brand" aria-label="EYNƏK ana səhifə">
+            <BrandLogo />
+          </Link>
           <MegaNav />
           <nav className="nav-links" aria-label="Mobil menyu">
             <Link href="/collection" className={location === '/collection' ? 'active' : ''} data-testid="link-collection">{az.nav.collection}</Link>
@@ -1094,8 +1096,7 @@ function AccountPage() {
                 </>
               ) : (
                 <>
-                  <h1>Sifarişləriniz bir yerdə.</h1>
-                  <p className="account-hero-sub">Daxil olun və ya hesab yaradın: sifarişlərinizi izləyin, bəyəndiyiniz çərçivələri saxlayın.</p>
+                  <p className="account-hero-sub">Sifarişləriniz bir yerdə.</p>
                   <div className="account-hero-actions">
                     <Link href="/sign-in?redirect_url=%2Faccount" className="btn account-cta" data-testid="link-account-sign-in">Daxil ol <ArrowRight size={16} /></Link>
                     <Link href="/sign-up" className="account-text-action" data-testid="link-account-sign-up">Hesab yarat</Link>

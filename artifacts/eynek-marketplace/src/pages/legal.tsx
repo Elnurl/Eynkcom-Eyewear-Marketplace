@@ -41,84 +41,178 @@ const pages: Record<LegalSlug, { eyebrow: string; title: string; lead: string; s
   },
   mexfilik: {
     eyebrow: 'Məxfilik',
-    title: 'Məlumatlarınız necə işlənir.',
-    lead: 'EYNƏK sifarişi yerinə yetirmək və hesabınızı qorumaq üçün yalnız lazımi məlumatı toplayır. Bu mətn ilk satış mərhələsi üçün izahdır, ayrıca məxfilik siyasəti hələ notarial və ya hüquqi yekunlaşdırılmayıb.',
+    title: 'Məxfilik siyasəti.',
+    lead: 'Bu siyasət eynek.store ünvanında fəaliyyət göstərən EYNƏK optik marketplace platforması üzrə şəxsi məlumatların toplanması, işlənməsi və qorunması qaydalarını müəyyən edir. Saytdan istifadə etməklə, sifariş verməklə və ya hesab yaratmaqla bu siyasəti qəbul etmiş sayılırsınız.',
     sections: [
       {
-        heading: 'Hansı məlumat toplanır',
+        heading: 'Operator və əhatə',
         body: [
-          'Sifariş üçün ad, telefon, e-poçt və kuryer seçiləndə çatdırılma ünvanı soruşulur.',
-          'Hesab yaradanda e-poçt, ad və şifrə saxlanılır. E-poçt təsdiqlənənə qədər tam giriş verilmir.',
-          'Satıcı müraciətində mağaza adı, əlaqə və ünvan məlumatları admin yoxlaması üçün saxlanılır.',
+          'Şəxsi məlumatların operatoru EYNƏK-dir (bundan sonra — «Platforma»). Platforma Azərbaycan Respublikasının qanunvericiliyinə, o cümlədən «Şəxsi məlumatlar haqqında» Azərbaycan Respublikası Qanununa uyğun hərəkət edir.',
+          'Məxfilik siyasəti alıcılar, qonaq sifarişləri, xəbər bülleteni abunəçiləri və EYNƏK-də satış üçün müraciət edən optik mağazaların əlaqəli nümayəndələri üçün tətbiq olunur.',
         ],
       },
       {
-        heading: 'Məlumat nə üçün istifadə olunur',
+        heading: 'Toplanan məlumatlar',
         body: [
-          'Sifarişi mağazaya çatdırmaq, statusu göstərmək və sizinlə əlaqə saxlamaq üçün.',
-          'Qonaq sifarişinə yalnız sizin saxladığınız giriş kodu və ya daxil olduğunuz hesabla baxmaq olar.',
-          'Məlumatları reklam üçün üçüncü tərəflərə satmırıq.',
+          'Hesab: ad, e-poçt ünvanı, parol (yalnız şifrələnmiş formada), giriş tarixçəsi, e-poçt təsdiqi statusu.',
+          'Sifariş və çatdırılma: ad, telefon, e-poçt, çatdırılma ünvanı (kuryer seçiləndə), seçilmiş mağaza və məhsul məlumatları, ödəniş üsulu, sifariş statusu; qonaq sifarişləri üçün əlavə olaraq sifarişə baxış kodu.',
+          'Satıcı müraciəti: mağaza adı, sahib və ya nümayəndənin adı, telefon, e-poçt, hüquqi ünvan, VÖEN (təqdim edilərsə), biznes fəaliyyəti və müraciət məzmunu.',
+          'Texniki məlumatlar: IP ünvanı, brauzer və cihaz növü, sessiya identifikatorları, səhifə baxışları və təhlükəsizlik jurnalı (saxtakarlığın qarşısını almaq üçün lazım olan həddə).',
+          'Virtual sınaq funksiyasından istifadə edəndə kamera görüntüsü, qayda olaraq, cihazınızda emal olunur; Platforma bu görüntünü profil və ya reklam məqsədilə saxlamır.',
         ],
       },
       {
-        heading: 'Saxlama və hüquqlarınız',
+        heading: 'Məqsəd və hüquqi əsas',
         body: [
-          'Sessiya və hesab məlumatları platformanın öz bazasında saxlanılır.',
-          'Məlumatlarınızın silinməsi və ya düzəlişi üçün info@eynek.store ünvanına yazın.',
+          'Sifarişin qəbulu, mağazaya ötürülməsi, çatdırılmanın təşkili, sifariş statusunun göstərilməsi və sizinlə əlaqə saxlanması.',
+          'Hesabın yaradılması, autentifikasiya, parolun bərpası və alıcı sifarişlərinin tarixçəsinin saxlanması.',
+          'Satıcı müraciətlərinin yoxlanması, təsdiqlənmiş mağazaların idarə edilməsi və marketplace-in təhlükəsiz işləməsi.',
+          'Ödəniş xidməti təminatçılarına yalnız ödənişin həyata keçirilməsi üçün lazım olan məlumatın ötürülməsi (məsələn, online kart ödənişi seçiləndə).',
+          'Qanuni öhdəliklərin yerinə yetirilməsi və mübahisələrin həlli.',
+          'Ayrıca razılıq verdiyiniz halda — xəbər bülleteni və marketinq mesajları.',
+        ],
+      },
+      {
+        heading: 'Saxlama müddəti və təhlükəsizlik',
+        body: [
+          'Məlumatlar sifariş və hesabla bağlı öhdəliklər bitənədək və ya qanunda nəzərdə tutulan müddət ərzində saxlanılır; mühasibat və vergi sənədləri üçün tələb olunan müddət bitdikdən sonra məqsədli şəkildə silinir və ya anonimləşdirilir.',
+          'Məlumatlar müasir texniki və təşkilati tədbirlərlə qorunur: şifrələnmiş əlaqələr, məhdud giriş hüquqları, təhlükəsiz server mühiti.',
+          'Şəxsi məlumatları reklam brokerlərinə satmırıq və tərəfdaşlarımızdan yalnız texniki xidmət və ya qanuni tələb çərçivəsində emal gözləyirik.',
+        ],
+      },
+      {
+        heading: 'Hüquqlarınız',
+        body: [
+          'Şəxsi məlumatlarınızın işlənməsi barədə məlumat almaq, düzəliş və ya silinmə tələb etmək, emala etiraz etmək və qanunla nəzərdə tutulmuş digər hüquqlardan istifadə etmək üçün info@eynek.store ünvanına müraciət edə bilərsiniz. Sorğu mümkün qədər tez, ən gec isə qanunda müəyyən olunmuş müddət içində cavablandırılır.',
+          'Hesabınızı və məhsul gözləmə siyahısı kimi bəzi məlumatları şəxsi kabinetdən idarə edə bilərsiniz.',
+        ],
+      },
+      {
+        heading: 'Dəyişikliklər',
+        body: [
+          'Məxfilik siyasəti yenilənə bilər; yeni redaksiya eynek.store-da dərc olunur. Əhəmiyyətli dəyişikliklər barədə mümkün olduqda e-poçt və ya sayt vasitəsilə məlumat verilir. Son yenilənmə tarixi: 15 noyabr 2026.',
         ],
       },
     ],
   },
   qaytarma: {
     eyebrow: 'Qaytarma',
-    title: 'Qaytarma necə işləyir.',
-    lead: 'Qaytarma sorğuları əvvəlcə EYNƏK-ə göndərilməlidir. Geri ödəniş müddəti, qaytarma çatdırılması və hüquqi şərtlər hələ mağazalarla yekun razılaşdırılmayıb.',
+    title: 'Qaytarma və geri ödəniş.',
+    lead: 'Bu qaydalar EYNƏK marketplace-i vasitəsilə alınan günəş eynəyi və optik çərçivə məhsullarına aiddir. Malların satıcısı təsdiqlənmiş optik mağazadır; qaytarma sorğusunu isə alıcı EYNƏK platformasına göndərir. Platforma sorğunu müvafiq mağaza ilə koordinasiya edir.',
     sections: [
       {
-        heading: 'Kimə müraciət edilir',
+        heading: 'Qaytarma hüququ',
         body: [
-          'Alıcı qaytarma sorğusunu birbaşa mağazaya yox, EYNƏK-ə göndərməlidir. Çatdırılmış və ya götürülmüş mağaza hissəsi üçün bunu sifariş səhifəsindən də etmək olar. Platforma həmin mağazanın sifariş hissəsi ilə əlaqələndirir.',
-          'Malların satıcısı yenə də optik mağazadır. EYNƏK məhsulun sahibi kimi çıxış etmir.',
+          'Məhsulu çatdırılma və ya mağazadan uğurla götürülmə tarixindən etibarən 14 (on dörd) təqvim günü ərzində, istifadə olunmamış vəziyyətdə, orijinal qablaşdırma və lazım gələndə bütün komplekt hissələri ilə qaytara bilərsiniz.',
+          'Qaytarma istəyinin səbəbi məcburi izah olunmur; istisnalar aşağıda göstərilir.',
+          'İstehlakçı hüquqlarının müdafiəsi qanunvericiliyindən irəli gələn gücləndirilmiş zəmanət və zəruri hallarda qaytarma hüquqları bu mətnlə məhdudlaşdırılmır.',
         ],
       },
       {
-        heading: 'Hələ razılaşdırılmayanlar',
+        heading: 'Qaytarma mümkün olmayan hallar',
         body: [
-          'Geri ödənişin neçə günə ediləcəyi, qaytarma çatdırılmasının kimə aid olduğu və qanuni zəmanət müddəti bu mətndə vəd edilmir.',
-          'Pilot komissiya qaytarılmış məhsula tətbiq olunmur. Admin geri ödənişi yalnız real maliyyə əməliyyatından sonra qeydə alır.',
+          'İstifadə izləri olan, zədələnmiş, yuyulmuş və ya gigiyenik baxımdan təkrar satıla bilməyəcək vəziyyətə gətirilmiş çərçivə və eynəklər.',
+          'Fərdi sifarişlə hazırlanmış və ya alıcının xüsusi tələbi ilə dəyişdirilmiş məhsullar (belə məhsul təklif edilərsə, məhsul səhifəsində ayrıca qeyd olunur).',
+          'Qablaşdırması açılmış və keyfiyyəti pozulmuş məhsullar — qanunda müəyyən edilmiş istisnalar istisna olmaqla.',
+          'Endirimli və ya kampaniya məhsulu üzrə satıcı və ya qanunla müəyyən edilmiş əlavə şərtlər mövcuddursa, həmin şərtlər tətbiq olunur.',
+        ],
+      },
+      {
+        heading: 'Qaytarma sorğusu necə göndərilir',
+        body: [
+          'Sifariş səhifəsində «Qaytarma sorğusu» düyməsindən istifadə edin və ya info@eynek.store ünvanına sifariş nömrənizi və qısa səbəbi yazın. Bir sifarişdə bir neçə mağaza varsa, hər mağaza hissəsi üçün ayrıca sorğu yaradılır.',
+          'EYNƏK sorğunu 2 (iki) iş günü ərzində ilkin yoxlayır və sizə məhsulun hara qaytarılacağı, kuryer və ya mağazaya təhvil və lazım gələn sənədlər barədə məlumat verir.',
+          'Məhsulu təhvil verərkən sifariş nömrəsi və alıcı adı göstərilməlidir. Qaytarma çatdırılmasının ödənişi, qanun və ya satıcı zəmanət şərtləri əsasında müəyyən edilir; EYNƏK əvvəlcədən razılaşdırılmamış əlavə xərcləri ödəmək öhdəliyi daşımır.',
+        ],
+      },
+      {
+        heading: 'Geri ödəniş',
+        body: [
+          'Qaytarılan məhsul mağaza və ya EYNƏK tərəfindən yoxlanılıb qəbul edildikdən sonra geri ödəniş 10 (on) iş günü ərzində həyata keçirilir.',
+          'Online bank kartı ilə ödənilmiş məbləğ eyni kart hesabına qaytarılır. Nağd ödənişli sifarişlərdə geri ödəniş bank köçürməsi və ya tərəflərin yazılı razılaşdığı digər qanuni üsulla edilir.',
+          'Çatdırılma haqqı yalnız qaytarma səbəbi satıcı və ya platforma xətası olduqda geri ödənilir; ümumi istəklə qaytarma zamanı ilk çatdırılma haqqı geri ödənilməyə bilər.',
+          'Qaytarılmış və təsdiqlənmiş məhsula platforma komissiyası hesablanmır.',
         ],
       },
       {
         heading: 'Əlaqə',
-        body: ['Qaytarma sorğusu üçün info@eynek.store ünvanına sifariş nömrənizi yazın.'],
+        body: [
+          'Qaytarma və geri ödəniş ilə bağlı suallar üçün info@eynek.store ünvanına və ya Dəstək mərkəzinə yazın.',
+        ],
       },
     ],
   },
   'satici-muqavilesi': {
     eyebrow: 'Satıcılar üçün',
-    title: 'Satıcı şərtləri.',
-    lead: 'Optik mağaza EYNƏK-də yalnız admin təsdiqindən sonra sata bilər. Bu səhifə pilot qaydaları izah edir; ayrıca imzalanmış müqavilə hələ tələb olunmur, amma yekun hüquqi mətn yerinə keçmir.',
+    title: 'Satıcı müqaviləsi.',
+    lead: 'Bu müqavilə təsdiqlənmiş optik mağazanın EYNƏK (eynek.store) marketplace platformasında məhsul satışı və sifarişlərin icrası şərtlərini müəyyən edir. Mağaza müraciəti təsdiqlənəndə və satıcı panelindən istifadəyə başlayanda satıcı bu şərtlərlə razılaşmış sayılır.',
     sections: [
       {
-        heading: 'Kim sata bilər',
+        heading: '1. Təriflər və tərəflər',
         body: [
-          'İctimai müraciət açıqdır, lakin təsdiq olunmayan mağaza kataloq, qiymət və stok idarə edə bilməz.',
-          'Hər mağaza yalnız öz vitrinini görür və dəyişir. Başqa mağazanın inventarına giriş yoxdur.',
+          '«Platforma» — EYNƏK optik marketplace-i (eynek.store) və onun texniki infrastrukturu.',
+          '«Satıcı» — admin tərəfindən təsdiqlənmiş, öz adından optik məhsul satan hüquqi şəxs və ya fərdi sahibkar.',
+          '«Alıcı» — Platforma vasitəsilə məhsul sifariş edən son istehlakçı.',
+          'Platforma vasitəçi kimi çıxış edir; məhsulun mülkiyyətçisi və birbaşa satış müqaviləsinin tərəfi Satıcıdır, Alıcı ilə satış müqaviləsi Satıcı ilə bağlanır.',
         ],
       },
       {
-        heading: 'Məhsullar və sifarişlər',
+        heading: '2. Qoşulma və təsdiq',
         body: [
-          'Yeni elanlar admin təsdiqinə qədər gizlin qalır. İctimai məzmunu sonradan dəyişmək yenidən yoxlama tələb edə bilər; yalnız stok dəyişikliyi təkrar moderasiya yaratmır.',
-          'Sifariş gələndə mağaza öz hissəsini təsdiqləməli və ya rədd etməlidir. Eyni vaxtda iki veb sifarişi stoku aşmamalıdır.',
-          'Kuryer haqqını mağaza təsdiq zamanı yazır. Mağazadan götürmə pulsuzdur və 0 AZN kimi qeyd olunur.',
+          'Satıcı müraciəti Platformada qeyd olunur; təsdiq üçün vergi və biznes məlumatlarının düzgün təqdim edilməsi tələb olunur.',
+          'Təsdiq alınmayan müraciət kataloqda görünmür və satış funksiyası aktivləşdirilmir.',
+          'Hər Satıcı yalnız öz mağaza panelinə, sifarişlərinə və məhsul kataloquna çıxış edir.',
         ],
       },
       {
-        heading: 'Komissiya',
+        heading: '3. Satıcının öhdəlikləri',
         body: [
-          'Pilot komissiya uğurla çatdırılmış və qaytarılmamış məhsul məbləğinin 5%-idir. Çatdırılma haqqından komissiya alınmır.',
-          'Yalnız yaradılmış, amma hələ çatdırılmamış sifarişə komissiya düşmür.',
+          'Kataloqda yerləşdirilən şəkillər, təsvirlər, qiymətlər, stok və məhsul xüsusiyyətlərinin düzgün, aktual və qanunvericiliyə uyğun olması.',
+          'Orijinal və ya qanuni yolla daxil edilmiş malların satışı; saxta və ya qadağan olunmuş məhsulun yerləşdirilməməsi.',
+          'Sifarişə vaxtında cavab: təsdiq, rədd və ya alternativ təklif; stokun eyni vaxtda bir neçə sifarişə qarşılıq gələcək şəkildə idarə olunması.',
+          'Çatdırılma və ya mağazadan götürmə üzrə Satıcının öhdəliyində olan addımların vaxtında yerinə yetirilməsi.',
+          'Alıcı şəxsi məlumatlarının yalnız sifarişin icrası məqsədilə istifadəsi və üçüncü tərəflərə ötürülməməsi.',
+          'Azərbaycan Respublikasının vergi, istehlakçı hüquqları və reklam qanunvericiliyinə riayət.',
+        ],
+      },
+      {
+        heading: '4. Məzmun və moderasiya',
+        body: [
+          'Yeni və dəyişdirilmiş məhsul elanları admin təsdiqinə qədər ictimai kataloqda gizli qala bilər.',
+          'Qiymət, təsvir, şəkil və digər ictimai məzmunun əhəmiyyətli dəyişikliyi təkrar moderasiya tələb edə bilər; yalnız stok miqdarının yenilənməsi yenidən yoxlamanı avtomatik tələb etmir.',
+          'Platforma qaydalara zidd məzmunu silmək, müvəqqəti dayandırmaq və ya mağaza hesabını bağlamaq hüququnu saxlayır.',
+        ],
+      },
+      {
+        heading: '5. Sifarişlər və ödəniş',
+        body: [
+          'Sifariş bir neçə Satıcıdan məhsul ehtiva edə bilər; hər Satıcı yalnız öz hissəsini təsdiqləyir və icra edir.',
+          'Alıcı ödənişi nağd (çatdırılma və ya götürmə zamanı) və ya online bank kartı ilə edə bilər; kart ödənişləri lisenziyalı ödəniş təminatçısı vasitəsilə həyata keçirilir.',
+          'Kuryer çatdırılma haqqını Satıcı təsdiq zamanı qeyd edir; mağazadan götürmə haqqı 0 (sıfır) AZN kimi göstərilir və alıcıdan əlavə götürmə haqqı tutulmur.',
+          'Satıcı ödənişi birbaşa Alıcıdan və ya ödəniş sisteminin qaydalarına uyğun alır; Platforma nağd ödənişdə vəsaitin saxlayıcısı deyil.',
+        ],
+      },
+      {
+        heading: '6. Komissiya və hesablaşma',
+        body: [
+          'Platforma uğurla çatdırılmış və qaytarılmamış məhsul üzrə Satıcının aldığı məhsul məbləğinin 5% (beş faiz) komissiya tutur. Çatdırılma haqqından komissiya hesablanmır.',
+          'Ləğv edilmiş, çatdırılmamış və ya qaytarılmış məhsula komissiya tətbiq olunmur.',
+          'Komissiya və hesablaşma qaydaları dəyişdikdə Satıcıya ən azı 14 (on dörd) təqvim günü əvvəl e-poçt və ya satıcı paneli vasitəsilə məlumat verilir.',
+        ],
+      },
+      {
+        heading: '7. Məsuliyyət və müddət',
+        body: [
+          'Məhsulun keyfiyyəti, zəmanət, uyğunluq və qanuni bəyannamələr üzrə əsas məsuliyyət Satıcıya aiddir.',
+          'Platforma texniki nasazlıq, fors-major və üçüncü tərəf xidmətlərinin (ödəniş, rabitə) pozuntuları hallarında məsuliyyəti qanunla icazə verilən həddə məhdudlaşdırır.',
+          'Hər iki tərəf müqaviləni qaydalara uyğun yazılı xəbərdarlıqla və ya hesabın bağlanması ilə dayandıra bilər; əvvəl verilmiş sifarişlər icra olunana qədər öhdəliklər qüvvədə qalır.',
+          'Mübahisələr əvvəlcə danışıqlar yolu ilə həll edilir; razılıq əldə olunmazsa, Azərbaycan Respublikasının məhkəmələri və qanunvericiliyi tətbiq olunur.',
+        ],
+      },
+      {
+        heading: '8. Əlaqə',
+        body: [
+          'Satıcılar üçün sat@eynek.store, ümumi sorğular üçün info@eynek.store. Son yenilənmə: 15 noyabr 2026.',
         ],
       },
     ],

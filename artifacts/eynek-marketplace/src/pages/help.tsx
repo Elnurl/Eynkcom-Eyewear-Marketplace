@@ -27,7 +27,7 @@ export function HelpPage() {
             <ul>
               <li>Ödənişi sifariş zamanı bank kartı ilə online və ya məhsulu alarkən qapıda nağd edə bilərsiniz.</li>
               <li>Çatdırılma Bakı və Abşerondadır. Mağazadan götürmə pulsuzdur.</li>
-              <li>Qaytarma sorğusu birbaşa mağazaya yox, EYNƏK-ə göndərilir. Geri ödəniş müddəti hələ razılaşdırılmayıb.</li>
+              <li>Qaytarma sorğusu birbaşa mağazaya yox, EYNƏK-ə göndərilir. Ətraflı şərtlər <Link href="/qaytarma">Qaytarma</Link> səhifəsindədir.</li>
             </ul>
           </section>
           <section id="telimat">

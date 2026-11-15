@@ -367,10 +367,42 @@ select:focus-visible {
   transform: none;
   filter: none;
 }
-.mp-shape-tile-photo--Square { background: #f6f4f1; }
-.mp-shape-tile-photo--Rectangle { background: #e7edf1; }
-.mp-shape-tile-photo--Cat-Eye { background: #f3ebe4; }
-.mp-shape-tile-photo--Aviator { background: #ececea; }
+.mp-shape-tile-photo--Square {
+  background: #eef0f2;
+  padding: 0;
+}
+.mp-shape-tile-photo--Square img {
+  object-fit: cover;
+  transform: none;
+  filter: none;
+}
+.mp-shape-tile-photo--Rectangle {
+  background: #eef0f2;
+  padding: 0;
+}
+.mp-shape-tile-photo--Rectangle img {
+  object-fit: cover;
+  transform: none;
+  filter: none;
+}
+.mp-shape-tile-photo--Cat-Eye {
+  background: #f2f0ee;
+  padding: 0;
+}
+.mp-shape-tile-photo--Cat-Eye img {
+  object-fit: cover;
+  transform: none;
+  filter: none;
+}
+.mp-shape-tile-photo--Aviator {
+  background: #f2f0ee;
+  padding: 0;
+}
+.mp-shape-tile-photo--Aviator img {
+  object-fit: cover;
+  transform: none;
+  filter: none;
+}
 .mp-shape-tile-photo img {
   width: 100%;
   height: 100%;

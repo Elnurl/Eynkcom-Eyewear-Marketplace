@@ -3,8 +3,8 @@ export function BrandLogo({ className = '' }: { className?: string }) {
     <img
       className={`brand-image ${className}`.trim()}
       src={`${import.meta.env.BASE_URL}eynek-name.png`}
-      width={476}
-      height={86}
+      width={135}
+      height={37}
       alt="EYNƏK"
     />
   );
@@ -13,7 +13,7 @@ export function BrandLogo({ className = '' }: { className?: string }) {
 export function BrandWord() {
   return (
     <span className="brand-word">
-      <img src={`${import.meta.env.BASE_URL}eynek-name.png`} width={476} height={86} alt="EYNƏK" />
+      <img src={`${import.meta.env.BASE_URL}eynek-name.png`} width={135} height={37} alt="EYNƏK" />
     </span>
   );
 }
