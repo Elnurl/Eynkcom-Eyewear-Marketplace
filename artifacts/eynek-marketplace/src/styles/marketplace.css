@@ -318,28 +318,60 @@ select:focus-visible {
 .mp-shape-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 @media (min-width: 640px) {
   .mp-shape-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (min-width: 900px) {
-  .mp-shape-grid { grid-template-columns: repeat(6, 1fr); }
+  .mp-shape-grid { grid-template-columns: repeat(5, 1fr); }
 }
 .mp-shape-tile {
-  min-height: 72px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--mp-tile);
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--mp-ink);
+  background: #fff;
   border: 1px solid var(--mp-line);
   border-radius: var(--mp-radius-sm);
-  font-size: 13px;
-  font-weight: 500;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .mp-shape-tile:hover {
   border-color: var(--mp-ink);
+  box-shadow: 0 8px 24px rgba(22, 22, 20, 0.06);
+}
+.mp-shape-tile-photo {
+  display: block;
+  aspect-ratio: 1;
+  background: #f3f3f1;
+  padding: 18px 14px;
+}
+.mp-shape-tile-photo--Round { background: #e9ede5; }
+.mp-shape-tile-photo--Square { background: #f6f4f1; }
+.mp-shape-tile-photo--Rectangle { background: #e7edf1; }
+.mp-shape-tile-photo--Cat-Eye { background: #f3ebe4; }
+.mp-shape-tile-photo--Aviator { background: #ececea; }
+.mp-shape-tile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  transform: scale(1.02);
+  filter: drop-shadow(0 10px 18px rgba(28, 28, 26, 0.08));
+}
+.mp-shape-tile-label {
+  padding: 10px 6px 12px;
+  text-align: center;
+  font-family: var(--mp-font);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 .mp-color-grid {
   display: flex;

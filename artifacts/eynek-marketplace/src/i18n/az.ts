@@ -32,6 +32,13 @@ export const az = {
     addToCart: 'Səbətə əlavə et',
     seller: 'Satıcı',
     sampleLabel: 'Nümunə vitrin',
+    reviewsTitle: 'Müştəri rəyləri',
+    reviewsEmptyLead: 'Hələ bu məhsul üçün rəy yoxdur.',
+    reviewsEmptyCta: 'İlk rəyi siz yazın!',
+    reviewsWrite: 'Rəy yaz',
+    reviewsWriteHint: 'Sifariş tamamlandıqdan sonra aktiv olacaq',
+    reviewsSort: 'Sırala:',
+    reviewsSortSoon: 'Tezliklə',
   },
   collection: {
     title: 'Eynəyini burada tap.',
@@ -40,6 +47,12 @@ export const az = {
     vtoFilter: 'VTO mövcuddur',
   },
   home: {
+    appealTitle: 'Hər kəs üçün uyğun çərçivə',
+    appealLead:
+      'Bakı və Abşerondakı optikalardan optik çərçivə və gün eynəyini bir yerdə kəşf edin. Virtual sınaq, onlayn və qapıda ödəniş.',
+    bestSellingTitle: 'Ən çox seçilən modellər',
+    bestSellingOptical: 'Optik çərçivə',
+    bestSellingSun: 'Gün eynəyi',
     shopByShape: 'Formaya görə',
     shopByColor: 'Rəngə görə',
     storesStrip: 'Mağazalar',

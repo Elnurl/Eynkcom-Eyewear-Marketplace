@@ -17,13 +17,18 @@ type Vendor = {
 };
 
 const shapeTiles = [
-  { slug: 'Square', label: 'Square' },
-  { slug: 'Round', label: 'Round' },
-  { slug: 'Aviator', label: 'Aviator' },
-  { slug: 'Cat-Eye', label: 'Cat-eye' },
-  { slug: 'Rectangle', label: 'Rectangle' },
-  { slug: 'Wayfarer', label: 'Wayfarer' },
-];
+  { slug: 'Round', label: 'Round', image: 'product-images/shape-round.png' },
+  { slug: 'Square', label: 'Square', image: 'product-images/shape-square.png' },
+  { slug: 'Rectangle', label: 'Rectangle', image: 'product-images/shape-rectangle.png' },
+  { slug: 'Cat-Eye', label: 'Cat-eye', image: 'product-images/shape-cat-eye.png' },
+  { slug: 'Aviator', label: 'Aviator', image: 'product-images/shape-aviator.png' },
+] as const;
+
+function shapeTileImage(path: string) {
+  if (path.startsWith('http') || path.startsWith('data:')) return path;
+  if (path.startsWith('/')) return path;
+  return `${import.meta.env.BASE_URL}${path}`;
+}
 
 function frameSwatch(color: string) {
   const known: Record<string, string> = {
@@ -57,7 +62,10 @@ export function HomeMarketSections({
         <div className="mp-shape-grid">
           {shapeTiles.map((item) => (
             <Link key={item.slug} href={`/collection?shape=${encodeURIComponent(item.slug)}`} className="mp-shape-tile" data-testid={`link-shape-${item.slug}`}>
-              {item.label}
+              <span className={`mp-shape-tile-photo mp-shape-tile-photo--${item.slug}`}>
+                <img src={shapeTileImage(item.image)} alt="" loading="lazy" />
+              </span>
+              <span className="mp-shape-tile-label">{item.label}</span>
             </Link>
           ))}
         </div>

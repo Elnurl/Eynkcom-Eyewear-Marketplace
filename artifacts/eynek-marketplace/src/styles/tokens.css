@@ -17,6 +17,11 @@
   --mp-space-5: 24px;
   --mp-space-6: 32px;
   --mp-font: 'Manrope', sans-serif;
+  --font-display: 'DM Sans', 'Manrope', system-ui, sans-serif;
+  /* Hero watermark — Look tipli editorial serif */
+  --font-hero: 'Playfair Display', 'Georgia', 'Times New Roman', serif;
+  /* VTO / redaksiya başlıqları — neytral, peşəkar sans */
+  --font-editorial: 'Source Sans 3', 'Manrope', system-ui, sans-serif;
   --mp-heading-weight: 300;
   --mp-label-size: 10px;
   --mp-label-track: 0.14em;
