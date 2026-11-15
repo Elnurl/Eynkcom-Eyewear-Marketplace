@@ -7,6 +7,12 @@ export type BulkImportFailure = { row: number; name: string; error: string };
 
 export const BULK_IMPORT_MAX_ROWS = 200;
 
+function normalizeProductColor(color: string) {
+  const value = color.trim();
+  if (/^qata$/i.test(value)) return "Qara";
+  return value;
+}
+
 const COLUMN_ALIASES: Record<string, keyof BulkProductRow> = {
   name: "name",
   ad: "name",
@@ -83,7 +89,7 @@ export function mapBulkRow(
     category: String(mapped.category ?? "").trim(),
     price: price ?? -1,
     stock: stock ?? -1,
-    color: String(mapped.color ?? "").trim(),
+    color: normalizeProductColor(String(mapped.color ?? "").trim()),
     material: String(mapped.material ?? "").trim(),
     brand: String(mapped.brand ?? "").trim(),
     gender: String(mapped.gender ?? "Uniseks").trim(),

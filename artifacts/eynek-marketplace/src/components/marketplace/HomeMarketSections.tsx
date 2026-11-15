@@ -30,9 +30,16 @@ function shapeTileImage(path: string) {
   return `${import.meta.env.BASE_URL}${path}`;
 }
 
+function normalizeProductColor(color: string) {
+  const value = color.trim();
+  if (/^qata$/i.test(value)) return 'Qara';
+  return value;
+}
+
 function frameSwatch(color: string) {
   const known: Record<string, string> = {
     Qara: '#1c1c1c',
+    Qata: '#1c1c1c',
     Gümüş: '#c5c8ce',
     Kəhrəba: '#d28a3a',
     Qızılı: '#c4a15a',
@@ -51,7 +58,7 @@ export function HomeMarketSections({
   products: MarketProduct[];
   stores: Vendor[];
 }) {
-  const colors = [...new Set(products.map((p) => p.color.trim()).filter(Boolean))].slice(0, 8);
+  const colors = [...new Set(products.map((p) => normalizeProductColor(p.color)).filter(Boolean))].slice(0, 8);
   const brands = [...new Set(products.map((p) => p.brand.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)).slice(0, 12);
 
   return (

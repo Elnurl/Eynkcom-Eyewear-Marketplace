@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
-import { BrandLogo, BrandWord } from '@/components/brand-logo';
+import { BrandFooterLogo, BrandLogo, BrandWord } from '@/components/brand-logo';
 import { HeaderSearch } from '@/components/header-search';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -404,7 +404,7 @@ function Footer() {
         <div className="haven-footer-brand">
           <div className="haven-footer-brand-stack">
             <Link href="/" className="haven-footer-logo" aria-label="EYNƏK ana səhifə">
-              <BrandLogo />
+              <BrandFooterLogo />
             </Link>
             <a href="mailto:info@eynek.store" className="haven-footer-email" data-testid="link-footer-email">
               info@eynek.store
@@ -462,9 +462,16 @@ function ProductCard({ product, liked, onFavorite, onTryOn, onAdd }: { product: 
 
 type CommonProps = { products: Product[]; stores: Vendor[]; likedIds: Set<number | string>; onFavorite: (id: number | string) => void; onQuickView: (product: Product) => void; onTryOn: (product?: Product) => void; onAdd: (product: Product) => void };
 
+function normalizeProductColor(color: string) {
+  const value = color.trim();
+  if (/^qata$/i.test(value)) return 'Qara';
+  return value;
+}
+
 function frameSwatch(color: string) {
   const known: Record<string, string> = {
     Qara: '#1c1c1c',
+    Qata: '#1c1c1c',
     Gümüş: '#c5c8ce',
     Kəhrəba: '#d28a3a',
     Qızılı: '#c4a15a',
@@ -1317,7 +1324,7 @@ function Storefront() {
         shape: product.shape,
         material: product.material,
         size: product.size,
-        color: product.color,
+        color: normalizeProductColor(product.color),
         tone: 'tone-1',
         frameStyle: product.category === 'Gün eynəyi' ? 'sunglass' : product.material === 'Metal' ? 'gold' : 'clear',
         description: product.description || `${product.brand ? `${product.brand} · ` : ''}${product.category} modeli.`,

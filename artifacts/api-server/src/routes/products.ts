@@ -23,6 +23,12 @@ import { deleteSellerProductFromVto, syncSellerProductToVto, vtoConfigured } fro
 import { requireAuth } from "../middlewares/requireAuth";
 import { BULK_IMPORT_MAX_ROWS, type BulkImportFailure } from "../lib/bulkProductImport";
 
+function normalizeProductColor(color: string) {
+  const value = color.trim();
+  if (/^qata$/i.test(value)) return "Qara";
+  return value;
+}
+
 function queueVtoSync(
   log: { info: (obj: object, msg: string) => void; warn: (obj: object, msg: string) => void },
   product: { id: string; name: string; size: string; frontImage: string; sideImage: string },
@@ -103,7 +109,7 @@ router.get("/products", async (_req, res): Promise<void> => {
         category: product.category,
         price: product.price,
         stock: product.stock,
-        color: product.color,
+        color: normalizeProductColor(product.color),
         material: product.material,
         brand: product.brand,
         gender: product.gender,

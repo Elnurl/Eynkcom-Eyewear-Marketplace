@@ -568,12 +568,12 @@ select:focus-visible {
   line-height: 0;
   flex-shrink: 0;
 }
-.haven-footer.mp-footer .haven-footer-logo .brand-image {
+.haven-footer.mp-footer .haven-footer-logo .brand-image--footer {
   display: block;
-  width: 118px;
-  max-width: 100%;
-  height: auto;
-  filter: brightness(0) invert(1);
+  width: auto;
+  height: 34px;
+  max-width: min(200px, 100%);
+  filter: none;
 }
 .haven-footer-brand .haven-footer-email {
   display: block;
