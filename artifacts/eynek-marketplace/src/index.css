@@ -1397,14 +1397,14 @@ body { background: #f8faff; }
 .haven-hero-title-line--light {
   font-size: clamp(52px, 11vw, 132px);
   font-weight: 700;
-  line-height: .92;
+  line-height: 1.02;
   letter-spacing: -0.04em;
 }
 .haven-hero-title-line--strong {
-  margin-top: -0.06em;
+  margin-top: 0.1em;
   font-size: clamp(52px, 11vw, 132px);
   font-weight: 700;
-  line-height: .9;
+  line-height: 1.02;
   letter-spacing: -0.04em;
 }
 .haven-hero-copy .haven-hero-actions {
