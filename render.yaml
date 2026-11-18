@@ -11,7 +11,7 @@ services:
     autoDeploy: true
     # Render's Node 24 image already has pnpm, and /usr is read-only, so a global
     # npm install fails with EROFS. NODE_ENV=production would also skip Vite and esbuild.
-    buildCommand: COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NODE_ENV=development pnpm install --frozen-lockfile --prod=false && pnpm run build
+    buildCommand: COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NODE_ENV=development pnpm install --frozen-lockfile --prod=false && pnpm --filter @workspace/db migrate && pnpm run build
     startCommand: NODE_ENV=production node --enable-source-maps artifacts/api-server/dist/index.mjs
     healthCheckPath: /api/healthz
     # Uploads used to die on every deploy (ephemeral disk). Keep local files here
