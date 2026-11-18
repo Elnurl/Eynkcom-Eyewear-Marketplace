@@ -484,6 +484,20 @@
 .seller-buyer-contact strong { display: block; margin-top: 4px; color: #26313e; font-size: 12px; word-break: break-word; }
 .seller-buyer-note { grid-column: 1 / -1; }
 .seller-buyer-pending { margin: 0 0 12px; padding: 12px 14px; border-radius: 8px; background: #fff8ef; border: 1px solid #f0e0c8; color: #7a6548; font-size: 11px; line-height: 1.5; }
+
+.seller-courier-box {
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #f4f7fc;
+  border: 1px solid #dfe6f0;
+}
+.seller-courier-head { display: flex; align-items: center; gap: 8px; color: #243040; font-size: 12px; font-weight: 800; }
+.seller-courier-hint { margin: 8px 0 12px; color: #6a7584; font-size: 10px; line-height: 1.55; }
+.seller-courier-dl { display: grid; gap: 10px; margin: 0; }
+.seller-courier-dl div { display: grid; gap: 3px; }
+.seller-courier-dl dt { margin: 0; color: #87909c; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.seller-courier-dl dd { margin: 0; color: #24313c; font-size: 11px; line-height: 1.45; }
 .seller-cancel-request { margin-top: 14px; padding: 14px 16px; border-radius: 8px; background: #fff8ef; border: 1px solid #f0e0c8; }
 .seller-cancel-request p { margin: 0 0 12px; color: #5c4a32; font-size: 11px; line-height: 1.55; }
 .order-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 12px; border-top: 1px solid #edf0f4; padding-top: 15px; }

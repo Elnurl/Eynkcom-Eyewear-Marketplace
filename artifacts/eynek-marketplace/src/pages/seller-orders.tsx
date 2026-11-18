@@ -13,7 +13,7 @@ import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 import { BrandLogo } from '@/components/brand-logo';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
 import { useSellerWorkspace } from '@/hooks/use-seller-workspace';
-import { LoadingCard, OrderItemRow, QueryError, StatePill, dateLabel, fulfillmentLabel, money, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
+import { LoadingCard, OrderItemRow, QueryError, StatePill, dateLabel, deliveryNoteWithoutGeo, fulfillmentLabel, mapsLink, money, parseDeliveryGeo, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
 import './order-pages.css';
 
 type Draft = { status: SellerOrderUpdateStatus; deliveryFeeAzN: string; trackingCode: string; collectedAtDelivery: boolean };
@@ -181,6 +181,33 @@ export default function SellerOrdersPage() {
                         {open ? (
                           <div className="seller-order-body">
                             <div className="seller-order-meta-lines"><span><strong>Üsul:</strong> {fulfillmentLabel(order.fulfillmentMethod)}</span><span><strong>{order.fulfillmentMethod === 'store_pickup' ? 'Götürmə:' : 'Çatdırılma:'}</strong> {order.deliveryArea}, {order.deliveryAddress}</span><span><strong>Ödəniş:</strong> {paymentStatusLabel(order.paymentStatus, order.fulfillmentMethod)}</span></div>
+                            {order.fulfillmentMethod !== 'store_pickup' ? (() => {
+                              const drop = parseDeliveryGeo(order.deliveryNote);
+                              const noteText = deliveryNoteWithoutGeo(order.deliveryNote);
+                              const pickupAddress = store?.address?.trim() || store?.location?.trim() || 'Mağaza ünvanı vitrində';
+                              return (
+                                <div className="seller-courier-box" data-testid={`courier-route-${order.id}`}>
+                                  <div className="seller-courier-head"><Truck size={16} aria-hidden /><strong>Kuryer marşrutu</strong></div>
+                                  <p className="seller-courier-hint">Bolt paneli hələ sayta bağlı deyil. Çatdırılma haqqını Bolt Business-də bu marşrutla hesablayıb aşağıdakı sahəyə yazın; kuryeri admin/a operator açacaq.</p>
+                                  <dl className="seller-courier-dl">
+                                    <div><dt>Götürmə (siz)</dt><dd>{pickupAddress}</dd></div>
+                                    <div><dt>Çatdırılma (alıcı)</dt><dd>{order.deliveryAddress}</dd></div>
+                                    {drop ? (
+                                      <div>
+                                        <dt>Xəritə nöqtəsi</dt>
+                                        <dd>
+                                          {drop.lat.toFixed(5)}, {drop.lng.toFixed(5)}{' '}
+                                          <a href={mapsLink(drop.lat, drop.lng)} target="_blank" rel="noopener noreferrer" className="text-link">Xəritədə aç</a>
+                                        </dd>
+                                      </div>
+                                    ) : (
+                                      <div><dt>Xəritə nöqtəsi</dt><dd>Alıcı pin qoymayıb — ünvana görə kuryer planlaşdırın.</dd></div>
+                                    )}
+                                    {noteText ? <div><dt>Alıcı qeydi</dt><dd>{noteText}</dd></div> : null}
+                                  </dl>
+                                </div>
+                              );
+                            })() : null}
                             {sellerSeesBuyerContact(order.status) ? (
                               <div className="seller-buyer-contact" data-testid={`buyer-contact-${order.id}`}>
                                 <div><small>Alıcı</small><strong>{order.customerName}</strong></div>
@@ -206,7 +233,7 @@ export default function SellerOrdersPage() {
                             ) : order.status === 'pending_confirmation' ? (
                               <div className="order-actions">
                                 <div className="commerce-field"><label htmlFor={`status-${order.id}`}>Qərar</label><select id={`status-${order.id}`} data-testid={`select-seller-order-status-${order.id}`} value={draft.status} onChange={(event) => setDraft(order.id, { status: event.target.value as SellerOrderUpdateStatus })}>{statusesFor(order).map((status) => <option value={status} key={status}>{sellerStatusLabel(status, order.fulfillmentMethod)}</option>)}</select></div>
-                                {order.fulfillmentMethod === 'store_pickup' ? <div className="commerce-field"><label>Çatdırılma haqqı</label><input value="0.00" disabled data-testid={`input-seller-delivery-fee-${order.id}`} /><small style={{ color: '#7c8590' }}>Mağazadan götürmə pulsuzdur</small></div> : <div className="commerce-field"><label htmlFor={`fee-${order.id}`}>Çatdırılma haqqı</label><input id={`fee-${order.id}`} type="number" min="0" max="1000" step="0.01" value={draft.deliveryFeeAzN} onChange={(event) => setDraft(order.id, { deliveryFeeAzN: event.target.value })} data-testid={`input-seller-delivery-fee-${order.id}`} /></div>}
+                                {order.fulfillmentMethod === 'store_pickup' ? <div className="commerce-field"><label>Çatdırılma haqqı</label><input value="0.00" disabled data-testid={`input-seller-delivery-fee-${order.id}`} /><small style={{ color: '#7c8590' }}>Mağazadan götürmə pulsuzdur</small></div> : <div className="commerce-field"><label htmlFor={`fee-${order.id}`}>Çatdırılma haqqı (AZN)</label><input id={`fee-${order.id}`} type="number" min="0" max="1000" step="0.01" value={draft.deliveryFeeAzN} onChange={(event) => setDraft(order.id, { deliveryFeeAzN: event.target.value })} placeholder="Bolt-dan aldığınız məbləğ" data-testid={`input-seller-delivery-fee-${order.id}`} /><small style={{ color: '#7c8590' }}>Məhsul + bu məbləğ = alıcının ödənişi. Pulsuzdursa 0 yazın.</small></div>}
                                 <button className="btn btn-blue" type="button" onClick={() => void save(order)} disabled={updateOrder.isPending} data-testid={`button-save-seller-order-${order.id}`}>{savedId === order.id ? <Check size={15} /> : <RefreshCw size={15} />} {savedId === order.id ? 'Yadda saxlanıldı' : 'Qərarı saxla'}</button>
                               </div>
                             ) : !isClosedSellerOrder(order.status) ? (

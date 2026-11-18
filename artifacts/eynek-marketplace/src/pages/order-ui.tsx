@@ -75,6 +75,27 @@ export function fulfillmentLabel(method?: FulfillmentMethod | string) {
   return method === 'store_pickup' ? 'Mağazadan götürmə' : 'Kuryer çatdırılması';
 }
 
+const geoTagPattern = /\[geo:([-0-9.]+),([-0-9.]+)\]/i;
+
+export function parseDeliveryGeo(note?: string | null) {
+  if (!note) return null;
+  const match = geoTagPattern.exec(note);
+  if (!match) return null;
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
+export function deliveryNoteWithoutGeo(note?: string | null) {
+  if (!note) return '';
+  return note.replace(geoTagPattern, '').trim();
+}
+
+export function mapsLink(lat: number, lng: number) {
+  return `https://www.google.com/maps?q=${lat},${lng}`;
+}
+
 export function orderStatusLabel(status: OrderStatus, fulfillment?: FulfillmentMethod | string) {
   if (fulfillment === 'store_pickup') {
     if (status === 'out_for_delivery') return 'Götürməyə hazırdır';

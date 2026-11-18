@@ -10,7 +10,9 @@ function siteOrigin() {
 function orderPageUrl(orderId?: string, accessToken?: string) {
   if (orderId) {
     const base = `${siteOrigin()}/order/${orderId}`;
-    return accessToken ? `${base}#${accessToken}` : base;
+    if (!accessToken) return base;
+    const query = new URLSearchParams({ access: accessToken });
+    return `${base}?${query.toString()}#${accessToken}`;
   }
   return `${siteOrigin()}/account`;
 }

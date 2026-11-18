@@ -4,8 +4,22 @@ import { Router, type IRouter } from "express";
 import { db, marketplaceOrderEventsTable, marketplaceOrdersTable } from "@workspace/db";
 import { tokenMatches } from "../lib/marketplaceOrders";
 import { buildCardCheckout, decodeEpointData, epointReady, epointSignatureMatches } from "../lib/epoint";
+import { optionalAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
+
+function buyerCanPayOrder(
+  user: { id: string; email?: string | null } | undefined,
+  order: { buyerUserId: string | null; customerEmail: string; accessTokenHash: string },
+  token: string,
+) {
+  const email = user?.email?.trim().toLocaleLowerCase("en-US") ?? "";
+  const ownsAccount = Boolean(
+    user && (order.buyerUserId === user.id || (email && order.customerEmail === email)),
+  );
+  const hasGuestAccess = token.length >= 32 && tokenMatches(token, order.accessTokenHash);
+  return ownsAccount || hasGuestAccess;
+}
 
 function siteOrigin(req: { protocol: string; get(name: string): string | undefined }) {
   const configured = process.env.PUBLIC_SITE_URL?.trim() || process.env.BETTER_AUTH_URL?.trim();
@@ -15,7 +29,7 @@ function siteOrigin(req: { protocol: string; get(name: string): string | undefin
   return `${proto}://${host}`;
 }
 
-router.post("/orders/:orderId/epoint", async (req, res): Promise<void> => {
+router.post("/orders/:orderId/epoint", optionalAuth, async (req, res): Promise<void> => {
   if (!epointReady()) {
     res.status(503).json({ error: "Online ödəniş hələ açılmayıb. Private key serverə yazılmalıdır." });
     return;
@@ -23,7 +37,7 @@ router.post("/orders/:orderId/epoint", async (req, res): Promise<void> => {
   const orderId = String(req.params.orderId || "");
   const token = req.get("X-Order-Access-Token") ?? "";
   const [order] = await db.select().from(marketplaceOrdersTable).where(eq(marketplaceOrdersTable.id, orderId)).limit(1);
-  if (!order || token.length < 32 || !tokenMatches(token, order.accessTokenHash)) {
+  if (!order || !buyerCanPayOrder(req.dbUser, order, token)) {
     res.status(404).json({ error: "Sifariş tapılmadı." });
     return;
   }

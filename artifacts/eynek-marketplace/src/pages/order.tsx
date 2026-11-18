@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { ArrowLeft, Check, ClipboardCheck, Copy, CreditCard, Package, RotateCcw, ShieldCheck, Store, X } from 'lucide-react';
 import { Link, useLocation, useParams } from 'wouter';
 import { useAuthSession } from '@/lib/auth-client';
@@ -15,12 +15,29 @@ import { BrandLogo } from '@/components/brand-logo';
 import { LoadingCard, OrderItemRow, OrderTimeline, QueryError, StatePill, dateLabel, fulfillmentLabel, money, orderStatusLabel, paymentStatusLabel, returnStatusLabel, sellerStatusLabel } from './order-ui';
 import './order-pages.css';
 
-function initialToken(orderId: string) {
+function readAccessToken(orderId: string) {
   if (typeof window === 'undefined') return '';
+  const fromQuery =
+    new URLSearchParams(window.location.search).get('access') ??
+    new URLSearchParams(window.location.search).get('token') ??
+    new URLSearchParams(window.location.search).get('accessToken') ??
+    '';
   const fragment = window.location.hash.replace(/^#/, '');
   const fragmentParams = new URLSearchParams(fragment);
-  const token = fragmentParams.get('token') ?? fragmentParams.get('accessToken') ?? (/^[a-f0-9]{64}$/i.test(fragment) ? fragment : '');
-  return token || sessionStorage.getItem(`eynek:order-token:${orderId}`) || '';
+  const fromHash =
+    fragmentParams.get('token') ??
+    fragmentParams.get('accessToken') ??
+    fragmentParams.get('access') ??
+    (/^[a-f0-9]{64}$/i.test(fragment) ? fragment : '');
+  const token = (fromQuery || fromHash || sessionStorage.getItem(`eynek:order-token:${orderId}`) || '').trim();
+  if (token && /^[a-f0-9]{64}$/i.test(token)) {
+    sessionStorage.setItem(`eynek:order-token:${orderId}`, token);
+  }
+  return token;
+}
+
+function initialToken(orderId: string) {
+  return readAccessToken(orderId);
 }
 
 function orderIdFromLocation(path: string) {
@@ -51,6 +68,11 @@ export default function OrderPage() {
   const [payError, setPayError] = useState('');
   const [payPending, setPayPending] = useState(false);
   const accountAccess = isLoaded && Boolean(isSignedIn);
+
+  useEffect(() => {
+    const token = readAccessToken(orderId);
+    if (token) setAccessToken(token);
+  }, [orderId, location]);
 
   const copyTrackingCode = async (sellerOrderId: string, code: string) => {
     try {
@@ -118,8 +140,9 @@ export default function OrderPage() {
   };
 
   const startCardPayment = async () => {
-    if (!accessToken) {
-      setPayError('Ödəniş üçün sifariş giriş kodu lazımdır (e-poçtdakı link və ya #token).');
+    const paymentToken = accessToken || readAccessToken(orderId);
+    if (!paymentToken && !accountAccess) {
+      setPayError('Ödəniş üçün e-poçtdakı tam linki açın və ya hesaba daxil olun.');
       return;
     }
     setPayError('');
@@ -127,7 +150,8 @@ export default function OrderPage() {
     try {
       const pay = await fetch(`/api/orders/${orderId}/epoint`, {
         method: 'POST',
-        headers: { 'X-Order-Access-Token': accessToken },
+        credentials: 'include',
+        headers: paymentToken ? { 'X-Order-Access-Token': paymentToken } : {},
       });
       const session = (await pay.json().catch(() => ({}))) as { error?: string; data?: string; signature?: string; checkoutUrl?: string };
       if (!pay.ok || !session.data || !session.signature || !session.checkoutUrl) {
