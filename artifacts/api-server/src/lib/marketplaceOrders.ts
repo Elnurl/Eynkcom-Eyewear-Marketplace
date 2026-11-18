@@ -174,6 +174,8 @@ export async function loadBuyerOrder(orderId: string) {
     productSubtotalAzN: toAzN(order.productSubtotalQepik)!,
     deliveryTotalAzN: toAzN(order.deliveryTotalQepik),
     totalAzN: toAzN(order.totalQepik),
+    paymentDueAt: order.paymentDueAt ?? null,
+    sellerConfirmDueAt: order.sellerConfirmDueAt ?? null,
     sellerOrders: sellerGroups.map(({ summary }) => ({
       id: summary.id,
       sellerName: summary.sellerName,

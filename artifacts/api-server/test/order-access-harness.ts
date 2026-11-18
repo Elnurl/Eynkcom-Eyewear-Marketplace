@@ -214,6 +214,8 @@ export async function loadBuyerOrder(id: string) {
     deliveryAddress: order.deliveryAddress, deliveryNote: order.deliveryNote,
     productSubtotalAzN: order.productSubtotalQepik / 100, deliveryTotalAzN: order.deliveryTotalQepik === null ? null : order.deliveryTotalQepik / 100,
     totalAzN: order.totalQepik === null ? null : order.totalQepik / 100,
+    paymentDueAt: order.paymentDueAt ?? null,
+    sellerConfirmDueAt: order.sellerConfirmDueAt ?? null,
     sellerOrders: [], timeline: [], createdAt: order.createdAt,
   };
 }
@@ -293,6 +295,7 @@ function sellerOrderResponse(row: any) {
     customerEmail: order.customerEmail, customerPhone: order.customerPhone,
     deliveryArea: order.deliveryArea, deliveryAddress: order.deliveryAddress,
     deliveryNote: order.deliveryNote, fulfillmentMethod: order.fulfillmentMethod ?? "courier", paymentMethod: order.paymentMethod,
+    orderStatus: order.status,
     ...(returnRequest ? { returnRequest } : {}),
     paymentStatus: order.paymentStatus, updatedAt: row.updatedAt,
   };

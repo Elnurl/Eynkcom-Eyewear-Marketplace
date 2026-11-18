@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { ArrowLeft, Check, ClipboardCheck, Copy, Package, RotateCcw, ShieldCheck, Store, X } from 'lucide-react';
+import { ArrowLeft, Check, ClipboardCheck, Copy, CreditCard, Package, RotateCcw, ShieldCheck, Store, X } from 'lucide-react';
 import { Link, useLocation, useParams } from 'wouter';
 import { useAuthSession } from '@/lib/auth-client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -48,6 +48,8 @@ export default function OrderPage() {
   const [cancelNote, setCancelNote] = useState('');
   const [cancelError, setCancelError] = useState('');
   const [trackingCopied, setTrackingCopied] = useState<string | null>(null);
+  const [payError, setPayError] = useState('');
+  const [payPending, setPayPending] = useState(false);
   const accountAccess = isLoaded && Boolean(isSignedIn);
 
   const copyTrackingCode = async (sellerOrderId: string, code: string) => {
@@ -115,6 +117,41 @@ export default function OrderPage() {
     setTokenInput('');
   };
 
+  const startCardPayment = async () => {
+    if (!accessToken) {
+      setPayError('Ödəniş üçün sifariş giriş kodu lazımdır (e-poçtdakı link və ya #token).');
+      return;
+    }
+    setPayError('');
+    setPayPending(true);
+    try {
+      const pay = await fetch(`/api/orders/${orderId}/epoint`, {
+        method: 'POST',
+        headers: { 'X-Order-Access-Token': accessToken },
+      });
+      const session = (await pay.json().catch(() => ({}))) as { error?: string; data?: string; signature?: string; checkoutUrl?: string };
+      if (!pay.ok || !session.data || !session.signature || !session.checkoutUrl) {
+        setPayError(session.error || 'Ödəniş səhifəsi açılmadı.');
+        return;
+      }
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = session.checkoutUrl;
+      form.acceptCharset = 'utf-8';
+      for (const [name, value] of [['data', session.data], ['signature', session.signature]] as const) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      }
+      document.body.appendChild(form);
+      form.submit();
+    } finally {
+      setPayPending(false);
+    }
+  };
+
   const decide = async (approve: boolean) => {
     setDecisionError('');
     try {
@@ -170,6 +207,35 @@ export default function OrderPage() {
       <>
         <section className="commerce-card order-hero"><div><div className="order-number">SİFARİŞ {order.data.orderNumber}</div><h1>{orderStatusLabel(order.data.status, order.data.fulfillmentMethod)}</h1><p>Yaradılıb: {dateLabel(order.data.createdAt)} · {fulfillmentLabel(order.data.fulfillmentMethod)} · {order.data.deliveryArea}</p></div><StatePill status={order.data.status} label={orderStatusLabel(order.data.status, order.data.fulfillmentMethod)} /></section>
         {order.data.status === 'awaiting_buyer_approval' && <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}><div className="commerce-card-heading"><div><h2>Yenilənmiş sifariş təsdiqinizi gözləyir</h2><p>Mağazalardan biri məhsul və ya çatdırılma detallarını dəyişib. Sifarişi təsdiqləyin və ya ləğv edin.</p></div><ClipboardCheck size={19} color="#9b5c36" /></div><div style={{ display: 'flex', gap: 9, marginTop: 18, flexWrap: 'wrap' }}><button className="btn btn-blue" disabled={decideRevision.isPending} onClick={() => void decide(true)} data-testid="button-approve-revision"><Check size={15} /> {decideRevision.isPending ? 'Göndərilir...' : 'Yenilənmiş sifarişi təsdiqlə'}</button><button className="btn btn-secondary" disabled={decideRevision.isPending} onClick={() => void decide(false)} data-testid="button-cancel-revision"><RotateCcw size={15} /> Sifarişi ləğv et</button></div>{decisionError && <QueryError message={decisionError} />}</section>}
+        {order.data.status === 'awaiting_payment' && order.data.paymentMethod === 'card' && (
+          <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="section-order-payment">
+            <div className="commerce-card-heading">
+              <div>
+                <h2>Ödənişi tamamla</h2>
+                <p>Mağaza stoku təsdiqlədi. Məhsul və çatdırılma bir yekun məbləğ üçün 15 dəqiqə ərzində ödəyin.</p>
+                {order.data.paymentDueAt ? (
+                  <p style={{ marginTop: 8, color: '#7a8490', fontSize: 11 }}>
+                    Son tarix: {dateLabel(order.data.paymentDueAt)}
+                  </p>
+                ) : null}
+              </div>
+              <CreditCard size={19} color="#5b719a" />
+            </div>
+            <div style={{ display: 'flex', gap: 9, marginTop: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button
+                className="btn btn-blue"
+                type="button"
+                disabled={payPending || !order.data.totalAzN}
+                onClick={() => void startCardPayment()}
+                data-testid="button-order-pay"
+              >
+                <CreditCard size={15} />
+                {payPending ? 'Açılır...' : `Ödəniş et — ${money(order.data.totalAzN)}`}
+              </button>
+            </div>
+            {payError ? <QueryError message={payError} /> : null}
+          </section>
+        )}
         {cancellationPending(order.data) && !canRequestCancellation(order.data) && order.data.status !== 'cancelled' && (
           <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="status-cancellation-pending">
             <div className="commerce-card-heading"><div><h2>Ləğv sorğusu mağazada</h2><p>Mağaza sorğunu təsdiqləyəndə sifariş ləğv olunacaq. Təsdiq gözləyən mərhələdə sifariş hələ davam edir.</p></div><RotateCcw size={19} color="#9b5c36" /></div>
@@ -236,7 +302,7 @@ export default function OrderPage() {
           </div>
           <aside>
             <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Məlumatlar</h2><p>{accessToken ? 'Qonaq sifarişi' : 'Hesab sifarişi'}</p></div><ShieldCheck size={19} color="#5b719a" /></div><dl className="sidebar-summary" style={{ padding: '18px 0 0' }}><div><dt>Üsul</dt><dd>{fulfillmentLabel(order.data.fulfillmentMethod)}</dd></div><div><dt>Müştəri</dt><dd>{order.data.customerName}</dd></div><div><dt>Telefon</dt><dd>{order.data.customerPhone}</dd></div><div><dt>{order.data.fulfillmentMethod === 'store_pickup' ? 'Götürmə yeri' : 'Ünvan'}</dt><dd style={{ textAlign: 'right', maxWidth: 170 }}>{order.data.deliveryAddress}</dd></div><div><dt>Ödəniş</dt><dd>{paymentStatusLabel(order.data.paymentStatus, order.data.fulfillmentMethod)}</dd></div></dl></section>
-            <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}><div className="commerce-card-heading"><div><h2>Yekun məbləğ</h2><p>{order.data.fulfillmentMethod === 'store_pickup' ? 'Mağazadan götürmə pulsuzdur.' : 'Mağazalar təsdiq etdikcə dəqiqləşir.'}</p></div></div><div className="summary-lines"><div className="summary-line"><span>Məhsullar</span><strong>{money(order.data.productSubtotalAzN)}</strong></div><div className="summary-line"><span>Çatdırılma</span><strong>{order.data.fulfillmentMethod === 'store_pickup' ? money(0) : money(order.data.deliveryTotalAzN)}</strong></div><div className="summary-line total"><span>Cəmi</span><strong>{money(order.data.totalAzN)}</strong></div></div></section>
+            <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}><div className="commerce-card-heading"><div><h2>Yekun məbləğ</h2><p>{order.data.status === 'awaiting_payment' ? 'Ödənişə hazır yekun (məhsul + çatdırılma).' : order.data.fulfillmentMethod === 'store_pickup' ? 'Mağazadan götürmə pulsuzdur.' : 'Mağazalar təsdiq etdikcə dəqiqləşir.'}</p></div></div><div className="summary-lines"><div className="summary-line"><span>Məhsullar</span><strong>{money(order.data.productSubtotalAzN)}</strong></div><div className="summary-line"><span>Çatdırılma</span><strong>{order.data.fulfillmentMethod === 'store_pickup' ? money(0) : money(order.data.deliveryTotalAzN)}</strong></div><div className="summary-line total"><span>Cəmi</span><strong>{money(order.data.totalAzN)}</strong></div></div></section>
           </aside>
         </div>
         {(() => {

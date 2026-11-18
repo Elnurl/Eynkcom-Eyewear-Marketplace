@@ -54,7 +54,15 @@ import {
 } from "../lib/marketplaceOrders";
 import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 import { notifyBuyer } from "../lib/buyer-notifications";
-import { noticeForSellerStatus } from "../lib/buyer-notices";
+import { noticeForSellerStatus, type BuyerNotice } from "../lib/buyer-notices";
+import {
+  PAYMENT_WINDOW_MS,
+  SELLER_CONFIRM_WINDOW_MS,
+  expireStaleOrderIfNeeded,
+  newGuestAccessToken,
+  releaseInventory,
+  reserveInventoryForSellerOrder,
+} from "../lib/orderLifecycle";
 
 const router: IRouter = Router();
 type OrderTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -62,6 +70,7 @@ const commissionRate = 0.05;
 
 const buyerCancellableParentStatuses = new Set([
   "pending_confirmation",
+  "awaiting_payment",
   "confirmed",
   "preparing",
   "cancellation_requested",
@@ -142,37 +151,18 @@ function addEvent(
   });
 }
 
-async function releaseInventory(tx: OrderTransaction, sellerOrderIds: string[]) {
-  if (sellerOrderIds.length === 0) return;
-  const items = await tx
-    .select()
-    .from(marketplaceOrderItemsTable)
-    .where(
-      and(
-        inArray(marketplaceOrderItemsTable.sellerOrderId, sellerOrderIds),
-        eq(marketplaceOrderItemsTable.stockReleased, false),
-      ),
-    )
-    .for("update");
-  for (const item of items) {
-    await tx
-      .update(sellerProductsTable)
-      .set({ stock: sql`${sellerProductsTable.stock} + ${item.quantity}` })
-      .where(eq(sellerProductsTable.id, item.productId));
-    await tx
-      .update(marketplaceOrderItemsTable)
-      .set({ stockReleased: true })
-      .where(eq(marketplaceOrderItemsTable.id, item.id));
-  }
-}
+type RefreshParentResult = {
+  order: typeof marketplaceOrdersTable.$inferSelect | null;
+  paymentWindowOpened: boolean;
+};
 
-async function refreshParentOrder(tx: OrderTransaction, orderId: string) {
+async function refreshParentOrder(tx: OrderTransaction, orderId: string): Promise<RefreshParentResult> {
   const [order] = await tx
     .select()
     .from(marketplaceOrdersTable)
     .where(eq(marketplaceOrdersTable.id, orderId))
     .limit(1);
-  if (!order) return null;
+  if (!order) return { order: null, paymentWindowOpened: false };
 
   const sellerOrders = await tx
     .select()
@@ -193,7 +183,7 @@ async function refreshParentOrder(tx: OrderTransaction, orderId: string) {
       })
       .where(eq(marketplaceOrdersTable.id, orderId))
       .returning();
-    return cancelled;
+    return { order: cancelled ?? null, paymentWindowOpened: false };
   }
 
   const productSubtotalQepik = active.reduce(
@@ -206,6 +196,11 @@ async function refreshParentOrder(tx: OrderTransaction, orderId: string) {
     : null;
   const totalQepik =
     deliveryTotalQepik === null ? null : productSubtotalQepik + deliveryTotalQepik;
+
+  const wasAwaitingPayment = order.status === "awaiting_payment";
+  let paymentWindowOpened = false;
+  let paymentDueAt = order.paymentDueAt;
+  let paymentStatus = order.paymentStatus;
 
   let status: string;
   if (sellerOrders.some((sellerOrder) => sellerOrder.status === "declined")) {
@@ -224,12 +219,24 @@ async function refreshParentOrder(tx: OrderTransaction, orderId: string) {
     allFeesKnown &&
     active.every((sellerOrder) => sellerOrder.status === "confirmed")
   ) {
-    status =
-      (deliveryTotalQepik ?? 0) > 0 && order.buyerApprovedAt === null
-        ? "awaiting_buyer_approval"
-        : "confirmed";
+    if (order.paymentMethod === "card" && order.paymentStatus !== "captured") {
+      status = "awaiting_payment";
+      if (!paymentDueAt) {
+        paymentDueAt = new Date(Date.now() + PAYMENT_WINDOW_MS);
+        paymentWindowOpened = !wasAwaitingPayment;
+      }
+      paymentStatus = "pending_payment";
+    } else if ((deliveryTotalQepik ?? 0) > 0 && order.buyerApprovedAt === null && order.paymentMethod !== "card") {
+      status = "awaiting_buyer_approval";
+    } else {
+      status = "confirmed";
+    }
   } else {
     status = "pending_confirmation";
+  }
+
+  if (order.paymentMethod === "card" && order.paymentStatus === "captured" && allFeesKnown && active.every((s) => s.status === "confirmed")) {
+    status = "confirmed";
   }
 
   const allPaidAtDelivery =
@@ -245,12 +252,49 @@ async function refreshParentOrder(tx: OrderTransaction, orderId: string) {
       productSubtotalQepik,
       deliveryTotalQepik,
       totalQepik,
-      paymentStatus: allPaidAtDelivery ? "paid_on_delivery" : order.paymentStatus,
+      paymentStatus: allPaidAtDelivery ? "paid_on_delivery" : paymentStatus,
+      paymentDueAt,
       updatedAt: new Date(),
     })
     .where(eq(marketplaceOrdersTable.id, orderId))
     .returning();
-  return updated;
+  return { order: updated ?? null, paymentWindowOpened };
+}
+
+async function notifyPaymentWindow(
+  order: typeof marketplaceOrdersTable.$inferSelect,
+  accessToken: string,
+) {
+  const notice: BuyerNotice = { kind: "payment_ready" };
+  notifyBuyer({
+    email: order.customerEmail,
+    phone: order.customerPhone,
+    orderNumber: order.orderNumber,
+    orderId: order.id,
+    accessToken,
+    notice,
+  });
+}
+
+/** Ödəniş pəncərəsini açır; bildirişi tranzaksiyadan sonra göndərin. */
+async function preparePaymentWindowIfNeeded(
+  tx: OrderTransaction,
+  orderId: string,
+  paymentWindowOpened: boolean,
+): Promise<string | null> {
+  if (!paymentWindowOpened) return null;
+  const { token, hash } = newGuestAccessToken();
+  await tx
+    .update(marketplaceOrdersTable)
+    .set({ accessTokenHash: hash, updatedAt: new Date() })
+    .where(eq(marketplaceOrdersTable.id, orderId));
+  await addEvent(
+    tx,
+    orderId,
+    "awaiting_payment",
+    "Mağaza stoku təsdiqlədi. 15 dəqiqə ərzində ödəniş edin (məhsul + çatdırılma).",
+  );
+  return token;
 }
 
 async function getSellerStoreForUser(email: string) {
@@ -399,11 +443,12 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
       deliveryNote: body.data.deliveryNote?.trim() ?? "",
       fulfillmentMethod,
       paymentMethod,
-      paymentStatus: paymentMethod === "card" ? "authorized" : "due_on_delivery",
+      paymentStatus: paymentMethod === "card" ? "unpaid" : "due_on_delivery",
       status: "pending_confirmation",
       productSubtotalQepik,
       deliveryTotalQepik: null,
       totalQepik: null,
+      sellerConfirmDueAt: new Date(Date.now() + SELLER_CONFIRM_WINDOW_MS),
     });
     await addEvent(tx, orderId, "received", "Sifariş EYNƏK tərəfindən qəbul edildi.");
     await addEvent(
@@ -436,13 +481,6 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
           lineTotalQepik: item.lineTotalQepik,
           stockReleased: false,
         });
-        await tx
-          .update(sellerProductsTable)
-          .set({
-            stock: item.product.stock - item.quantity,
-            updatedAt: new Date(),
-          })
-          .where(eq(sellerProductsTable.id, item.product.id));
       }
       const store = storeById.get(group.sellerId);
       await addEvent(
@@ -495,6 +533,9 @@ router.get("/orders/:orderId", optionalAuth, async (req, res): Promise<void> => 
     res.status(404).json({ error: "Sifariş tapılmadı." });
     return;
   }
+  await db.transaction(async (tx) => {
+    await expireStaleOrderIfNeeded(tx, order.id);
+  });
   const saved = await loadBuyerOrder(order.id);
   if (!saved) {
     res.status(404).json({ error: "Sifariş tapılmadı." });
@@ -551,6 +592,7 @@ router.post("/orders/:orderId/decision", optionalAuth, async (req, res): Promise
       .from(marketplaceSellerOrdersTable)
       .where(eq(marketplaceSellerOrdersTable.orderId, order.id))
       .for("update");
+    let paymentToken: string | null = null;
     if (body.data.approve) {
       if (sellerOrders.every((sellerOrder) => sellerOrder.status === "declined")) {
         return { kind: "invalid-state" as const };
@@ -570,11 +612,12 @@ router.post("/orders/:orderId/decision", optionalAuth, async (req, res): Promise
         .update(marketplaceOrdersTable)
         .set({ buyerApprovedAt: new Date(), updatedAt: new Date() })
         .where(eq(marketplaceOrdersTable.id, order.id));
-      const updated = await refreshParentOrder(tx, order.id);
+      const refreshed = await refreshParentOrder(tx, order.id);
+      paymentToken = await preparePaymentWindowIfNeeded(tx, order.id, refreshed.paymentWindowOpened);
       await addEvent(
         tx,
         order.id,
-        updated?.status ?? "confirmed",
+        refreshed.order?.status ?? "confirmed",
         "Yenilənmiş sifariş alıcı tərəfindən təsdiqləndi.",
       );
     } else {
@@ -592,7 +635,7 @@ router.post("/orders/:orderId/decision", optionalAuth, async (req, res): Promise
         .where(eq(marketplaceOrdersTable.id, order.id));
       await addEvent(tx, order.id, "cancelled", "Alıcı sifarişi ləğv etdi.");
     }
-    return { kind: "updated" as const };
+    return { kind: "updated" as const, paymentToken: paymentToken ?? null, orderId: order.id };
   });
 
   if (result.kind === "missing") {
@@ -602,6 +645,14 @@ router.post("/orders/:orderId/decision", optionalAuth, async (req, res): Promise
   if (result.kind === "invalid-state") {
     res.status(400).json({ error: "Bu mərhələdə sifariş qərarı qəbul edilmir." });
     return;
+  }
+  if (result.kind === "updated" && result.paymentToken) {
+    const [row] = await db
+      .select()
+      .from(marketplaceOrdersTable)
+      .where(eq(marketplaceOrdersTable.id, result.orderId))
+      .limit(1);
+    if (row) notifyPaymentWindow(row, result.paymentToken);
   }
   const saved = await loadBuyerOrder(params.data.orderId);
   if (!saved) {
@@ -916,6 +967,8 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
       }
       const fee = pickupOrder ? 0 : aznToQepik(body.data.deliveryFeeAzN!);
       if (fee === null) return { kind: "invalid-fee" as const };
+      const reserve = await reserveInventoryForSellerOrder(tx, sellerOrder.id);
+      if (!reserve.ok) return { kind: "out-of-stock" as const };
       await tx
         .update(marketplaceSellerOrdersTable)
         .set({
@@ -959,8 +1012,15 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
           .where(eq(marketplaceSellerOrdersTable.id, other.id));
       }
     } else {
-      if (parent.status === "awaiting_buyer_approval") {
+      if (parent.status === "awaiting_buyer_approval" || parent.status === "awaiting_payment") {
         return { kind: "awaiting-buyer" as const };
+      }
+      if (
+        nextStatus === "preparing" &&
+        parent.paymentMethod === "card" &&
+        parent.paymentStatus !== "captured"
+      ) {
+        return { kind: "invalid-state" as const };
       }
       if (parent.status !== "confirmed" && parent.status !== "preparing" && parent.status !== "out_for_delivery") {
         return { kind: "invalid-state" as const };
@@ -1037,12 +1097,14 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
     if (body.data.note?.trim()) {
       await addEvent(tx, parent.id, "seller_note", `${storeRecord?.name ?? "Mağaza"}: ${body.data.note.trim()}`, sellerOrder.id);
     }
-    await refreshParentOrder(tx, parent.id);
+    const refreshed = await refreshParentOrder(tx, parent.id);
+    const paymentToken = await preparePaymentWindowIfNeeded(tx, parent.id, refreshed.paymentWindowOpened);
     const storeName = storeRecord?.name ?? "Mağaza";
     const notice = noticeForSellerStatus(nextStatus, storeName, pickupOrder);
     return {
       kind: "updated" as const,
       orderId: parent.id,
+      paymentToken,
       notice: notice
         ? {
             email: parent.customerEmail,
@@ -1063,9 +1125,13 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
     res.status(400).json({ error: "Çatdırılma haqqı qəpik dəqiqliyində və sıfırdan böyük olmayan rəqəm olmalıdır." });
     return;
   }
+  if (result.kind === "out-of-stock") {
+    res.status(409).json({ error: "Stok artıq qalmayıb. «Stok yoxdur» seçin və ya stoku yeniləyin." });
+    return;
+  }
   if (result.kind === "awaiting-buyer") {
     res.status(400).json({
-      error: "Alıcı çatdırılma haqqını təsdiqləyəndən sonra hazırlanmağa keçə bilərsiniz.",
+      error: "Alıcı ödənişi təsdiqləyəndən və ya sorğunu cavablandırana qədər bu addımı keçə bilməzsiniz.",
     });
     return;
   }
@@ -1079,6 +1145,14 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
     return;
   }
   if (result.kind === "updated" && result.notice) notifyBuyer(result.notice);
+  if (result.kind === "updated" && result.paymentToken) {
+    const [row] = await db
+      .select()
+      .from(marketplaceOrdersTable)
+      .where(eq(marketplaceOrdersTable.id, result.orderId))
+      .limit(1);
+    if (row) notifyPaymentWindow(row, result.paymentToken);
+  }
   res.json(UpdateSellerOrderResponse.parse(saved));
 });
 

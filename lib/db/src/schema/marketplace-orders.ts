@@ -36,6 +36,8 @@ export const marketplaceOrdersTable = pgTable(
     totalQepik: integer("total_qepik"),
     refundedQepik: integer("refunded_qepik").notNull().default(0),
     buyerApprovedAt: timestamp("buyer_approved_at", { withTimezone: true }),
+    sellerConfirmDueAt: timestamp("seller_confirm_due_at", { withTimezone: true }),
+    paymentDueAt: timestamp("payment_due_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
@@ -100,6 +102,7 @@ export const marketplaceOrderItemsTable = pgTable(
     unitPriceQepik: integer("unit_price_qepik").notNull(),
     lineTotalQepik: integer("line_total_qepik").notNull(),
     stockReleased: boolean("stock_released").notNull().default(false),
+    stockDeducted: boolean("stock_deducted").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

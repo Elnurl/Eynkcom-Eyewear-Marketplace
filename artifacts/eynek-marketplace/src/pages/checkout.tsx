@@ -9,6 +9,7 @@ import {
   useGetCheckoutOptions,
 } from '@workspace/api-client-react';
 import type { CheckoutOptions, GuestOrderInput } from '@workspace/api-client-react';
+import { AddressMapPicker, type AddressMapValue } from '@/components/AddressMapPicker';
 import { BrandLogo } from '@/components/brand-logo';
 import { az } from '@/i18n/az';
 import { LoadingCard, QueryError, money } from './order-ui';
@@ -68,6 +69,7 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
   const [formError, setFormError] = useState('');
   const [placedOrder, setPlacedOrder] = useState<{ id: string; orderNumber: string; token: string } | null>(null);
   const [payNote, setPayNote] = useState('');
+  const [deliveryPin, setDeliveryPin] = useState<AddressMapValue | null>(null);
 
   const options = checkoutOptions.data as CheckoutOptions | undefined;
   const areas = options?.deliveryAreas ?? [GuestOrderInputDeliveryArea.Bakı, GuestOrderInputDeliveryArea.Abşeron];
@@ -101,6 +103,10 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
       setFormError('Kuryer üçün ətraflı ünvan yazın.');
       return;
     }
+    if (!pickup && !deliveryPin) {
+      setFormError('Çatdırılma üçün xəritədə nöqtə seçin.');
+      return;
+    }
     const guestAccessToken = createGuestToken();
     const input: GuestOrderInput = {
       customerName: form.customerName,
@@ -110,7 +116,13 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
       paymentMethod,
       guestAccessToken,
       items: items.map((item) => ({ productId: String(item.productId), quantity: item.quantity })),
-      ...(form.deliveryNote.trim() ? { deliveryNote: form.deliveryNote.trim() } : {}),
+      ...(() => {
+        const note = form.deliveryNote.trim();
+        if (pickup) return note ? { deliveryNote: note } : {};
+        const geo = deliveryPin ? `[geo:${deliveryPin.lat.toFixed(6)},${deliveryPin.lng.toFixed(6)}]` : '';
+        const merged = [note, geo].filter(Boolean).join('\n');
+        return merged ? { deliveryNote: merged } : {};
+      })(),
       ...(pickup
         ? {}
         : {
@@ -122,32 +134,11 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
       const order = await createOrder.mutateAsync({ data: input });
       sessionStorage.setItem(`eynek:order-token:${order.id}`, guestAccessToken);
       onClearCart();
-      if (paymentMethod === 'card') {
-        const pay = await fetch(`/api/orders/${order.id}/epoint`, {
-          method: 'POST',
-          headers: { 'X-Order-Access-Token': guestAccessToken },
-        });
-        const session = await pay.json().catch(() => ({})) as { error?: string; data?: string; signature?: string; checkoutUrl?: string };
-        if (!pay.ok || !session.data || !session.signature || !session.checkoutUrl) {
-          setPayNote(session.error || 'Sifariş yazıldı, amma kart səhifəsi açılmadı.');
-          setPlacedOrder({ id: order.id, orderNumber: order.orderNumber, token: guestAccessToken });
-          return;
-        }
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = session.checkoutUrl;
-        form.acceptCharset = 'utf-8';
-        for (const [name, value] of [['data', session.data], ['signature', session.signature]] as const) {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = name;
-          input.value = value;
-          form.appendChild(input);
-        }
-        document.body.appendChild(form);
-        form.submit();
-        return;
-      }
+      setPayNote(
+        paymentMethod === 'card'
+          ? 'Mağaza stoku təsdiqləyəndən sonra 15 dəqiqə ərzində ödəniş linki e-poçtunuza və aşağıdakı izləmə səhifəsinə gələcək.'
+          : '',
+      );
       setPlacedOrder({ id: order.id, orderNumber: order.orderNumber, token: guestAccessToken });
     } catch (error) {
       const response = error as { data?: { error?: string } };
@@ -163,7 +154,7 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
             <CheckCircle2 size={28} color="#1f8a4c" />
             <div className="eyebrow">Sifariş qəbul edildi</div>
             <h1>Sifarişin tamamlandı.</h1>
-            <p>{payNote || `Sifariş ${placedOrder.orderNumber} qeydə alındı. Mağaza təsdiqini gözləyir. İzləmə səhifəsində hazırlıq və götürmə mərhələsini görə bilərsiniz.`}</p>
+            <p>{payNote || `Sifariş ${placedOrder.orderNumber} qeydə alındı. Mağaza stok təsdiqini gözləyir (30 dəq). İzləmə səhifəsindən vəziyyəti izləyə bilərsiniz.`}</p>
             <button className="btn btn-blue" type="button" data-testid="link-track-order" onClick={() => setLocation(`/order/${placedOrder.id}#${placedOrder.token}`)}>Sifarişi izlə <ArrowRight size={16} /></button>
           </section>
         </div>
@@ -231,6 +222,18 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
                   <div className="commerce-card-heading"><div><h2>Çatdırılma ünvanı</h2><p>Hazırda yalnız Bakı və Abşeron üçün çatdırırıq.</p></div><MapPin size={19} color="#5b719a" /></div>
                   <div className="commerce-form">
                     <div className="commerce-field"><label htmlFor="deliveryArea">Ərazi</label><select id="deliveryArea" data-testid="select-delivery-area" value={form.deliveryArea} onChange={(event) => update('deliveryArea', event.target.value)}>{areas.map((area) => <option value={area} key={area}>{area}</option>)}</select></div>
+                    <div className="commerce-field full">
+                      <AddressMapPicker
+                        value={deliveryPin}
+                        onChange={setDeliveryPin}
+                        onSuggestAddress={(line) => {
+                          setForm((current) => {
+                            if (current.deliveryAddress.trim().length > 0) return current;
+                            return { ...current, deliveryAddress: line };
+                          });
+                        }}
+                      />
+                    </div>
                     <div className="commerce-field full"><label htmlFor="deliveryAddress">Ətraflı ünvan</label><textarea id="deliveryAddress" data-testid="input-delivery-address" required={!pickup} minLength={5} placeholder="Küçə, bina, mənzil və ya ofis" value={form.deliveryAddress} onChange={(event) => update('deliveryAddress', event.target.value)} /></div>
                     <div className="commerce-field full"><label htmlFor="deliveryNote">Çatdırılma qeydi <span style={{ color: '#87909c', fontWeight: 500 }}>(istəyə görə)</span></label><textarea id="deliveryNote" data-testid="input-delivery-note" placeholder="Kuryer üçün əlavə məlumat" value={form.deliveryNote} onChange={(event) => update('deliveryNote', event.target.value)} /></div>
                   </div>

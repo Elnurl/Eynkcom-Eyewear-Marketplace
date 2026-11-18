@@ -13,6 +13,7 @@ export const OrderStatus = {
   received: 'received',
   pending_confirmation: 'pending_confirmation',
   awaiting_buyer_approval: 'awaiting_buyer_approval',
+  awaiting_payment: 'awaiting_payment',
   confirmed: 'confirmed',
   preparing: 'preparing',
   cancellation_requested: 'cancellation_requested',

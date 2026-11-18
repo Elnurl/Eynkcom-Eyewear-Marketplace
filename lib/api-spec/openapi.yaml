@@ -1390,10 +1390,10 @@ components:
       enum: [pay_on_delivery, card]
     PaymentStatus:
       type: string
-      enum: [due_on_delivery, authorized, captured, paid_on_delivery, failed, partially_refunded, refunded]
+      enum: [due_on_delivery, unpaid, pending_payment, authorized, captured, paid_on_delivery, failed, partially_refunded, refunded]
     OrderStatus:
       type: string
-      enum: [received, pending_confirmation, awaiting_buyer_approval, confirmed, preparing, cancellation_requested, out_for_delivery, partially_delivered, delivered, cancelled]
+      enum: [received, pending_confirmation, awaiting_buyer_approval, awaiting_payment, confirmed, preparing, cancellation_requested, out_for_delivery, partially_delivered, delivered, cancelled]
     SellerOrderStatus:
       type: string
       enum: [pending_confirmation, confirmed, declined, paused, preparing, cancellation_requested, out_for_delivery, delivered, cancelled]
@@ -1586,6 +1586,12 @@ components:
           type: ["number", "null"]
         totalAzN:
           type: ["number", "null"]
+        paymentDueAt:
+          type: ["string", "null"]
+          format: date-time
+        sellerConfirmDueAt:
+          type: ["string", "null"]
+          format: date-time
         sellerOrders:
           type: array
           items:

@@ -11,6 +11,8 @@ export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
 
 export const PaymentStatus = {
   due_on_delivery: 'due_on_delivery',
+  unpaid: 'unpaid',
+  pending_payment: 'pending_payment',
   authorized: 'authorized',
   captured: 'captured',
   paid_on_delivery: 'paid_on_delivery',

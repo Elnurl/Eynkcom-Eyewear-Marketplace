@@ -32,6 +32,10 @@ export interface BuyerOrder {
   deliveryTotalAzN: number | null;
   /** @nullable */
   totalAzN: number | null;
+  /** @nullable */
+  paymentDueAt?: Date | null;
+  /** @nullable */
+  sellerConfirmDueAt?: Date | null;
   sellerOrders: BuyerSellerOrderSummary[];
   timeline: OrderTimelineEvent[];
   createdAt: Date;

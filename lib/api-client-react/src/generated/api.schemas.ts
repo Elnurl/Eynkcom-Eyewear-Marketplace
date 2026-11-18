@@ -509,6 +509,8 @@ export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
 
 export const PaymentStatus = {
   due_on_delivery: 'due_on_delivery',
+  unpaid: 'unpaid',
+  pending_payment: 'pending_payment',
   authorized: 'authorized',
   captured: 'captured',
   paid_on_delivery: 'paid_on_delivery',
@@ -524,6 +526,7 @@ export const OrderStatus = {
   received: 'received',
   pending_confirmation: 'pending_confirmation',
   awaiting_buyer_approval: 'awaiting_buyer_approval',
+  awaiting_payment: 'awaiting_payment',
   confirmed: 'confirmed',
   preparing: 'preparing',
   cancellation_requested: 'cancellation_requested',
@@ -726,6 +729,10 @@ export interface BuyerOrder {
   deliveryTotalAzN: number | null;
   /** @nullable */
   totalAzN: number | null;
+  /** @nullable */
+  paymentDueAt?: string | null;
+  /** @nullable */
+  sellerConfirmDueAt?: string | null;
   sellerOrders: BuyerSellerOrderSummary[];
   timeline: OrderTimelineEvent[];
   createdAt: string;

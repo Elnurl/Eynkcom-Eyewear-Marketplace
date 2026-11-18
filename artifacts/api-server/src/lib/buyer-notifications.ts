@@ -7,12 +7,22 @@ function siteOrigin() {
   return (process.env.BETTER_AUTH_URL?.trim() || "https://eynek.store").replace(/\/$/, "");
 }
 
-function orderPageUrl(orderId?: string) {
-  if (orderId) return `${siteOrigin()}/order/${orderId}`;
+function orderPageUrl(orderId?: string, accessToken?: string) {
+  if (orderId) {
+    const base = `${siteOrigin()}/order/${orderId}`;
+    return accessToken ? `${base}#${accessToken}` : base;
+  }
   return `${siteOrigin()}/account`;
 }
 
-export function notifyBuyer(input: { email: string; phone: string; orderNumber: string; orderId?: string; notice: BuyerNotice }) {
+export function notifyBuyer(input: {
+  email: string;
+  phone: string;
+  orderNumber: string;
+  orderId?: string;
+  accessToken?: string;
+  notice: BuyerNotice;
+}) {
   const copy = buyerNotice(input.orderNumber, input.notice);
   void sendEmail(brandEmail({
     to: input.email,
@@ -23,7 +33,7 @@ export function notifyBuyer(input: { email: string; phone: string; orderNumber: 
     details: copy.details,
     accent: copy.accent,
     action: "Sifarişə bax",
-    url: orderPageUrl(input.orderId),
+    url: orderPageUrl(input.orderId, input.accessToken),
     outro: "Bu bildiriş yalnız sifarişinizin vəziyyəti üçündür.",
   }));
 

@@ -108,7 +108,7 @@ test("checkout binds ownership only to verified session, never body, email, or f
   });
   assert.equal(guest.status, 201);
   assert.equal(orders[guest.data.id].buyerUserId, null);
-  assert.equal(products[0].stock, 9);
+  assert.equal(products[0].stock, 10);
   const owner = await request("/orders", {
     method: "POST", session: "owner",
     body: { ...checkout, guestAccessToken: wrongToken, buyerUserId: "stranger", customerEmail: "stranger@example.com" },
@@ -123,7 +123,7 @@ test("checkout binds ownership only to verified session, never body, email, or f
     body: { ...checkout, guestAccessToken: "c".repeat(64), buyerUserId: "owner" },
   });
   assert.equal(untrusted.status, 401);
-  assert.equal(products[0].stock, 8);
+  assert.equal(products[0].stock, 10);
 });
 
 test("admin user and order endpoints reject ordinary buyers even with forged admin headers", async () => {

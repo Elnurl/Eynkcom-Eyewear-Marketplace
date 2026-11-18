@@ -35,7 +35,19 @@ router.post("/orders/:orderId/epoint", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Bu sifariş artıq ödənilib." });
     return;
   }
-  const qepik = order.totalQepik ?? order.productSubtotalQepik;
+  if (order.status !== "awaiting_payment" && order.paymentStatus !== "pending_payment") {
+    res.status(400).json({ error: "Ödəniş hələ aktiv deyil. Mağaza təsdiqini gözləyin." });
+    return;
+  }
+  if (order.paymentDueAt && Date.now() > order.paymentDueAt.getTime()) {
+    res.status(400).json({ error: "Ödəniş müddəti bitib. Sifariş ləğv olunub." });
+    return;
+  }
+  const qepik = order.totalQepik;
+  if (qepik === null) {
+    res.status(400).json({ error: "Yekun məbləğ hələ hazır deyil." });
+    return;
+  }
   const amountAzN = Number((qepik / 100).toFixed(2));
   if (!Number.isFinite(amountAzN) || amountAzN <= 0) {
     res.status(400).json({ error: "Ödəniş məbləği hazır deyil." });
@@ -73,22 +85,40 @@ router.post("/payments/epoint/result", async (req, res): Promise<void> => {
     return;
   }
   const paid = status === "success";
-  const [updated] = await db
-    .update(marketplaceOrdersTable)
-    .set({
-      paymentStatus: paid ? "captured" : "failed",
-      updatedAt: new Date(),
-    })
+  const [existing] = await db
+    .select({ paymentStatus: marketplaceOrdersTable.paymentStatus })
+    .from(marketplaceOrdersTable)
     .where(eq(marketplaceOrdersTable.id, orderId))
-    .returning({ id: marketplaceOrdersTable.id });
-  if (updated) {
-    await db.insert(marketplaceOrderEventsTable).values({
+    .limit(1);
+  if (existing?.paymentStatus === "captured") {
+    res.status(200).send("ok");
+    return;
+  }
+  await db.transaction(async (tx) => {
+    if (!paid) {
+      await tx
+        .update(marketplaceOrdersTable)
+        .set({ paymentStatus: "failed", updatedAt: new Date() })
+        .where(eq(marketplaceOrdersTable.id, orderId));
+      await tx.insert(marketplaceOrderEventsTable).values({
+        id: randomUUID(),
+        orderId,
+        status: "failed",
+        label: "Kart ödənişi Epoint-də alınmadı.",
+      });
+      return;
+    }
+    await tx
+      .update(marketplaceOrdersTable)
+      .set({ paymentStatus: "captured", status: "confirmed", updatedAt: new Date() })
+      .where(eq(marketplaceOrdersTable.id, orderId));
+    await tx.insert(marketplaceOrderEventsTable).values({
       id: randomUUID(),
       orderId,
-      status: paid ? "captured" : "failed",
-      label: paid ? "Kart ödənişi Epoint-də təsdiqləndi." : "Kart ödənişi Epoint-də alınmadı.",
+      status: "captured",
+      label: "Kart ödənişi Epoint-də təsdiqləndi.",
     });
-  }
+  });
   res.status(200).send("ok");
 });
 

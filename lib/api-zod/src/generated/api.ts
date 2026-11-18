@@ -75,10 +75,10 @@ export const CreateGuestOrderBody = zod.object({
 export const CreateGuestOrderResponse = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -88,6 +88,8 @@ export const CreateGuestOrderResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
+  "paymentDueAt": zod.coerce.date().nullable().optional(),
+  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -141,10 +143,10 @@ export const GetGuestOrderHeader = zod.object({
 export const GetGuestOrderResponse = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -154,6 +156,8 @@ export const GetGuestOrderResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
+  "paymentDueAt": zod.coerce.date().nullable().optional(),
+  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -195,10 +199,10 @@ export const GetGuestOrderResponse = zod.object({
 export const ListAccountOrdersResponseItem = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -208,6 +212,8 @@ export const ListAccountOrdersResponseItem = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
+  "paymentDueAt": zod.coerce.date().nullable().optional(),
+  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -266,10 +272,10 @@ export const DecideGuestOrderRevisionBody = zod.object({
 export const DecideGuestOrderRevisionResponse = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -279,6 +285,8 @@ export const DecideGuestOrderRevisionResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
+  "paymentDueAt": zod.coerce.date().nullable().optional(),
+  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -340,10 +348,10 @@ export const RequestOrderCancellationBody = zod.object({
 export const RequestOrderCancellationResponse = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -353,6 +361,8 @@ export const RequestOrderCancellationResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
+  "paymentDueAt": zod.coerce.date().nullable().optional(),
+  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -420,10 +430,10 @@ export const CreateOrderReturnRequestBody = zod.object({
 export const CreateOrderReturnRequestResponse = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -433,6 +443,8 @@ export const CreateOrderReturnRequestResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
+  "paymentDueAt": zod.coerce.date().nullable().optional(),
+  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -494,10 +506,10 @@ export const updateOrderReturnRequestResponseSellerOrdersItemProductRefundedAzNM
 export const UpdateOrderReturnRequestResponse = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -585,7 +597,7 @@ export const ListSellerOrdersResponseItem = zod.object({
 }).optional()
 }).and(zod.object({
   "orderNumber": zod.string(),
-  "orderStatus": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "orderStatus": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -594,7 +606,7 @@ export const ListSellerOrdersResponseItem = zod.object({
   "deliveryNote": zod.string().nullable(),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "updatedAt": zod.coerce.date()
 }))
 export const ListSellerOrdersResponse = zod.array(ListSellerOrdersResponseItem)
@@ -664,7 +676,7 @@ export const UpdateSellerOrderResponse = zod.object({
 }).optional()
 }).and(zod.object({
   "orderNumber": zod.string(),
-  "orderStatus": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "orderStatus": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -673,7 +685,7 @@ export const UpdateSellerOrderResponse = zod.object({
   "deliveryNote": zod.string().nullable(),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "updatedAt": zod.coerce.date()
 }))
 
@@ -711,10 +723,10 @@ export const listAdminOrdersResponseSellerOrdersItemProductRefundedAzNMin = 0;
 export const ListAdminOrdersResponseItem = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -795,10 +807,10 @@ export const recordOrderRefundResponseSellerOrdersItemProductRefundedAzNMin = 0;
 export const RecordOrderRefundResponse = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
@@ -869,10 +881,10 @@ export const recordOrderSettlementResponseSellerOrdersItemProductRefundedAzNMin 
 export const RecordOrderSettlementResponse = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),
-  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
+  "status": zod.enum(['received', 'pending_confirmation', 'awaiting_buyer_approval', 'awaiting_payment', 'confirmed', 'preparing', 'cancellation_requested', 'out_for_delivery', 'partially_delivered', 'delivered', 'cancelled']),
   "fulfillmentMethod": zod.enum(['courier', 'store_pickup']),
   "paymentMethod": zod.enum(['pay_on_delivery', 'card']),
-  "paymentStatus": zod.enum(['due_on_delivery', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
+  "paymentStatus": zod.enum(['due_on_delivery', 'unpaid', 'pending_payment', 'authorized', 'captured', 'paid_on_delivery', 'failed', 'partially_refunded', 'refunded']),
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),

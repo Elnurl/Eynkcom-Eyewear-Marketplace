@@ -2,6 +2,7 @@ import type { EmailDetailRow } from "./email";
 
 export type BuyerNotice =
   | { kind: "placed" }
+  | { kind: "payment_ready" }
   | { kind: "confirmed"; storeName: string }
   | { kind: "declined"; storeName: string }
   | { kind: "cancelled"; storeName: string }
@@ -51,13 +52,28 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): BuyerNoti
     case "placed":
       return {
         subject: `EYNƏK — sifariş ${orderNumber} qəbul olundu`,
-        sms: `EYNƏK: Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiqini gözləyir.`,
-        intro: `Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiq edənə qədər hazırlanmır. Ödəniş üsulu sifarişdə göstərilir (online kart və ya qapıda).`,
+        sms: `EYNƏK: Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiqini gözləyir (30 dəq).`,
+        intro: `Sifariş ${orderNumber} qəbul olundu. Ödəniş mağaza stoku təsdiqləyənə qədər açılmır.`,
         badge: "Sifariş qəbul olundu",
         headline: "Sifarişin qəbul olundu.",
-        body: "Mağaza təsdiq edənə qədər sifariş hazırlanmır. Vəziyyəti istənilən vaxt yoxlaya bilərsən.",
-        details: orderDetails(orderNumber, "Mağazanın təsdiqini gözləyir", payOnReceive),
+        body: "Mağaza stoku təsdiqləyəndən sonra 15 dəqiqə ərzində ödəniş linki aktiv olacaq. Vəziyyəti saytdan və e-poçtdan izləyə bilərsən.",
+        details: orderDetails(orderNumber, "Mağazanın təsdiqini gözləyir"),
         accent: "success",
+      };
+    case "payment_ready":
+      return {
+        subject: `EYNƏK — sifariş ${orderNumber} üçün ödəniş vaxtı`,
+        sms: `EYNƏK: Sifariş ${orderNumber} üçün 15 dəqiqə ödəniş müddətin var. Link e-poçtdadır.`,
+        intro: `Mağaza sifariş ${orderNumber} üzrə stoku təsdiqlədi. Məhsul + çatdırılma bir məbləğ üçün 15 dəqiqə ərzində ödə.`,
+        badge: "Ödəniş gözlənilir",
+        headline: "Ödənişi tamamla.",
+        body: "Bu link 15 dəqiqə aktivdir. Ödənişdən sonra sifariş EYNƏK operator panelinə ötürüləcək.",
+        details: orderDetails(orderNumber, "Ödəniş gözlənilir", {
+          label: "Ödəniş",
+          value: "Online kart (Epoint)",
+          hint: "Məhsul və çatdırılma birlikdə.",
+        }),
+        accent: "warning",
       };
     case "confirmed":
       return {
