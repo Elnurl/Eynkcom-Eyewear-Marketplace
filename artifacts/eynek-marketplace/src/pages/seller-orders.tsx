@@ -184,7 +184,7 @@ export default function SellerOrdersPage() {
                             {order.fulfillmentMethod !== 'store_pickup' ? (() => {
                               const drop = parseDeliveryGeo(order.deliveryNote);
                               const noteText = deliveryNoteWithoutGeo(order.deliveryNote);
-                              const pickupAddress = store?.address?.trim() || store?.location?.trim() || 'Mağaza ünvanı vitrində';
+                              const pickupAddress = store?.location?.trim() || 'Mağaza ünvanı vitrində';
                               return (
                                 <div className="seller-courier-box" data-testid={`courier-route-${order.id}`}>
                                   <div className="seller-courier-head"><Truck size={16} aria-hidden /><strong>Kuryer marşrutu</strong></div>

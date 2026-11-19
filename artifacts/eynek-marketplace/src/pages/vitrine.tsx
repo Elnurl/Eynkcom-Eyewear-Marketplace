@@ -159,7 +159,7 @@ export function VitrinePage({
         </button>
       </header>
 
-      <section className="vitrine-hero">
+      <section className={`vitrine-hero${showHero ? ' vitrine-hero--campaign' : ''}`}>
         {showHero ? (
           <div className="vitrine-hero-media" aria-hidden>
             <img

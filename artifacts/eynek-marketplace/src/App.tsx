@@ -43,6 +43,7 @@ import { TrustBar } from '@/components/marketplace/TrustBar';
 import { MegaNav } from '@/components/marketplace/MegaNav';
 import { MarketProductCard, productSupportsVto } from '@/components/marketplace/MarketProductCard';
 import { fetchVtoSkus, openEynekTryOn, waitForEynekVto } from '@/lib/eynek-vto';
+import { sampleHorizonProducts, sampleVendors } from '@/lib/sample-stores';
 import { HomeAppealSection, HomeBestSellingSection } from '@/components/marketplace/HomeDiscoverySections';
 import { HomeMarketSections } from '@/components/marketplace/HomeMarketSections';
 import { VendorMark } from '@/components/marketplace/VendorMark';
@@ -1346,12 +1347,15 @@ function Storefront() {
     return () => { cancelled = true; };
   }, []);
   const allProducts = useMemo(() => {
-    const base = catalogProducts.length > 0 ? catalogProducts : sampleCatalog;
+    const base =
+      catalogProducts.length > 0
+        ? catalogProducts
+        : [...sampleHorizonProducts, ...sampleCatalog];
     return base.map((product) => ({ ...product, vtoReady: vtoSkus.has(String(product.id)) }));
   }, [catalogProducts, vtoSkus]);
-  const stores = useMemo(
-    () =>
-      storeRows.map((store: SellerStore): Vendor => ({
+  const stores = useMemo(() => {
+    if (storeRows.length > 0) {
+      return storeRows.map((store: SellerStore): Vendor => ({
         slug: store.slug,
         name: store.name,
         initials: store.initials,
@@ -1363,9 +1367,10 @@ function Storefront() {
         website: store.website,
         vitrineTheme: store.vitrineTheme ?? null,
         count: store.productCount,
-      })),
-    [storeRows],
-  );
+      }));
+    }
+    return sampleVendors as Vendor[];
+  }, [storeRows]);
 
   const [cartIds, setCartIds] = useState<string[]>(() => readStoredIds(CART_STORAGE_KEY));
   const [likedIds, setLikedIds] = useState<Set<number | string>>(() => new Set(readStoredIds(WISHLIST_STORAGE_KEY)));

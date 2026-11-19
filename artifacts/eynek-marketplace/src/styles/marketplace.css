@@ -680,6 +680,76 @@ body {
   box-shadow: 0 18px 40px rgba(28, 28, 24, 0.06);
   isolation: isolate;
 }
+/* Full-bleed campaign hero when mağaza hero fonu var (Instagram / editorial vitrin) */
+.vitrine-page.has-hero-media {
+  position: relative;
+  padding: 0 0 48px;
+}
+.vitrine-page.has-hero-media .vitrine-top {
+  position: absolute;
+  z-index: 20;
+  inset: 0 0 auto 0;
+  margin: 0;
+  padding: 16px max(18px, calc((100% - 1200px) / 2));
+  pointer-events: none;
+}
+.vitrine-page.has-hero-media .vitrine-eynek,
+.vitrine-page.has-hero-media .vitrine-share {
+  pointer-events: auto;
+}
+.vitrine-page.has-hero-media .vitrine-share {
+  border-color: color-mix(in srgb, #fff 55%, transparent);
+  background: color-mix(in srgb, #fff 78%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(12, 12, 10, 0.12);
+}
+.vitrine-hero--campaign {
+  width: 100%;
+  min-height: clamp(520px, 82svh, 980px);
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 20px 24px;
+  padding: 104px max(18px, calc((100% - 1200px) / 2)) max(36px, 5vh);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--vt-bg);
+}
+.vitrine-hero--campaign .vitrine-hero-media::after {
+  background: linear-gradient(
+    118deg,
+    color-mix(in srgb, var(--vt-bg) 92%, #0e0e0c) 0%,
+    color-mix(in srgb, var(--vt-bg) 58%, transparent) 34%,
+    color-mix(in srgb, var(--vt-bg) 8%, transparent) 58%,
+    transparent 78%
+  );
+}
+.vitrine-hero--campaign .vitrine-hero-copy {
+  flex: 1 1 280px;
+  max-width: 560px;
+}
+.vitrine-hero--campaign .vitrine-hero-copy h1 {
+  font-size: clamp(34px, 5.6vw, 56px);
+}
+.vitrine-hero--campaign .seller-avatar--vitrine {
+  width: 96px;
+  height: 96px;
+  flex: 0 0 96px;
+  font-size: 24px;
+  border-color: color-mix(in srgb, #fff 70%, transparent);
+  background: color-mix(in srgb, var(--vt-card) 94%, #fff);
+}
+.vitrine-page.has-hero-media .vitrine-grid-wrap,
+.vitrine-page.has-hero-media .vitrine-footer {
+  width: min(1200px, 100% - 36px);
+  margin-left: auto;
+  margin-right: auto;
+}
+.vitrine-page.has-hero-media .vitrine-grid-wrap {
+  margin-top: 36px;
+}
 .vitrine-hero-media {
   position: absolute;
   inset: 0;
@@ -792,9 +862,10 @@ body {
   outline-offset: 1px;
 }
 .seller-hero-preview {
-  width: 140px;
-  height: 88px;
-  border-radius: 12px;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 16 / 10;
+  border-radius: 14px;
   overflow: hidden;
 }
 .seller-hero-preview img {
@@ -868,7 +939,28 @@ body {
   text-underline-offset: 3px;
 }
 @media (max-width: 720px) {
-  .vitrine-page { width: min(100% - 20px, 1120px); padding-top: 12px; }
-  .vitrine-hero { grid-template-columns: 1fr; padding: 18px; }
+  .vitrine-page:not(.has-hero-media) {
+    width: min(100% - 20px, 1120px);
+    padding-top: 12px;
+  }
+  .vitrine-hero:not(.vitrine-hero--campaign) {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+  .vitrine-hero--campaign {
+    min-height: clamp(460px, 74svh, 720px);
+    flex-direction: column;
+    align-items: stretch;
+    padding: 88px 18px 28px;
+  }
+  .vitrine-page.has-hero-media .vitrine-top {
+    padding: 12px 16px;
+  }
+  .vitrine-hero--campaign .seller-avatar--vitrine {
+    width: 80px;
+    height: 80px;
+    flex-basis: 80px;
+    font-size: 20px;
+  }
   .vitrine-section-head { align-items: start; }
 }
