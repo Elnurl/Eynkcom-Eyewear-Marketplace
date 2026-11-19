@@ -10,6 +10,7 @@ import adminRouter from "./admin";
 import newsletterRouter from "./newsletter";
 import sellerSupportRouter from "./seller-support";
 import epointRouter from "./epoint";
+import geocodeRouter from "./geocode";
 
 const router: IRouter = Router();
 
@@ -20,6 +21,7 @@ router.use(storesRouter);
 router.use(sellerApplicationsRouter);
 router.use(ordersRouter);
 router.use(epointRouter);
+router.use(geocodeRouter);
 router.use(accountProfileRouter);
 router.use(adminRouter);
 router.use(newsletterRouter);

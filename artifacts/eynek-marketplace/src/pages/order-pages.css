@@ -156,9 +156,117 @@
   box-shadow: 0 0 0 3px rgba(91, 113, 154, .14);
 }
 
-.address-map-search-btn {
-  min-height: 42px;
-  white-space: nowrap;
+.address-map-search-wrap {
+  position: relative;
+  z-index: 5;
+}
+
+.address-map-search--combo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #cfd6df;
+  border-radius: 12px;
+  background: #fff;
+  min-height: 44px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.address-map-search--combo:focus-within {
+  border-color: #9eb4d6;
+  box-shadow: 0 0 0 3px rgba(91, 113, 154, 0.14);
+}
+
+.address-map-search--combo input {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 10px 0 !important;
+  background: transparent;
+}
+
+.address-map-search-icon {
+  flex-shrink: 0;
+  color: #87909c;
+}
+
+.address-map-search-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #d8dee6;
+  border-top-color: #5b719a;
+  border-radius: 50%;
+  animation: address-map-spin 0.7s linear infinite;
+}
+
+@keyframes address-map-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.address-map-suggest {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  border: 1px solid #dfe4eb;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(22, 28, 38, 0.12);
+  max-height: min(280px, 42vh);
+  overflow: auto;
+}
+
+.address-map-suggest-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.address-map-suggest-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #5b719a;
+}
+
+.address-map-suggest-item span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.address-map-suggest-item strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #263651;
+  line-height: 1.35;
+}
+
+.address-map-suggest-item small {
+  font-size: 11px;
+  font-weight: 600;
+  color: #87909c;
+  line-height: 1.35;
+}
+
+.address-map-suggest-item:hover,
+.address-map-suggest-item.active {
+  background: #f4f7fb;
 }
 
 .address-map-error {

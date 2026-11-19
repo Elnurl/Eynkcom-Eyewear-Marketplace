@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import L from 'leaflet';
+import { MapPin, Search } from 'lucide-react';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import 'leaflet/dist/leaflet.css';
+import { type GeocodeHit, reverseBakuAddress, searchBakuAddress } from '@/lib/bakuGeocode';
 
 const BAKU_CENTER: L.LatLngExpression = [40.4093, 49.8671];
 const BAKU_BOUNDS = L.latLngBounds([40.28, 49.72], [40.58, 50.12]);
@@ -30,71 +32,57 @@ type Props = {
   disabled?: boolean;
 };
 
-async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
-  try {
-    const url = new URL('https://nominatim.openstreetmap.org/reverse');
-    url.searchParams.set('format', 'json');
-    url.searchParams.set('lat', String(lat));
-    url.searchParams.set('lon', String(lng));
-    url.searchParams.set('accept-language', 'az,en');
-    url.searchParams.set('zoom', '18');
-    const response = await fetch(url.toString(), {
-      headers: { Accept: 'application/json' },
-    });
-    if (!response.ok) return null;
-    const data = (await response.json()) as { display_name?: string; address?: Record<string, string> };
-    if (!data.display_name) return null;
-    const a = data.address;
-    if (a) {
-      const parts = [
-        a.road,
-        a.house_number ? `bina ${a.house_number}` : '',
-        a.suburb || a.neighbourhood,
-        a.city_district,
-      ].filter(Boolean);
-      if (parts.length >= 2) return parts.join(', ');
-    }
-    const short = data.display_name.split(',').slice(0, 4).join(', ');
-    return short;
-  } catch {
-    return null;
-  }
+function suggestLines(hit: GeocodeHit) {
+  const label = hit.label.replace(/\s*\\\s*/g, ', ').trim();
+  const parts = label.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length <= 1) return { title: label, sub: hit.source === 'local' ? 'Metro' : 'Ünvan' };
+  return { title: parts[0], sub: parts.slice(1, 3).join(', ') };
 }
 
 export function AddressMapPicker({ value, onChange, onSuggestAddress, disabled }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const searchWrapRef = useRef<HTMLDivElement | null>(null);
+  const onChangeRef = useRef(onChange);
+  const onSuggestRef = useRef(onSuggestAddress);
+  const listId = useId();
   const [search, setSearch] = useState('');
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [results, setResults] = useState<GeocodeHit[]>([]);
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const placeMarker = useCallback(
-    (lat: number, lng: number, suggest = true) => {
-      if (!mapRef.current) return;
-      const latLng = L.latLng(lat, lng);
-      if (markerRef.current) {
-        markerRef.current.setLatLng(latLng);
-      } else {
-        markerRef.current = L.marker(latLng, { icon: defaultIcon, draggable: !disabled }).addTo(mapRef.current);
-        markerRef.current.on('dragend', () => {
-          const pos = markerRef.current?.getLatLng();
-          if (!pos) return;
-          onChange({ lat: pos.lat, lng: pos.lng });
-          void reverseGeocode(pos.lat, pos.lng).then((line) => {
-            if (line && onSuggestAddress) onSuggestAddress(line);
-          });
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onSuggestRef.current = onSuggestAddress;
+  }, [onChange, onSuggestAddress]);
+
+  const applyCoords = useCallback((lat: number, lng: number, suggest = true) => {
+    if (!mapRef.current) return;
+    const latLng = L.latLng(lat, lng);
+    if (markerRef.current) {
+      markerRef.current.setLatLng(latLng);
+    } else {
+      markerRef.current = L.marker(latLng, { icon: defaultIcon, draggable: !disabled }).addTo(mapRef.current);
+      markerRef.current.on('dragend', () => {
+        const pos = markerRef.current?.getLatLng();
+        if (!pos) return;
+        onChangeRef.current({ lat: pos.lat, lng: pos.lng });
+        void reverseBakuAddress(pos.lat, pos.lng).then((line) => {
+          if (line && onSuggestRef.current) onSuggestRef.current(line);
         });
-      }
-      onChange({ lat, lng });
-      if (suggest) {
-        void reverseGeocode(lat, lng).then((line) => {
-          if (line && onSuggestAddress) onSuggestAddress(line);
-        });
-      }
-    },
-    [disabled, onChange, onSuggestAddress],
-  );
+      });
+    }
+    onChangeRef.current({ lat, lng });
+    mapRef.current.setView(latLng, Math.max(mapRef.current.getZoom(), 16), { animate: true });
+    if (suggest) {
+      void reverseBakuAddress(lat, lng).then((line) => {
+        if (line && onSuggestRef.current) onSuggestRef.current(line);
+      });
+    }
+  }, [disabled]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -115,12 +103,14 @@ export function AddressMapPicker({ value, onChange, onSuggestAddress, disabled }
 
     map.on('click', (event) => {
       if (disabled) return;
-      placeMarker(event.latlng.lat, event.latlng.lng);
+      setOpen(false);
+      setResults([]);
+      applyCoords(event.latlng.lat, event.latlng.lng);
     });
 
     mapRef.current = map;
 
-    if (value) placeMarker(value.lat, value.lng, false);
+    if (value) applyCoords(value.lat, value.lng, false);
 
     return () => {
       map.remove();
@@ -142,68 +132,126 @@ export function AddressMapPicker({ value, onChange, onSuggestAddress, disabled }
     }
   }, [disabled]);
 
-  const runSearch = async () => {
+  useEffect(() => {
     const q = search.trim();
-    if (q.length < 3) {
-      setSearchError('Ən azı 3 hərf yazın.');
-      return;
-    }
-    setSearchError('');
-    setSearching(true);
-    try {
-      const url = new URL('https://nominatim.openstreetmap.org/search');
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('q', `${q}, Bakı, Azərbaycan`);
-      url.searchParams.set('limit', '1');
-      url.searchParams.set('countrycodes', 'az');
-      url.searchParams.set('bounded', '1');
-      url.searchParams.set('viewbox', '49.72,40.58,50.12,40.28');
-      const response = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
-      const rows = (await response.json()) as { lat: string; lon: string; display_name: string }[];
-      if (!rows.length) {
-        setSearchError('Nəticə tapılmadı. Xəritədə nöqtə qoyun.');
-        return;
-      }
-      const hit = rows[0];
-      const lat = Number(hit.lat);
-      const lng = Number(hit.lon);
-      mapRef.current?.setView([lat, lng], 17, { animate: true });
-      placeMarker(lat, lng, false);
-      if (onSuggestAddress) onSuggestAddress(hit.display_name.split(',').slice(0, 4).join(', '));
-    } catch {
-      setSearchError('Axtarış mümkün olmadı. Xəritədə nöqtə seçin.');
-    } finally {
+    if (q.length < 2) {
+      setResults([]);
       setSearching(false);
+      setSearchError('');
+      return undefined;
     }
+    setSearching(true);
+    const handle = window.setTimeout(() => {
+      void searchBakuAddress(q, 5).then((hits) => {
+        setResults(hits);
+        setActiveIndex(0);
+        setSearching(false);
+        if (!hits.length) setSearchError('Tapılmadı — xəritədə nöqtə qoyun.');
+        else setSearchError('');
+      });
+    }, 300);
+    return () => window.clearTimeout(handle);
+  }, [search]);
+
+  useEffect(() => {
+    const onDoc = (event: MouseEvent) => {
+      if (!searchWrapRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
+  const pickResult = (hit: GeocodeHit) => {
+    setOpen(false);
+    setResults([]);
+    setSearch(hit.label);
+    setSearchError('');
+    applyCoords(hit.lat, hit.lng, false);
+    onSuggestAddress?.(hit.label);
+  };
+
+  const pickActive = () => {
+    const hit = results[activeIndex];
+    if (hit) pickResult(hit);
+    else if (search.trim().length >= 2 && results.length === 0) setSearchError('Tapılmadı — xəritədə nöqtə qoyun.');
   };
 
   return (
     <div className="address-map-picker" data-testid="address-map-picker">
       <label className="address-map-label" htmlFor="address-map-search">
-        Xəritədə ünvan
+        Çatdırılma nöqtəsi
       </label>
-      <p className="address-map-hint">Bakı xəritəsində çatdırılma nöqtəsini seçin; markeri sürükləyə və ya ünvana klik edə bilərsiniz.</p>
-      <div className="address-map-search">
-        <input
-          id="address-map-search"
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              void runSearch();
-            }
-          }}
-          placeholder="Məsələn: Nizami küçəsi 203"
-          disabled={disabled}
-          data-testid="input-address-map-search"
-        />
-        <button type="button" className="btn btn-secondary address-map-search-btn" onClick={() => void runSearch()} disabled={disabled || searching}>
-          {searching ? 'Axtarılır...' : 'Tap'}
-        </button>
+      <p className="address-map-hint">Ünvan yazın — təkliflər inputun altında; seçəndə marker xəritədə görünür.</p>
+
+      <div className="address-map-search-wrap" ref={searchWrapRef}>
+        <div className="address-map-search address-map-search--combo">
+          <Search size={18} className="address-map-search-icon" aria-hidden />
+          <input
+            id="address-map-search"
+            type="search"
+            role="combobox"
+            aria-expanded={open && results.length > 0}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            autoComplete="off"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => {
+              if (results.length) setOpen(true);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                setOpen(true);
+                setActiveIndex((i) => Math.min(i + 1, Math.max(0, results.length - 1)));
+              } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                setActiveIndex((i) => Math.max(i - 1, 0));
+              } else if (event.key === 'Enter') {
+                event.preventDefault();
+                pickActive();
+              } else if (event.key === 'Escape') {
+                setOpen(false);
+              }
+            }}
+            placeholder="20 yanvar metro, Nizami küç. 203..."
+            disabled={disabled}
+            data-testid="input-address-map-search"
+          />
+          {searching ? <span className="address-map-search-spinner" aria-hidden /> : null}
+        </div>
+
+        {open && results.length > 0 ? (
+          <ul className="address-map-suggest" id={listId} role="listbox" data-testid="address-map-results">
+            {results.map((hit, index) => {
+              const { title, sub } = suggestLines(hit);
+              return (
+                <li key={`${hit.source}-${hit.lat}-${hit.lng}`} role="option" aria-selected={index === activeIndex}>
+                  <button
+                    type="button"
+                    className={`address-map-suggest-item${index === activeIndex ? ' active' : ''}`}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => pickResult(hit)}
+                    disabled={disabled}
+                  >
+                    <MapPin size={16} aria-hidden />
+                    <span>
+                      <strong>{title}</strong>
+                      <small>{sub}</small>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
       </div>
-      {searchError ? <p className="address-map-error">{searchError}</p> : null}
+
+      {searchError && !open ? <p className="address-map-error">{searchError}</p> : null}
+
       <div
         ref={containerRef}
         className="address-map-canvas"
@@ -216,7 +264,7 @@ export function AddressMapPicker({ value, onChange, onSuggestAddress, disabled }
           Seçilmiş nöqtə: {value.lat.toFixed(5)}, {value.lng.toFixed(5)}
         </p>
       ) : (
-        <p className="address-map-coords address-map-coords--muted">Hələ nöqtə seçilməyib.</p>
+        <p className="address-map-coords address-map-coords--muted">Xəritəyə klik edin və ya yuxarıdan ünvan seçin.</p>
       )}
     </div>
   );

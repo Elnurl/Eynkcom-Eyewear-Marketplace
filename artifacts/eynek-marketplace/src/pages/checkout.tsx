@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { AlertCircle, ArrowRight, CheckCircle2, CreditCard, Info, MapPin, PackageCheck, ShieldCheck, Store, Truck } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
+  CheckoutOptionsCardPaymentStatus,
   FulfillmentMethod,
   GuestOrderInputDeliveryArea,
   PaymentMethod,
@@ -12,7 +13,7 @@ import type { CheckoutOptions, GuestOrderInput } from '@workspace/api-client-rea
 import { AddressMapPicker, type AddressMapValue } from '@/components/AddressMapPicker';
 import { BrandLogo } from '@/components/brand-logo';
 import { az } from '@/i18n/az';
-import { LoadingCard, QueryError, money } from './order-ui';
+import { LoadingCard, money } from './order-ui';
 import './order-pages.css';
 
 export interface CheckoutCartItem {
@@ -52,6 +53,14 @@ const defaultValues = {
   deliveryNote: '',
 };
 
+/** API (/checkout/options) işləməyəndə checkout UI bloklanmasın (lokal dev). */
+const FALLBACK_CHECKOUT_OPTIONS: CheckoutOptions = {
+  paymentMethods: [PaymentMethod.pay_on_delivery, PaymentMethod.card],
+  cardPaymentStatus: CheckoutOptionsCardPaymentStatus.available,
+  deliveryAreas: [GuestOrderInputDeliveryArea.Bakı, GuestOrderInputDeliveryArea.Abşeron],
+  fulfillmentMethods: [FulfillmentMethod.courier, FulfillmentMethod.store_pickup],
+};
+
 export default function CheckoutPage({ items, stores = [], onClearCart }: CheckoutPageProps) {
   const [, setLocation] = useLocation();
   const checkoutOptions = useGetCheckoutOptions();
@@ -71,8 +80,9 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
   const [payNote, setPayNote] = useState('');
   const [deliveryPin, setDeliveryPin] = useState<AddressMapValue | null>(null);
 
-  const options = checkoutOptions.data as CheckoutOptions | undefined;
-  const areas = options?.deliveryAreas ?? [GuestOrderInputDeliveryArea.Bakı, GuestOrderInputDeliveryArea.Abşeron];
+  const options = (checkoutOptions.data ?? FALLBACK_CHECKOUT_OPTIONS) as CheckoutOptions;
+  const areas = options.deliveryAreas;
+  const checkoutOffline = checkoutOptions.isError && !checkoutOptions.data;
   const pickup = fulfillmentMethod === FulfillmentMethod.store_pickup;
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + (item.lineTotalAzN ?? (item.unitPriceAzN ?? 0) * item.quantity), 0), [items]);
   const pickupShops = useMemo(() => {
@@ -174,8 +184,22 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
           <p>Kuryer ilə Bakı və Abşerona çatdıra, və ya məhsulları satan optik mağazadan pulsuz götürə bilərsiniz.</p>
         </header>
 
-        {checkoutOptions.isLoading ? <LoadingCard lines={5} /> : checkoutOptions.isError ? <QueryError message="Çatdırılma seçimləri yüklənmədi." onRetry={() => void checkoutOptions.refetch()} /> : (
+        {checkoutOptions.isLoading ? (
+          <LoadingCard lines={5} />
+        ) : (
           <form className="commerce-grid" onSubmit={submit}>
+            {checkoutOffline ? (
+              <div className="info-ribbon" style={{ gridColumn: '1 / -1' }}>
+                <Info size={16} />
+                <span>
+                  API işləmir — forma yalnız xəritəni yoxlamaq üçündür. Sifariş göndərmək üçün terminalda{' '}
+                  <strong>pnpm dev:api</strong> və `.env`-də <strong>DATABASE_URL</strong> lazımdır.{' '}
+                  <button type="button" className="text-link" onClick={() => void checkoutOptions.refetch()}>
+                    Yenidən cəhd et
+                  </button>
+                </span>
+              </div>
+            ) : null}
             <div>
               <section className="commerce-card commerce-card-pad">
                 <div className="commerce-card-heading"><div><h2>Əlaqə məlumatları</h2><p>Mağaza və ya EYNƏK sifarişlə bağlı bu məlumatlarla sizinlə əlaqə saxlayacaq.</p></div><ShieldCheck size={19} color="#5b719a" /></div>
@@ -227,10 +251,7 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
                         value={deliveryPin}
                         onChange={setDeliveryPin}
                         onSuggestAddress={(line) => {
-                          setForm((current) => {
-                            if (current.deliveryAddress.trim().length > 0) return current;
-                            return { ...current, deliveryAddress: line };
-                          });
+                          setForm((current) => ({ ...current, deliveryAddress: line }));
                         }}
                       />
                     </div>
