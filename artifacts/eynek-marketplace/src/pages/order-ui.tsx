@@ -96,13 +96,16 @@ export function mapsLink(lat: number, lng: number) {
   return `https://www.google.com/maps?q=${lat},${lng}`;
 }
 
-/** Bolt (Taxify) — telefonda tətbiqi açır, çatdırılma nöqtəsini doldurur. */
-export function boltRideLink(drop: { lat: number; lng: number; title?: string }) {
+/** Bolt Send (bağlama/kuryer) — taksi yox, çatdırılma kateqoriyası. */
+export function boltSendLink(drop: { lat: number; lng: number; title?: string }) {
   const params = new URLSearchParams({
     pickup: 'my_location',
     dropoff_latitude: String(drop.lat),
     dropoff_longitude: String(drop.lng),
     dropoff_title: drop.title?.trim() || 'Alıcı ünvanı',
+    category: 'send',
+    vehicle_type: 'send',
+    service_type: 'send',
   });
   return `taxify://action/bookaride?${params.toString()}`;
 }

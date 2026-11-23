@@ -896,6 +896,7 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
   color: #1d7a36;
 }
 .seller-mobile-product-card .status-pill--low { background: rgba(255,152,0,0.15); color: #c66a00; }
+.seller-mobile-card-actions { display: flex; gap: 8px; }
 .seller-mobile-product-card .edit-btn {
   width: 36px;
   height: 36px;

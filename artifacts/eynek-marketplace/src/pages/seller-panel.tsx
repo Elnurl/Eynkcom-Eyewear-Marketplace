@@ -440,7 +440,10 @@ export default function SellerPanel() {
                     <span className={`status-pill${product.stock > 0 && product.stock < 5 ? ' status-pill--low' : ''}`}>
                       {product.stock === 0 ? 'Stokda yoxdur' : product.stock < 5 ? 'Az qalıb' : product.status}
                     </span>
-                    <button type="button" className="edit-btn" onClick={() => openEditForm(product.id)} aria-label="Redaktə et"><Edit2 size={16} /></button>
+                    <div className="seller-mobile-card-actions">
+                      <button type="button" className="edit-btn" onClick={() => openEditForm(product.id)} aria-label="Redaktə et" data-testid={`button-edit-mobile-${product.id}`}><Edit2 size={16} /></button>
+                      <button type="button" className="edit-btn text-danger" onClick={() => void deleteProduct(product.id)} aria-label="Sil" data-testid={`button-delete-mobile-${product.id}`}><Trash2 size={16} /></button>
+                    </div>
                   </div>
                 </article>
               ))}

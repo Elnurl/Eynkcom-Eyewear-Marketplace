@@ -14,7 +14,7 @@ import { SellerPanelShell } from '@/components/seller/SellerPanelShell';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
 import { useSellerWorkspace } from '@/hooks/use-seller-workspace';
 import { getSellerPreviewOrders, sellerPanelPreviewEnabled } from '@/lib/seller-dev-preview';
-import { LoadingCard, OrderItemRow, QueryError, StatePill, boltRideLink, dateLabel, deliveryNoteWithoutGeo, fulfillmentLabel, mapsLink, money, parseDeliveryGeo, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
+import { LoadingCard, OrderItemRow, QueryError, StatePill, boltSendLink, dateLabel, deliveryNoteWithoutGeo, fulfillmentLabel, mapsLink, money, parseDeliveryGeo, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
 import './order-pages.css';
 
 type Draft = { status: SellerOrderUpdateStatus; deliveryFeeAzN: string; trackingCode: string; collectedAtDelivery: boolean };
@@ -221,7 +221,7 @@ export default function SellerOrdersPage() {
                                   {drop ? (
                                     <a
                                       className="btn btn-blue seller-courier-bolt"
-                                      href={boltRideLink({ lat: drop.lat, lng: drop.lng, title: order.deliveryAddress })}
+                                      href={boltSendLink({ lat: drop.lat, lng: drop.lng, title: order.deliveryAddress })}
                                       data-testid={`button-open-bolt-${order.id}`}
                                     >
                                       <Truck size={16} aria-hidden /> Kuryer çağır
