@@ -3,6 +3,7 @@ import { useLocation, Link, useSearch } from 'wouter';
 import { ArrowRight, Store, AlertCircle } from 'lucide-react';
 import { useAuthSession } from '@/lib/auth-client';
 import { BrandLogo, BrandWord } from '@/components/brand-logo';
+import { sellerPanelPreviewEnabled } from '@/lib/seller-dev-preview';
 
 export default function SellerLogin() {
   const { isLoaded, isSignedIn } = useAuthSession();
@@ -14,6 +15,10 @@ export default function SellerLogin() {
   const returnTo = requestedReturnTo && safeTargets.includes(requestedReturnTo) ? requestedReturnTo : '/seller-panel';
 
   useEffect(() => {
+    if (sellerPanelPreviewEnabled) {
+      setLocation('/seller-panel');
+      return;
+    }
     if (isLoaded && isSignedIn) setLocation(returnTo);
   }, [isLoaded, isSignedIn, returnTo, setLocation]);
 

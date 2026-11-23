@@ -96,6 +96,17 @@ export function mapsLink(lat: number, lng: number) {
   return `https://www.google.com/maps?q=${lat},${lng}`;
 }
 
+/** Bolt (Taxify) — telefonda tətbiqi açır, çatdırılma nöqtəsini doldurur. */
+export function boltRideLink(drop: { lat: number; lng: number; title?: string }) {
+  const params = new URLSearchParams({
+    pickup: 'my_location',
+    dropoff_latitude: String(drop.lat),
+    dropoff_longitude: String(drop.lng),
+    dropoff_title: drop.title?.trim() || 'Alıcı ünvanı',
+  });
+  return `taxify://action/bookaride?${params.toString()}`;
+}
+
 export function orderStatusLabel(status: OrderStatus, fulfillment?: FulfillmentMethod | string) {
   if (fulfillment === 'store_pickup') {
     if (status === 'out_for_delivery') return 'Götürməyə hazırdır';

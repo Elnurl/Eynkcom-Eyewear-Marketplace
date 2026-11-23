@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { ArrowLeft, Check, ClipboardCheck, Copy, CreditCard, Package, RotateCcw, ShieldCheck, Store, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, ClipboardCheck, Copy, CreditCard, Package, RotateCcw, ShieldCheck, Store, X } from 'lucide-react';
 import { Link, useLocation, useParams } from 'wouter';
 import { useAuthSession } from '@/lib/auth-client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import {
 } from '@workspace/api-client-react';
 import type { BuyerOrder, BuyerSellerOrderSummary } from '@workspace/api-client-react';
 import { BrandLogo } from '@/components/brand-logo';
+import { clearPaymentFailedQuery, isPaymentFailedReturn } from '@/lib/last-placed-order';
 import { LoadingCard, OrderItemRow, OrderTimeline, QueryError, StatePill, dateLabel, fulfillmentLabel, money, orderStatusLabel, paymentStatusLabel, returnStatusLabel, sellerStatusLabel } from './order-ui';
 import './order-pages.css';
 
@@ -67,12 +68,19 @@ export default function OrderPage() {
   const [trackingCopied, setTrackingCopied] = useState<string | null>(null);
   const [payError, setPayError] = useState('');
   const [payPending, setPayPending] = useState(false);
+  const [paymentFailedReturn] = useState(() => typeof window !== 'undefined' && isPaymentFailedReturn());
   const accountAccess = isLoaded && Boolean(isSignedIn);
 
   useEffect(() => {
     const token = readAccessToken(orderId);
     if (token) setAccessToken(token);
   }, [orderId, location]);
+
+  useEffect(() => {
+    if (!paymentFailedReturn) return;
+    setPayError('Kart ödənişi tamamlanmadı və ya ləğv olundu. Aşağıdan yenidən ödəniş edə bilərsiniz.');
+    clearPaymentFailedQuery();
+  }, [paymentFailedReturn]);
 
   const copyTrackingCode = async (sellerOrderId: string, code: string) => {
     try {
@@ -227,6 +235,12 @@ export default function OrderPage() {
 
   return <main className="commerce-page"><div className="commerce-wrap">
     <header className="commerce-header"><div><Link href="/" className="brand" data-testid="link-order-brand"><BrandLogo /></Link><div className="eyebrow" style={{ marginTop: 25 }}>{accessToken ? 'Qonaq sifariş izləmə' : 'Hesab sifariş tarixçəsi'}</div><h1>Sifarişin haradadır?</h1></div><p>Sifarişiniz bir neçə optik mağazadan ibarətdirsə, hər mağazanın hazırlıq və ya götürmə mərhələsini ayrıca görə bilərsiniz.</p></header>
+    {paymentFailedReturn ? (
+      <div className="commerce-error" role="alert" style={{ marginBottom: 16 }} data-testid="banner-payment-failed">
+        <AlertCircle size={18} />
+        <span>Kart ödənişi alınmadı. Ödəniş bölməsindən yenidən cəhd edin və ya başqa kart sınayın.</span>
+      </div>
+    ) : null}
     {order.isLoading ? <LoadingCard lines={6} /> : order.isError || !order.data ? <div><QueryError message="Sifariş tapılmadı və ya giriş kodu düzgün deyil." onRetry={() => void order.refetch()} /><button className="btn btn-secondary" type="button" style={{ marginTop: 12 }} onClick={forgetToken}>Kodu yenidən yaz</button></div> : (
       <>
         <section className="commerce-card order-hero"><div><div className="order-number">SİFARİŞ {order.data.orderNumber}</div><h1>{orderStatusLabel(order.data.status, order.data.fulfillmentMethod)}</h1><p>Yaradılıb: {dateLabel(order.data.createdAt)} · {fulfillmentLabel(order.data.fulfillmentMethod)} · {order.data.deliveryArea}</p></div><StatePill status={order.data.status} label={orderStatusLabel(order.data.status, order.data.fulfillmentMethod)} /></section>

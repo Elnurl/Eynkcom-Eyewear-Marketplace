@@ -3,12 +3,15 @@ import { useLocation, Link } from 'wouter';
 import { discardUpload } from '@workspace/api-client-react';
 import { useAuthSession } from '@/lib/auth-client';
 import { 
-  LogOut, Plus, Search, MoreVertical, Edit2, Trash2, 
-  Image as ImageIcon, ArrowLeft, Store, Settings, 
-  Package, LayoutDashboard, X, Check, AlertCircle, Truck, Loader2, ImagePlus, Upload
+  Plus, Search, MoreVertical, Edit2, Trash2, 
+  Image as ImageIcon, Store, Settings, 
+  Package, X, Check, AlertCircle, Loader2, ImagePlus, Upload, Truck, Clock, ChevronDown, Eye
 } from 'lucide-react';
 import { useSellerWorkspace, type SellerProduct, type SellerProductInput } from '@/hooks/use-seller-workspace';
 import { BrandLogo } from '@/components/brand-logo';
+import { SellerPanelShell } from '@/components/seller/SellerPanelShell';
+import { sellerImageUrl } from '@/lib/seller-images';
+import { sellerPanelPreviewEnabled } from '@/lib/seller-dev-preview';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
 import { SellerBulkImport } from '@/components/SellerBulkImport';
 import { fetchVtoSkus } from '@/lib/eynek-vto';
@@ -46,14 +49,6 @@ async function uploadProductImage(file: File): Promise<string> {
   return payload.objectPath;
 }
 
-function sellerImageUrl(image: string) {
-  if (image.startsWith('data:') || image.startsWith('http')) return image;
-  if (image.startsWith('/objects/')) return `/api/storage${image}`;
-  const sampleName = /^product-images\/(mimoza-02|sahil-11|nisan-07|xezer-air|luna-24|merdekan-03|iceriseher-09|caspian-sun)\.jpg$/.exec(image)?.[1];
-  if (sampleName) return `${import.meta.env.BASE_URL}product-images/${sampleName}-cutout.png`;
-  return `${import.meta.env.BASE_URL}${image}`;
-}
-
 export default function SellerPanel() {
   const {
     user,
@@ -71,6 +66,7 @@ export default function SellerPanel() {
     isSaving,
     errorMessage,
     refreshCatalog,
+    isPreview,
   } = useSellerWorkspace();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'store'>('products');
@@ -92,6 +88,7 @@ export default function SellerPanel() {
   const [vtoSkus, setVtoSkus] = useState<Set<string>>(new Set());
   
   useEffect(() => {
+    if (sellerPanelPreviewEnabled) return;
     if (!isAuthLoading && !isAuthenticated) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-panel')}`);
   }, [isAuthLoading, isAuthenticated, setLocation]);
 
@@ -122,7 +119,7 @@ export default function SellerPanel() {
     );
   }, [products, searchQuery]);
 
-  if (isAuthLoading || !isAuthenticated || isLoading) return null;
+  if (!sellerPanelPreviewEnabled && (isAuthLoading || !isAuthenticated || isLoading)) return null;
   if (!store) {
     return (
       <div className="seller-auth-page">
@@ -162,6 +159,7 @@ export default function SellerPanel() {
   const draftCount = products.filter(p => p.status === 'Qaralama').length;
   const reviewCount = products.filter(p => p.approvalStatus === 'pending').length;
   const outOfStockCount = products.filter(p => p.stock === 0).length;
+  const todayLabel = new Intl.DateTimeFormat('az-AZ', { day: 'numeric', month: 'long' }).format(new Date());
   const saveStoreLogo = async (logoPath: string | null) => {
     setStoreSaveMessage('');
     try {
@@ -243,84 +241,58 @@ export default function SellerPanel() {
   };
 
   return (
-    <div className="seller-panel-layout">
-      {/* Sidebar */}
-      <aside className="seller-sidebar">
-        <div className="seller-sidebar-header">
-          <Link href="/" className="brand" data-testid="link-brand-panel">
-            <BrandLogo />
-          </Link>
-          <span className="seller-badge">Satıcı Paneli</span>
-        </div>
-        
-        <button
-          type="button"
-          className="seller-store-info seller-store-info--button"
-          onClick={() => setActiveTab('store')}
-          aria-label="Mağaza məlumatları"
-          data-testid="button-store-settings"
-        >
-          {store.logoPath ? (
-            <div className="store-avatar store-avatar--logo">
-              <img src={sellerImageUrl(store.logoPath)} alt="" />
-            </div>
-          ) : (
-            <div className="store-avatar"><Store size={20} /></div>
-          )}
-          <div>
-            <strong>{store.name}</strong>
-            <small>Mağaza məlumatları</small>
-          </div>
-        </button>
-
-        <nav className="seller-nav">
-          <button 
-            className={`seller-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-            data-testid="nav-overview"
-          >
-            <LayoutDashboard size={18} /> İcmal
-          </button>
-          <button 
-            className={`seller-nav-item ${activeTab === 'products' ? 'active' : ''}`}
-            onClick={() => setActiveTab('products')}
-            data-testid="nav-products"
-          >
-            <Package size={18} /> Məhsullar
-            <span className="nav-count">{products.length}</span>
-          </button>
-          <button
-            className={`seller-nav-item ${activeTab === 'store' ? 'active' : ''}`}
-            onClick={() => setActiveTab('store')}
-            data-testid="nav-store"
-          >
-            <Settings size={18} /> Mağaza məlumatları
-          </button>
-          <Link href="/seller-orders" className="seller-nav-item" data-testid="nav-orders">
-            <Truck size={18} /> Sifarişlər
-          </Link>
-        </nav>
-
-        <div className="seller-sidebar-footer">
-          <Link href="/" className="seller-nav-item" data-testid="link-back-storefront">
-            <ArrowLeft size={18} /> Vitrinə qayıt
-          </Link>
-          <button className="seller-nav-item text-danger" onClick={handleLogout} data-testid="button-logout">
-            <LogOut size={18} /> Çıxış et
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="seller-main">
+    <SellerPanelShell
+      storeName={store.name}
+      storeSlug={store.slug}
+      logoPath={store.logoPath}
+      productCount={products.length}
+      active={activeTab}
+      onTab={setActiveTab}
+      onLogout={handleLogout}
+    >
         {activeTab === 'overview' && (
           <div className="seller-content fade-in">
-            <header className="seller-main-header">
+            <div className="seller-mobile-only seller-mobile-overview-hero">
+              <p className="seller-mobile-eyebrow"><span className="seller-mobile-eynek-dot" aria-hidden />Satışı idarə et</p>
+              <h1>Salam, {store.name}</h1>
+              <p>Bu gün · {todayLabel}</p>
+            </div>
+
+            <header className="seller-main-header seller-desktop-only">
               <h1>Mağaza İcmalı</h1>
               <p>Məhsullarınızın və mağazanızın ümumi vəziyyəti</p>
             </header>
 
-            <div className="seller-stats-grid">
+            <div className="seller-mobile-only seller-mobile-stat-grid">
+              <div className="seller-stat-card">
+                <div className="stat-icon bg-blue-soft"><Package size={18} /></div>
+                <div className="stat-info"><h3>Cəmi məhsul</h3><strong>{products.length}</strong></div>
+              </div>
+              <div className="seller-stat-card">
+                <div className="stat-icon bg-green-soft"><Check size={18} /></div>
+                <div className="stat-info"><h3>Aktiv</h3><strong>{activeCount}</strong></div>
+              </div>
+              <div className="seller-stat-card">
+                <div className="stat-icon bg-gray-soft"><Clock size={18} /></div>
+                <div className="stat-info"><h3>Yoxlamada</h3><strong>{reviewCount}</strong></div>
+              </div>
+              <div className="seller-stat-card">
+                <div className="stat-icon bg-red-soft"><AlertCircle size={18} /></div>
+                <div className="stat-info"><h3>Stokda yoxdur</h3><strong>{outOfStockCount}</strong></div>
+              </div>
+              <div className="seller-stat-card seller-stat-card--wide">
+                <div className="stat-icon bg-gray-soft"><Settings size={18} /></div>
+                <div className="stat-info"><h3>Qaralama</h3><strong>{draftCount}</strong></div>
+              </div>
+            </div>
+
+            <div className="seller-mobile-only seller-mobile-quick-actions">
+              <button type="button" onClick={openAddForm} data-testid="button-mobile-create-product"><Plus size={18} />Yeni məhsul</button>
+              <Link href="/seller-orders"><Truck size={18} />Sifarişlər</Link>
+              <button type="button" onClick={() => setActiveTab('store')}><Store size={18} />Mağazam</button>
+            </div>
+
+            <div className="seller-stats-grid seller-desktop-only">
               <div className="seller-stat-card">
                 <div className="stat-icon bg-blue-soft"><Package size={20} /></div>
                 <div className="stat-info">
@@ -358,7 +330,7 @@ export default function SellerPanel() {
               </div>
             </div>
 
-            <div className="seller-panel-section mt-10" style={{ marginBottom: 24 }}>
+            <div className="seller-panel-section mt-10 seller-desktop-only" style={{ marginBottom: 24 }}>
               <h2>Virtual vitrin linki</h2>
               <p style={{ margin: '6px 0 12px', color: 'var(--muted)', fontSize: 14 }}>
                 Eynek-də mağazaya basanda və Instagram/WhatsApp linkində eyni vitrin açılır.
@@ -373,7 +345,33 @@ export default function SellerPanel() {
               </div>
             </div>
 
-            <div className="seller-panel-section mt-10">
+            <div className="seller-panel-section mt-10 seller-mobile-only">
+              <div className="seller-mobile-inventory-label">
+                <span>Son məhsullar</span>
+                <button type="button" className="text-link" style={{ fontSize: 12, border: 0, background: 'transparent', padding: 0 }} onClick={() => setActiveTab('products')}>İnventar →</button>
+              </div>
+              <div className="recent-products-list">
+                {products.slice(0, 3).map((p) => (
+                  <div key={p.id} className="recent-product-item">
+                    <img src={sellerImageUrl(p.frontImage)} alt="" className="recent-product-img" />
+                    <div>
+                      <strong>{p.name}</strong>
+                      <span>{p.color} · {p.size}</span>
+                    </div>
+                    <div className="ml-auto text-right">
+                      <strong>{p.price} AZN</strong>
+                      <span>{p.stock} ədəd</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Link href={vitrinePublicPath(store.slug)} className="seller-mobile-vitrine-row" data-testid="link-seller-vitrine-mobile-card">
+                <span>Virtual vitrin</span>
+                <ChevronDown size={16} style={{ transform: 'rotate(-90deg)' }} aria-hidden />
+              </Link>
+            </div>
+
+            <div className="seller-panel-section mt-10 seller-desktop-only">
               <h2>Son əlavə edilənlər</h2>
               <div className="recent-products-list">
                 {products.slice(0, 4).map(p => (
@@ -399,7 +397,57 @@ export default function SellerPanel() {
 
         {activeTab === 'products' && (
           <div className="seller-content fade-in">
-            <header className="seller-main-header with-actions">
+            <div className="seller-mobile-only seller-mobile-products-top">
+              <div>
+                {isPreview ? (
+                  <p className="seller-mobile-preview-label"><Eye size={14} aria-hidden /> Dizayn önizəməsi</p>
+                ) : null}
+                <h1>Məhsullar</h1>
+                <p>Məhsulları və stoku idarə edin.</p>
+              </div>
+              <span className="seller-mobile-count-pill"><Package size={14} aria-hidden /> {products.length} məhsul</span>
+            </div>
+
+            <div className="seller-mobile-only seller-mobile-product-actions">
+              <button type="button" className="btn btn-blue" onClick={openAddForm} data-testid="button-create-product-mobile"><Plus size={16} />Yeni məhsul</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setBulkImportOpen(true)} data-testid="button-bulk-import-mobile"><Upload size={16} />Toplu import</button>
+            </div>
+
+            <div className="seller-mobile-only seller-toolbar">
+              <div className="search-box">
+                <Search size={16} />
+                <input type="search" placeholder="Ad və ya rəng axtar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="seller-mobile-only seller-mobile-inventory-label">
+              <span>İnventar</span>
+              <span className="seller-mobile-sort">Son yenilənən <ChevronDown size={14} aria-hidden /></span>
+            </div>
+
+            <div className="seller-mobile-only seller-mobile-product-list">
+              {filteredProducts.map((product) => (
+                <article key={product.id} className="seller-mobile-product-card" data-testid={`card-product-mobile-${product.id}`}>
+                  <img src={sellerImageUrl(product.frontImage)} alt="" />
+                  <div>
+                    <strong>{product.name}</strong>
+                    <div className="meta">{product.category} · {product.size}</div>
+                    <div className="meta">{product.color}</div>
+                    <div className="price">{product.price} AZN</div>
+                    <div className="stock-line"><Package size={12} aria-hidden />{product.stock} ədəd stokda</div>
+                  </div>
+                  <div className="badges">
+                    <span className={`status-pill${product.stock > 0 && product.stock < 5 ? ' status-pill--low' : ''}`}>
+                      {product.stock === 0 ? 'Stokda yoxdur' : product.stock < 5 ? 'Az qalıb' : product.status}
+                    </span>
+                    <button type="button" className="edit-btn" onClick={() => openEditForm(product.id)} aria-label="Redaktə et"><Edit2 size={16} /></button>
+                  </div>
+                </article>
+              ))}
+              {filteredProducts.length === 0 ? <div className="empty-state-mini">Məhsul tapılmadı.</div> : null}
+            </div>
+
+            <header className="seller-main-header with-actions seller-desktop-only">
               <div>
                 <h1>Məhsullar</h1>
                 <p>İnventarınızı idarə edin, yeni məhsullar əlavə edin və stokları yeniləyin.</p>
@@ -414,7 +462,7 @@ export default function SellerPanel() {
               </div>
             </header>
 
-            <div className="seller-toolbar">
+            <div className="seller-toolbar seller-desktop-only">
               <div className="search-box">
                 <Search size={16} />
                 <input 
@@ -426,7 +474,7 @@ export default function SellerPanel() {
               </div>
             </div>
 
-            <div className="seller-products-table-wrapper">
+            <div className="seller-products-table-wrapper seller-desktop-only">
               <table className="seller-table">
                 <thead>
                   <tr>
@@ -503,7 +551,14 @@ export default function SellerPanel() {
         )}
         {activeTab === 'store' && (
           <div className="seller-content fade-in">
-            <header className="seller-main-header">
+            <div className="seller-mobile-only seller-mobile-store-intro">
+              <span className="icon" aria-hidden><Store size={18} /></span>
+              <div>
+                <p className="eyebrow">Mağaza idarəetməsi</p>
+                <h1>Mağaza məlumatları</h1>
+              </div>
+            </div>
+            <header className="seller-main-header seller-desktop-only">
               <h1>Mağaza məlumatları</h1>
               <p>İctimai vitrin məlumatlarını və loqonu buradan idarə edin.</p>
             </header>
@@ -618,8 +673,6 @@ export default function SellerPanel() {
             </div>
           </div>
         )}
-      </main>
-
       {/* Product Form Modal */}
       {bulkImportOpen ? (
         <SellerBulkImport
@@ -643,7 +696,7 @@ export default function SellerPanel() {
         />
       )}
       <SellerSupportWidget enabled={Boolean(store)} uploadMode="seller" defaultName={user?.name ?? ''} defaultEmail={user?.email ?? ''} />
-    </div>
+    </SellerPanelShell>
   );
 }
 

@@ -13,6 +13,7 @@ import type { CheckoutOptions, GuestOrderInput } from '@workspace/api-client-rea
 import { AddressMapPicker, type AddressMapValue } from '@/components/AddressMapPicker';
 import { BrandLogo } from '@/components/brand-logo';
 import { az } from '@/i18n/az';
+import { clearPaymentFailedQuery, isPaymentFailedReturn, lastPlacedOrderHref, saveLastPlacedOrder } from '@/lib/last-placed-order';
 import { LoadingCard, money } from './order-ui';
 import './order-pages.css';
 
@@ -79,6 +80,12 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
   const [placedOrder, setPlacedOrder] = useState<{ id: string; orderNumber: string; token: string } | null>(null);
   const [payNote, setPayNote] = useState('');
   const [deliveryPin, setDeliveryPin] = useState<AddressMapValue | null>(null);
+  const [paymentFailedReturn] = useState(() => typeof window !== 'undefined' && isPaymentFailedReturn());
+  const lastOrderHref = useMemo(() => (typeof window !== 'undefined' ? lastPlacedOrderHref() : null), [paymentFailedReturn]);
+
+  useEffect(() => {
+    if (paymentFailedReturn) clearPaymentFailedQuery();
+  }, [paymentFailedReturn]);
 
   const options = (checkoutOptions.data ?? FALLBACK_CHECKOUT_OPTIONS) as CheckoutOptions;
   const areas = options.deliveryAreas;
@@ -143,6 +150,7 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
     try {
       const order = await createOrder.mutateAsync({ data: input });
       sessionStorage.setItem(`eynek:order-token:${order.id}`, guestAccessToken);
+      saveLastPlacedOrder({ id: order.id, orderNumber: order.orderNumber, token: guestAccessToken });
       onClearCart();
       setPayNote(
         paymentMethod === 'card'
@@ -183,6 +191,26 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
           </div>
           <p>Kuryer ilə Bakı və Abşerona çatdıra, və ya məhsulları satan optik mağazadan pulsuz götürə bilərsiniz.</p>
         </header>
+
+        {paymentFailedReturn ? (
+          <div className="commerce-error" role="alert" style={{ marginBottom: 16 }} data-testid="banner-payment-failed">
+            <AlertCircle size={18} />
+            <span>
+              Kart ödənişi tamamlanmadı və ya ləğv olundu.
+              {lastOrderHref ? (
+                <>
+                  {' '}
+                  <Link href={lastOrderHref} className="text-link">
+                    Sifarişi izlə
+                  </Link>{' '}
+                  səhifəsindən yenidən ödəniş edə bilərsiniz.
+                </>
+              ) : (
+                ' E-poçtdakı sifariş linkindən yenidən cəhd edin.'
+              )}
+            </span>
+          </div>
+        ) : null}
 
         {checkoutOptions.isLoading ? (
           <LoadingCard lines={5} />

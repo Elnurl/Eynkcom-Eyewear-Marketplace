@@ -73,7 +73,7 @@ router.post("/orders/:orderId/epoint", optionalAuth, async (req, res): Promise<v
     orderNumber: order.orderNumber,
     amountAzN,
     successUrl: `${origin}/order/${order.id}`,
-    errorUrl: `${origin}/checkout?payment=failed`,
+    errorUrl: `${origin}/order/${order.id}?payment=failed`,
   });
   res.json(session);
 });

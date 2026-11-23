@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Check, ChevronDown, Clipboard, LogOut, Package, RefreshCw, Store, Truck } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown, Clipboard, Package, RefreshCw, Truck } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -10,10 +10,11 @@ import {
 } from '@workspace/api-client-react';
 import type { SellerOrder, SellerOrderUpdate } from '@workspace/api-client-react';
 import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
-import { BrandLogo } from '@/components/brand-logo';
+import { SellerPanelShell } from '@/components/seller/SellerPanelShell';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
 import { useSellerWorkspace } from '@/hooks/use-seller-workspace';
-import { LoadingCard, OrderItemRow, QueryError, StatePill, dateLabel, deliveryNoteWithoutGeo, fulfillmentLabel, mapsLink, money, parseDeliveryGeo, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
+import { getSellerPreviewOrders, sellerPanelPreviewEnabled } from '@/lib/seller-dev-preview';
+import { LoadingCard, OrderItemRow, QueryError, StatePill, boltRideLink, dateLabel, deliveryNoteWithoutGeo, fulfillmentLabel, mapsLink, money, parseDeliveryGeo, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
 import './order-pages.css';
 
 type Draft = { status: SellerOrderUpdateStatus; deliveryFeeAzN: string; trackingCode: string; collectedAtDelivery: boolean };
@@ -62,9 +63,15 @@ export default function SellerOrdersPage() {
   const { isLoaded, isSignedIn, user } = useAuthSession();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const orders = useListSellerOrders({ query: { enabled: isLoaded && Boolean(isSignedIn), queryKey: getListSellerOrdersQueryKey(), retry: false } });
+  const orders = useListSellerOrders({
+    query: {
+      enabled: !sellerPanelPreviewEnabled && isLoaded && Boolean(isSignedIn),
+      queryKey: getListSellerOrdersQueryKey(),
+      retry: false,
+    },
+  });
   const updateOrder = useUpdateSellerOrder();
-  const { store } = useSellerWorkspace();
+  const { store, products } = useSellerWorkspace();
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [error, setError] = useState('');
   const [savedId, setSavedId] = useState('');
@@ -72,10 +79,11 @@ export default function SellerOrdersPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    if (sellerPanelPreviewEnabled) return;
     if (isLoaded && !isSignedIn) setLocation(`/sign-in?redirect_url=${encodeURIComponent('/seller-orders')}`);
   }, [isLoaded, isSignedIn, setLocation]);
 
-  const sellerOrders = orders.data ?? [];
+  const sellerOrders = sellerPanelPreviewEnabled ? getSellerPreviewOrders() : (orders.data ?? []);
   const totalEarnings = useMemo(() => sellerOrders.reduce((sum, order) => sum + (order.sellerEarningsAzN ?? 0), 0), [sellerOrders]);
   const activeOrders = useMemo(() => sellerOrders.filter((order) => !isClosedSellerOrder(order.status)), [sellerOrders]);
   const closedOrders = useMemo(() => sellerOrders.filter((order) => isClosedSellerOrder(order.status)), [sellerOrders]);
@@ -139,26 +147,32 @@ export default function SellerOrdersPage() {
     }
   };
 
-  if (!isLoaded || !isSignedIn) return null;
+  if (!sellerPanelPreviewEnabled && (!isLoaded || !isSignedIn)) return null;
 
   return (
-    <div className="seller-panel-layout">
-      <aside className="seller-sidebar">
-        <div className="seller-sidebar-header"><Link href="/" className="brand" data-testid="link-seller-orders-brand"><BrandLogo /></Link><span className="seller-badge">Satıcı Paneli</span></div>
-        <div className="seller-store-info"><div className="store-avatar"><Store size={20} /></div><div><strong>Sifarişlər</strong><small>{user?.email}</small></div></div>
-        <nav className="seller-nav"><Link href="/seller-panel" className="seller-nav-item"><Package size={18} /> Məhsullar</Link><Link href="/seller-orders" className="seller-nav-item active"><Truck size={18} /> Sifarişlər</Link></nav>
-        <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Vitrinə qayıt</Link><button className="seller-nav-item text-danger" onClick={() => void signOutAndGo('/')} data-testid="button-seller-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
-      </aside>
-      <main className="seller-main">
+    <SellerPanelShell
+      storeName={store?.name ?? 'Mağaza'}
+      storeSlug={store?.slug}
+      logoPath={store?.logoPath}
+      productCount={products.length}
+      active="orders"
+      onLogout={() => void signOutAndGo('/')}
+    >
         <div className="seller-content">
-          <div className="management-toolbar"><div><div className="eyebrow">Mağaza əməliyyatları</div><h1>Sifarişlər.</h1></div><p>Mağazanıza aid sifarişləri təsdiqləyin. Kuryer üçün haqq yazın; mağazadan götürmə avtomatik pulsuzdur.</p></div>
+          <div className="management-toolbar">
+            <div>
+              <div className="eyebrow">Mağaza əməliyyatları</div>
+              <h1>Sifarişlər</h1>
+            </div>
+            <p className="seller-desktop-only">Mağazanıza aid sifarişləri təsdiqləyin. Kuryer üçün haqq yazın; mağazadan götürmə avtomatik pulsuzdur.</p>
+          </div>
           <div className="stat-strip"><div className="stat-tile"><small>Açıq sifarişlər</small><strong>{openOrders}</strong></div><div className="stat-tile"><small>Ümumi sifariş</small><strong>{sellerOrders.length}</strong></div><div className="stat-tile"><small>Qazanc</small><strong>{money(totalEarnings)}</strong></div></div>
           {error && <div className="commerce-error" role="alert" data-testid="status-seller-order-error"><AlertCircle size={16} />{error}</div>}
-          {orders.isLoading ? <LoadingCard lines={5} /> : orders.isError ? <QueryError message="Sifarişlər yüklənmədi." onRetry={() => void orders.refetch()} /> : sellerOrders.length ? (
+          {!sellerPanelPreviewEnabled && orders.isLoading ? <LoadingCard lines={5} /> : !sellerPanelPreviewEnabled && orders.isError ? <QueryError message="Sifarişlər yüklənmədi." onRetry={() => void orders.refetch()} /> : sellerOrders.length ? (
             <>
               <div className="seller-order-tabs" role="tablist" aria-label="Sifariş qrupları">
-                <button type="button" role="tab" aria-selected={tab === 'active'} className={tab === 'active' ? 'is-on' : ''} onClick={() => setTab('active')} data-testid="tab-seller-orders-active">Aktiv sifarişlər{activeOrders.length ? ` · ${activeOrders.length}` : ''}</button>
-                <button type="button" role="tab" aria-selected={tab === 'closed'} className={tab === 'closed' ? 'is-on' : ''} onClick={() => setTab('closed')} data-testid="tab-seller-orders-closed">Tamamlanmış / ləğv{closedOrders.length ? ` · ${closedOrders.length}` : ''}</button>
+                <button type="button" role="tab" aria-selected={tab === 'active'} className={tab === 'active' ? 'is-on' : ''} onClick={() => setTab('active')} data-testid="tab-seller-orders-active">Aktiv{activeOrders.length ? ` · ${activeOrders.length}` : ''}</button>
+                <button type="button" role="tab" aria-selected={tab === 'closed'} className={tab === 'closed' ? 'is-on' : ''} onClick={() => setTab('closed')} data-testid="tab-seller-orders-closed">Tamamlanmış{closedOrders.length ? ` · ${closedOrders.length}` : ''}</button>
               </div>
               {visibleOrders.length ? (
                 <div className="admin-order-list seller-order-list">
@@ -188,7 +202,6 @@ export default function SellerOrdersPage() {
                               return (
                                 <div className="seller-courier-box" data-testid={`courier-route-${order.id}`}>
                                   <div className="seller-courier-head"><Truck size={16} aria-hidden /><strong>Kuryer marşrutu</strong></div>
-                                  <p className="seller-courier-hint">Bolt paneli hələ sayta bağlı deyil. Çatdırılma haqqını Bolt Business-də bu marşrutla hesablayıb aşağıdakı sahəyə yazın; kuryeri admin/a operator açacaq.</p>
                                   <dl className="seller-courier-dl">
                                     <div><dt>Götürmə (siz)</dt><dd>{pickupAddress}</dd></div>
                                     <div><dt>Çatdırılma (alıcı)</dt><dd>{order.deliveryAddress}</dd></div>
@@ -205,6 +218,17 @@ export default function SellerOrdersPage() {
                                     )}
                                     {noteText ? <div><dt>Alıcı qeydi</dt><dd>{noteText}</dd></div> : null}
                                   </dl>
+                                  {drop ? (
+                                    <a
+                                      className="btn btn-blue seller-courier-bolt"
+                                      href={boltRideLink({ lat: drop.lat, lng: drop.lng, title: order.deliveryAddress })}
+                                      data-testid={`button-open-bolt-${order.id}`}
+                                    >
+                                      <Truck size={16} aria-hidden /> Kuryer çağır
+                                    </a>
+                                  ) : (
+                                    <p className="seller-courier-bolt-hint">Alıcı xəritədə pin qoyanda «Kuryer çağır» Bolt-u ünvanla açacaq.</p>
+                                  )}
                                 </div>
                               );
                             })() : null}
@@ -274,8 +298,7 @@ export default function SellerOrdersPage() {
             </>
           ) : <div className="empty-state" data-testid="status-seller-orders-loaded"><Package size={22} /><h3>Hələ sifariş yoxdur.</h3><p>Mağazanız üçün yeni sifarişlər burada görünəcək.</p></div>}
         </div>
-      </main>
       <SellerSupportWidget enabled={Boolean(store)} uploadMode="seller" defaultName={user?.name ?? ''} defaultEmail={user?.email ?? ''} />
-    </div>
+    </SellerPanelShell>
   );
 }
