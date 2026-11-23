@@ -31,6 +31,8 @@ services:
           property: connectionString
       - key: MARKETPLACE_ADMIN_EMAIL
         value: hmdzadelnur@gmail.com
+      - key: MARKETPLACE_ADMIN_PHONE
+        sync: false
       - key: HORIZON_AUTO_SEED
         value: "true"
       - key: BETTER_AUTH_SECRET

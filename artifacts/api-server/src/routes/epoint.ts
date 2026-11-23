@@ -1,9 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
-import { db, marketplaceOrderEventsTable, marketplaceOrdersTable } from "@workspace/db";
+import { db, marketplaceOrderEventsTable, marketplaceOrdersTable, marketplaceSellerOrdersTable } from "@workspace/db";
 import { tokenMatches } from "../lib/marketplaceOrders";
+import { notifyBuyer } from "../lib/buyer-notifications";
 import { buildCardCheckout, decodeEpointData, epointReady, epointSignatureMatches } from "../lib/epoint";
+import { logger } from "../lib/logger";
+import { notifyMarketplaceStaff } from "../lib/seller-notifications";
 import { optionalAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -134,6 +137,37 @@ router.post("/payments/epoint/result", async (req, res): Promise<void> => {
     });
   });
   res.status(200).send("ok");
+  if (paid) void notifyPaymentCaptured(orderId);
 });
+
+async function notifyPaymentCaptured(orderId: string): Promise<void> {
+  try {
+    const [order] = await db
+      .select()
+      .from(marketplaceOrdersTable)
+      .where(eq(marketplaceOrdersTable.id, orderId))
+      .limit(1);
+    if (!order) return;
+    notifyBuyer({
+      email: order.customerEmail,
+      phone: order.customerPhone,
+      orderNumber: order.orderNumber,
+      orderId: order.id,
+      notice: { kind: "paid" },
+    });
+    const sellerRows = await db
+      .select({ sellerId: marketplaceSellerOrdersTable.sellerId })
+      .from(marketplaceSellerOrdersTable)
+      .where(eq(marketplaceSellerOrdersTable.orderId, orderId));
+    notifyMarketplaceStaff({
+      sellerIds: sellerRows.map((row) => row.sellerId),
+      orderNumber: order.orderNumber,
+      customerName: order.customerName,
+      noticeKind: "paid",
+    });
+  } catch (error) {
+    logger.error({ err: error, orderId }, "Payment captured notifications failed");
+  }
+}
 
 export default router;

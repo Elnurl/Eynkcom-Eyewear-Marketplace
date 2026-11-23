@@ -55,6 +55,7 @@ import {
 import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 import { notifyBuyer } from "../lib/buyer-notifications";
 import { noticeForSellerStatus, type BuyerNotice } from "../lib/buyer-notices";
+import { notifyMarketplaceStaff } from "../lib/seller-notifications";
 import {
   PAYMENT_WINDOW_MS,
   SELLER_CONFIRM_WINDOW_MS,
@@ -67,6 +68,14 @@ import {
 const router: IRouter = Router();
 type OrderTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const commissionRate = 0.05;
+
+async function sellerIdsForOrder(orderId: string): Promise<string[]> {
+  const rows = await db
+    .select({ sellerId: marketplaceSellerOrdersTable.sellerId })
+    .from(marketplaceSellerOrdersTable)
+    .where(eq(marketplaceSellerOrdersTable.orderId, orderId));
+  return rows.map((row) => row.sellerId);
+}
 
 const buyerCancellableParentStatuses = new Set([
   "pending_confirmation",
@@ -511,7 +520,14 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
     phone: saved.customerPhone,
     orderNumber: saved.orderNumber,
     orderId: saved.id,
+    accessToken: body.data.guestAccessToken,
     notice: { kind: "placed" },
+  });
+  notifyMarketplaceStaff({
+    sellerIds: await sellerIdsForOrder(saved.id),
+    orderNumber: saved.orderNumber,
+    customerName: saved.customerName,
+    noticeKind: "new_order",
   });
   res.status(201).json(CreateGuestOrderResponse.parse(saved));
 });
@@ -714,7 +730,7 @@ router.post("/orders/:orderId/cancellation-request", optionalAuth, async (req, r
         .update(marketplaceOrdersTable)
         .set({ status: "cancelled", updatedAt: new Date() })
         .where(eq(marketplaceOrdersTable.id, order.id));
-      return { kind: "updated" as const };
+      return { kind: "updated" as const, sellerNotice: "cancelled" as const };
     }
 
     let changed = 0;
@@ -742,7 +758,7 @@ router.post("/orders/:orderId/cancellation-request", optionalAuth, async (req, r
         : "Alıcı ləğv sorğusu göndərdi. Mağaza təsdiq edənə qədər sifariş davam edir.",
     );
     await refreshParentOrder(tx, order.id);
-    return { kind: "updated" as const };
+    return { kind: "updated" as const, sellerNotice: "cancel_request" as const };
   });
 
   if (result.kind === "missing") {
@@ -757,6 +773,14 @@ router.post("/orders/:orderId/cancellation-request", optionalAuth, async (req, r
   if (!saved) {
     res.status(404).json({ error: "Sifariş tapılmadı." });
     return;
+  }
+  if (result.sellerNotice) {
+    notifyMarketplaceStaff({
+      sellerIds: await sellerIdsForOrder(saved.id),
+      orderNumber: saved.orderNumber,
+      customerName: saved.customerName,
+      noticeKind: result.sellerNotice,
+    });
   }
   res.json(RequestOrderCancellationResponse.parse(saved));
 });

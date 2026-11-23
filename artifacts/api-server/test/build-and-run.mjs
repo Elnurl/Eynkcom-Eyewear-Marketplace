@@ -48,7 +48,16 @@ try {
   });
   const notices = join(localDir, "buyer-notices.test.mjs");
   await copyFile(join(dir, "buyer-notices.test.mjs"), notices);
-  const result = spawnSync(process.execPath, ["--test", local, notices], { stdio: "inherit", env: { ...process.env, NODE_ENV: "production" } });
+  await build({
+    entryPoints: ["test/seller-notices.test.ts"],
+    outfile: join(dir, "seller-notices.test.mjs"),
+    bundle: true,
+    platform: "node",
+    format: "esm",
+  });
+  const sellerNotices = join(localDir, "seller-notices.test.mjs");
+  await copyFile(join(dir, "seller-notices.test.mjs"), sellerNotices);
+  const result = spawnSync(process.execPath, ["--test", local, notices, sellerNotices], { stdio: "inherit", env: { ...process.env, NODE_ENV: "production" } });
   process.exitCode = result.status ?? 1;
 } finally {
   await rm(localDir, { recursive: true, force: true });

@@ -3,6 +3,7 @@ import type { EmailDetailRow } from "./email";
 export type BuyerNotice =
   | { kind: "placed" }
   | { kind: "payment_ready" }
+  | { kind: "paid" }
   | { kind: "confirmed"; storeName: string }
   | { kind: "declined"; storeName: string }
   | { kind: "cancelled"; storeName: string }
@@ -58,6 +59,20 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): BuyerNoti
         headline: "Sifarişin qəbul olundu.",
         body: "Mağaza stoku təsdiqləyəndən sonra 15 dəqiqə ərzində ödəniş linki aktiv olacaq. Vəziyyəti saytdan və e-poçtdan izləyə bilərsən.",
         details: orderDetails(orderNumber, "Mağazanın təsdiqini gözləyir"),
+        accent: "success",
+      };
+    case "paid":
+      return {
+        subject: `EYNƏK — sifariş ${orderNumber} ödənildi`,
+        sms: `EYNƏK: Sifariş ${orderNumber} ödənişi qəbul olundu. Mağaza hazırlığa keçir.`,
+        intro: `Sifariş ${orderNumber} üzrə kart ödənişi təsdiqləndi.`,
+        badge: "Ödəniş alındı",
+        headline: "Ödənişiniz qəbul olundu.",
+        body: "Kart ödənişi Epoint-də təsdiqləndi. Mağaza sifarişi hazırlamağa başlayır. Vəziyyəti saytdan izləyə bilərsən.",
+        details: orderDetails(orderNumber, "Ödənildi", {
+          label: "Ödəniş",
+          value: "Online kart (Epoint)",
+        }),
         accent: "success",
       };
     case "payment_ready":
