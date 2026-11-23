@@ -11,12 +11,20 @@ test("Azerbaijan mobiles become Sinch numbers", () => {
 });
 
 test("seller status maps to a buyer notice, preparing stays quiet", () => {
-  assert.equal(noticeForSellerStatus("preparing", "Optika", false), null);
-  assert.deepEqual(noticeForSellerStatus("declined", "Optika", false), { kind: "declined", storeName: "Optika" });
-  const ready = noticeForSellerStatus("out_for_delivery", "Optika", true);
+  assert.equal(noticeForSellerStatus("preparing", "Optika", false, "card", "captured"), null);
+  assert.deepEqual(noticeForSellerStatus("declined", "Optika", false, "card", "captured"), {
+    kind: "declined",
+    storeName: "Optika",
+  });
+  const ready = noticeForSellerStatus("out_for_delivery", "Optika", true, "pay_on_delivery", "due_on_delivery");
   assert.equal(ready && buyerNotice("EYN-1", ready).sms.includes("götürməyə hazırdır"), true);
-  const sent = noticeForSellerStatus("out_for_delivery", "Optika", false);
-  assert.equal(sent && buyerNotice("EYN-1", sent).sms.includes("çatdırılmaya verildi"), true);
+  const sent = noticeForSellerStatus("out_for_delivery", "Optika", false, "pay_on_delivery", "due_on_delivery");
+  const codCopy = sent && buyerNotice("EYN-1", sent);
+  assert.equal(codCopy?.sms.includes("qapıdadır"), true);
+  const paid = noticeForSellerStatus("out_for_delivery", "Optika", false, "card", "captured");
+  const paidCopy = paid && buyerNotice("EYN-1", paid);
+  assert.equal(paidCopy?.body.includes("qapıda"), false);
+  assert.equal(paidCopy?.details.some((row) => row.value === "Online kart (Epoint)"), true);
 });
 
 test("a new order tells the buyer to wait for store confirmation", () => {

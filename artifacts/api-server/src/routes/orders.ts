@@ -1124,7 +1124,13 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
     const refreshed = await refreshParentOrder(tx, parent.id);
     const paymentToken = await preparePaymentWindowIfNeeded(tx, parent.id, refreshed.paymentWindowOpened);
     const storeName = storeRecord?.name ?? "Mağaza";
-    const notice = noticeForSellerStatus(nextStatus, storeName, pickupOrder);
+    const notice = noticeForSellerStatus(
+      nextStatus,
+      storeName,
+      pickupOrder,
+      refreshed.order?.paymentMethod ?? parent.paymentMethod,
+      refreshed.order?.paymentStatus ?? parent.paymentStatus,
+    );
     return {
       kind: "updated" as const,
       orderId: parent.id,

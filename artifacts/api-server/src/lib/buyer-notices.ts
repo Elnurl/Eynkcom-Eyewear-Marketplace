@@ -4,10 +4,10 @@ export type BuyerNotice =
   | { kind: "placed" }
   | { kind: "payment_ready" }
   | { kind: "paid" }
-  | { kind: "confirmed"; storeName: string }
+  | { kind: "confirmed"; storeName: string; paymentMethod: string; paymentStatus: string }
   | { kind: "declined"; storeName: string }
   | { kind: "cancelled"; storeName: string }
-  | { kind: "out_for_delivery"; storeName: string; pickup: boolean }
+  | { kind: "out_for_delivery"; storeName: string; pickup: boolean; paymentMethod: string; paymentStatus: string }
   | { kind: "delivered"; storeName: string; pickup: boolean };
 
 const mobilePrefixes = new Set(["10", "50", "51", "55", "60", "70", "77", "99"]);
@@ -17,6 +17,37 @@ const payOnReceive: EmailDetailRow = {
   value: "Məhsulu alanda",
   hint: "Kuryerdə və ya mağazadan götürəndə.",
 };
+
+const paidOnlineRow: EmailDetailRow = {
+  label: "Ödəniş",
+  value: "Online kart (Epoint)",
+  hint: "Ödəniş artıq tamamlanıb.",
+};
+
+/** Kart ödənişi artıq tutulubsa (onlayn), qapıda ödəniş mətni göstərilmir. */
+export function buyerOrderPaidOnline(paymentMethod: string, paymentStatus: string): boolean {
+  if (paymentMethod === "pay_on_delivery") return false;
+  return paymentStatus === "captured" || paymentStatus === "authorized";
+}
+
+function paymentDetailRow(
+  paymentMethod: string,
+  paymentStatus: string,
+  pickup: boolean,
+): EmailDetailRow | undefined {
+  if (buyerOrderPaidOnline(paymentMethod, paymentStatus)) return paidOnlineRow;
+  if (paymentMethod === "card" && ["unpaid", "pending_payment"].includes(paymentStatus)) {
+    return {
+      label: "Ödəniş",
+      value: "Online kart (Epoint)",
+      hint: "Ödəniş linki sifariş səhifəsindədir.",
+    };
+  }
+  if (pickup) {
+    return { label: "Ödəniş", value: "Mağazada", hint: "Məhsulu götürəndə." };
+  }
+  return payOnReceive;
+}
 
 /** Azerbaijan mobile numbers as Sinch expects them: 994XXXXXXXXX. */
 export function normalizeAzMobile(raw: string): string | null {
@@ -90,17 +121,25 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): BuyerNoti
         }),
         accent: "warning",
       };
-    case "confirmed":
+    case "confirmed": {
+      const paidOnline = buyerOrderPaidOnline(notice.paymentMethod, notice.paymentStatus);
       return {
         subject: `EYNƏK — ${notice.storeName} sifarişi təsdiqlədi`,
         sms: `EYNƏK: ${notice.storeName} sifariş ${orderNumber} təsdiqlədi.`,
         intro: `${notice.storeName} sifariş ${orderNumber} üçün öz hissəsini təsdiqlədi.`,
         badge: "Mağaza təsdiqi",
         headline: "Mağaza sifarişi təsdiqlədi.",
-        body: `${notice.storeName} sifariş ${orderNumber} üzrə öz hissəsini təsdiqlədi. Hazırlıq mərhələsi davam edir.`,
-        details: orderDetails(orderNumber, `${notice.storeName} təsdiqlədi`, payOnReceive),
+        body: paidOnline
+          ? `${notice.storeName} sifariş ${orderNumber} üzrə öz hissəsini təsdiqlədi. Ödənişiniz artıq onlayn qəbul olunub; hazırlıq davam edir.`
+          : `${notice.storeName} sifariş ${orderNumber} üzrə öz hissəsini təsdiqlədi. Hazırlıq mərhələsi davam edir.`,
+        details: orderDetails(
+          orderNumber,
+          `${notice.storeName} təsdiqlədi`,
+          paymentDetailRow(notice.paymentMethod, notice.paymentStatus, false),
+        ),
         accent: "success",
       };
+    }
     case "cancelled":
       return {
         subject: `EYNƏK — ${notice.storeName} sifarişi ləğv etdi`,
@@ -123,32 +162,48 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): BuyerNoti
         details: orderDetails(orderNumber, `${notice.storeName} qəbul etmədi`),
         accent: "warning",
       };
-    case "out_for_delivery":
+    case "out_for_delivery": {
+      const paidOnline = buyerOrderPaidOnline(notice.paymentMethod, notice.paymentStatus);
       return notice.pickup
         ? {
             subject: `EYNƏK — sifariş ${orderNumber} götürməyə hazırdır`,
             sms: `EYNƏK: Sifariş ${orderNumber} ${notice.storeName} mağazasından götürməyə hazırdır.`,
-            intro: `Sifariş ${orderNumber} ${notice.storeName} mağazasında götürməyə hazırdır. Ödəniş mağazada edilir.`,
+            intro: paidOnline
+              ? `Sifariş ${orderNumber} ${notice.storeName} mağazasında götürməyə hazırdır. Ödəniş onlayn tamamlanıb.`
+              : `Sifariş ${orderNumber} ${notice.storeName} mağazasında götürməyə hazırdır. Ödəniş mağazada edilir.`,
             badge: "Götürməyə hazırdır",
             headline: "Sifariş mağazada gözləyir.",
-            body: `${notice.storeName} sifariş ${orderNumber} üçün məhsulu hazırladı. Mağazadan götürə bilərsən; ödəniş orada edilir.`,
-            details: orderDetails(orderNumber, `${notice.storeName} — götürməyə hazır`, {
-              label: "Ödəniş",
-              value: "Mağazada",
-              hint: "Məhsulu götürəndə.",
-            }),
+            body: paidOnline
+              ? `${notice.storeName} sifariş ${orderNumber} üçün məhsulu hazırladı. Mağazadan götürə bilərsən.`
+              : `${notice.storeName} sifariş ${orderNumber} üçün məhsulu hazırladı. Mağazadan götürə bilərsən; ödəniş orada edilir.`,
+            details: orderDetails(
+              orderNumber,
+              `${notice.storeName} — götürməyə hazır`,
+              paymentDetailRow(notice.paymentMethod, notice.paymentStatus, true),
+            ),
             accent: "success",
           }
         : {
             subject: `EYNƏK — sifariş ${orderNumber} yoldadır`,
-            sms: `EYNƏK: Sifariş ${orderNumber} çatdırılmaya verildi. Ödəniş qapıdadır.`,
-            intro: `${notice.storeName} sifariş ${orderNumber} üçün məhsulu çatdırılmaya verdi. Ödəniş kuryerə, qapıda edilir.`,
+            sms: paidOnline
+              ? `EYNƏK: Sifariş ${orderNumber} çatdırılmaya verildi.`
+              : `EYNƏK: Sifariş ${orderNumber} çatdırılmaya verildi. Ödəniş qapıdadır.`,
+            intro: paidOnline
+              ? `${notice.storeName} sifariş ${orderNumber} üçün məhsulu çatdırılmaya verdi. Ödəniş artıq onlayn edilib.`
+              : `${notice.storeName} sifariş ${orderNumber} üçün məhsulu çatdırılmaya verdi. Ödəniş kuryerə, qapıda edilir.`,
             badge: "Çatdırılma yoldadır",
             headline: "Sifariş yola çıxdı.",
-            body: `${notice.storeName} sifariş ${orderNumber} üçün məhsulu kuryerə təhvil verdi. Ödəniş qapıda edilir.`,
-            details: orderDetails(orderNumber, "Kuryerə verildi", payOnReceive),
+            body: paidOnline
+              ? `${notice.storeName} sifariş ${orderNumber} üçün məhsulu kuryerə təhvil verdi. Çatdırılmanı gözləyin.`
+              : `${notice.storeName} sifariş ${orderNumber} üçün məhsulu kuryerə təhvil verdi. Ödəniş qapıda edilir.`,
+            details: orderDetails(
+              orderNumber,
+              "Kuryerə verildi",
+              paymentDetailRow(notice.paymentMethod, notice.paymentStatus, false),
+            ),
             accent: "success",
           };
+    }
     case "delivered":
       return notice.pickup
         ? {
@@ -178,10 +233,14 @@ export function noticeForSellerStatus(
   status: string,
   storeName: string,
   pickup: boolean,
+  paymentMethod: string,
+  paymentStatus: string,
 ): BuyerNotice | null {
-  if (status === "confirmed") return { kind: "confirmed", storeName };
+  if (status === "confirmed") return { kind: "confirmed", storeName, paymentMethod, paymentStatus };
   if (status === "declined") return { kind: "declined", storeName };
-  if (status === "out_for_delivery") return { kind: "out_for_delivery", storeName, pickup };
+  if (status === "out_for_delivery") {
+    return { kind: "out_for_delivery", storeName, pickup, paymentMethod, paymentStatus };
+  }
   if (status === "delivered") return { kind: "delivered", storeName, pickup };
   return null;
 }
