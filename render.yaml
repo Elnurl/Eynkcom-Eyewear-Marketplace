@@ -71,7 +71,7 @@ services:
       - key: S3_REGION
         value: auto
       - key: EPOINT_PUBLIC_KEY
-        value: i7448
+        value: i000202119
       - key: EPOINT_PRIVATE_KEY
         sync: false
       - key: VTO_URL

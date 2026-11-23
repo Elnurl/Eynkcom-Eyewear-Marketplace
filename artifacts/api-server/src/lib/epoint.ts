@@ -3,7 +3,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 const CHECKOUT_URL = "https://epoint.az/api/1/checkout";
 
 export function epointPublicKey() {
-  return process.env.EPOINT_PUBLIC_KEY?.trim() || "i7448";
+  return process.env.EPOINT_PUBLIC_KEY?.trim() || "i000202119";
 }
 
 export function epointPrivateKey() {
