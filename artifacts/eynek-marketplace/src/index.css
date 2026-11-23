@@ -559,6 +559,13 @@ input[type="range"] { width: 100%; accent-color: var(--blue); }
 .seller-main-header.with-actions { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .seller-header-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .seller-modal--wide { max-width: 720px; }
+.seller-modal--confirm { max-width: 420px; width: min(420px, calc(100vw - 32px)); }
+.seller-modal--confirm .seller-modal-body { padding: 22px 22px 8px; }
+.seller-modal--confirm .seller-modal-body p { margin: 0; color: var(--navy); font-size: 15px; line-height: 1.45; }
+.seller-delete-product-name { margin-top: 10px !important; font-weight: 700; word-break: break-word; }
+.seller-delete-note { margin-top: 10px !important; color: var(--muted) !important; font-size: 13px !important; }
+.seller-btn-danger { border-color: #d32f2f; background: #d32f2f; color: #fff; }
+.seller-btn-danger:hover { filter: brightness(0.95); }
 .bulk-import-body { display: flex; flex-direction: column; gap: 18px; }
 .bulk-import-lead { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .bulk-import-lead code { font-size: 12px; }

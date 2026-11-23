@@ -82,6 +82,7 @@ export default function SellerPanel() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
   // Search and Filter
   const [searchQuery, setSearchQuery] = useState('');
@@ -153,6 +154,18 @@ export default function SellerPanel() {
   const closeForm = () => {
     setIsFormOpen(false);
     setEditingId(null);
+  };
+
+  const productToDelete = deletingId ? products.find((p) => p.id === deletingId) : undefined;
+
+  const confirmDeleteProduct = async () => {
+    if (!deletingId) return;
+    try {
+      await deleteProduct(deletingId);
+      setDeletingId(null);
+    } catch {
+      /* errorMessage paneldə göstərilir */
+    }
   };
 
   const activeCount = products.filter(p => p.status === 'Aktiv' && p.approvalStatus === 'approved').length;
@@ -442,7 +455,7 @@ export default function SellerPanel() {
                     </span>
                     <div className="seller-mobile-card-actions">
                       <button type="button" className="edit-btn" onClick={() => openEditForm(product.id)} aria-label="Redaktə et" data-testid={`button-edit-mobile-${product.id}`}><Edit2 size={16} /></button>
-                      <button type="button" className="edit-btn text-danger" onClick={() => void deleteProduct(product.id)} aria-label="Sil" data-testid={`button-delete-mobile-${product.id}`}><Trash2 size={16} /></button>
+                      <button type="button" className="edit-btn text-danger" onClick={() => setDeletingId(product.id)} aria-label="Sil" data-testid={`button-delete-mobile-${product.id}`}><Trash2 size={16} /></button>
                     </div>
                   </div>
                 </article>
@@ -524,7 +537,7 @@ export default function SellerPanel() {
                             <button className="icon-button" onClick={() => openEditForm(product.id)} aria-label="Redaktə et" data-testid={`button-edit-${product.id}`}>
                               <Edit2 size={16} />
                             </button>
-                            <button className="icon-button text-danger" onClick={() => deleteProduct(product.id)} aria-label="Sil" data-testid={`button-delete-${product.id}`}>
+                            <button className="icon-button text-danger" onClick={() => setDeletingId(product.id)} aria-label="Sil" data-testid={`button-delete-${product.id}`}>
                               <Trash2 size={16} />
                             </button>
                           </div>
@@ -698,6 +711,32 @@ export default function SellerPanel() {
           }}
         />
       )}
+      {deletingId ? (
+        <div
+          className="seller-modal-backdrop"
+          onClick={(event) => { if (event.target === event.currentTarget && !isSaving) setDeletingId(null); }}
+        >
+          <div className="seller-modal seller-modal--confirm" role="alertdialog" aria-modal="true" aria-labelledby="seller-delete-title" data-testid="modal-delete-product">
+            <div className="seller-modal-header">
+              <h2 id="seller-delete-title">Məhsulu sil</h2>
+              <button type="button" className="icon-button" disabled={isSaving} onClick={() => setDeletingId(null)} aria-label="Bağla">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="seller-modal-body">
+              <p>Bu məhsulu silmək istədiyinizə əminsiniz?</p>
+              {productToDelete ? <p className="seller-delete-product-name">{productToDelete.name}</p> : null}
+              <p className="seller-delete-note">Bu əməliyyat geri qaytarılmır.</p>
+            </div>
+            <div className="seller-modal-footer">
+              <button type="button" className="btn btn-secondary" disabled={isSaving} onClick={() => setDeletingId(null)} data-testid="button-cancel-delete-product">Ləğv et</button>
+              <button type="button" className="btn btn-blue seller-btn-danger" disabled={isSaving} onClick={() => void confirmDeleteProduct()} data-testid="button-confirm-delete-product">
+                {isSaving ? 'Silinir...' : 'Sil'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <SellerSupportWidget enabled={Boolean(store)} uploadMode="seller" defaultName={user?.name ?? ''} defaultEmail={user?.email ?? ''} />
     </SellerPanelShell>
   );
