@@ -18,6 +18,10 @@ export interface SellerStoreUpdate {
      * @maxLength 300
      */
   location?: string;
+  /** @maxLength 254 */
+  email?: string;
+  /** @maxLength 40 */
+  phone?: string;
   /** @maxLength 1000 */
   description?: string;
   logoPath?: string | null;

@@ -25,6 +25,7 @@ export async function loadSellerNotifyTargets(sellerIds: string[]): Promise<Sell
       id: sellerStoresTable.id,
       name: sellerStoresTable.name,
       ownerEmail: sellerStoresTable.ownerEmail,
+      phone: sellerStoresTable.phone,
     })
     .from(sellerStoresTable)
     .where(inArray(sellerStoresTable.id, uniqueIds));
@@ -59,7 +60,7 @@ export async function loadSellerNotifyTargets(sellerIds: string[]): Promise<Sell
       sellerId: store.id,
       storeName: store.name,
       email,
-      phone: phones.get(email) ?? "",
+      phone: store.phone?.trim() || phones.get(email) || "",
     };
   });
 }
@@ -119,8 +120,21 @@ export async function notifySellersForOrder(input: {
   noticeKind: SellerNoticeKind;
 }) {
   const targets = await loadSellerNotifyTargets(input.sellerIds);
+  if (input.sellerIds.length && targets.length === 0) {
+    logger.warn(
+      { sellerIds: input.sellerIds, orderNumber: input.orderNumber },
+      "Seller notifications skipped: store targets not found",
+    );
+  }
   const notice: SellerNotice = { kind: input.noticeKind, customerName: input.customerName };
   for (const target of targets) {
+    if (!target.email) {
+      logger.warn(
+        { sellerId: target.sellerId, orderNumber: input.orderNumber },
+        "Seller notification skipped: store has no owner email",
+      );
+      continue;
+    }
     notifySeller({
       email: target.email,
       phone: target.phone,

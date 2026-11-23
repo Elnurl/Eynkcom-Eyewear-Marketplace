@@ -92,6 +92,13 @@
       "when": 1791100000000,
       "tag": "0012_order_variant_b",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791200000000,
+      "tag": "0013_seller_store_contact",
+      "breakpoints": true
     }
   ]
 }

@@ -88,8 +88,8 @@ export const CreateGuestOrderResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
-  "paymentDueAt": zod.coerce.date().nullable().optional(),
-  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
+  "paymentDueAt": zod.coerce.date().nullish(),
+  "sellerConfirmDueAt": zod.coerce.date().nullish(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -156,8 +156,8 @@ export const GetGuestOrderResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
-  "paymentDueAt": zod.coerce.date().nullable().optional(),
-  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
+  "paymentDueAt": zod.coerce.date().nullish(),
+  "sellerConfirmDueAt": zod.coerce.date().nullish(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -212,8 +212,8 @@ export const ListAccountOrdersResponseItem = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
-  "paymentDueAt": zod.coerce.date().nullable().optional(),
-  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
+  "paymentDueAt": zod.coerce.date().nullish(),
+  "sellerConfirmDueAt": zod.coerce.date().nullish(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -285,8 +285,8 @@ export const DecideGuestOrderRevisionResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
-  "paymentDueAt": zod.coerce.date().nullable().optional(),
-  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
+  "paymentDueAt": zod.coerce.date().nullish(),
+  "sellerConfirmDueAt": zod.coerce.date().nullish(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -361,8 +361,8 @@ export const RequestOrderCancellationResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
-  "paymentDueAt": zod.coerce.date().nullable().optional(),
-  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
+  "paymentDueAt": zod.coerce.date().nullish(),
+  "sellerConfirmDueAt": zod.coerce.date().nullish(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -443,8 +443,8 @@ export const CreateOrderReturnRequestResponse = zod.object({
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),
-  "paymentDueAt": zod.coerce.date().nullable().optional(),
-  "sellerConfirmDueAt": zod.coerce.date().nullable().optional(),
+  "paymentDueAt": zod.coerce.date().nullish(),
+  "sellerConfirmDueAt": zod.coerce.date().nullish(),
   "sellerOrders": zod.array(zod.object({
   "id": zod.string(),
   "sellerName": zod.string(),
@@ -1182,6 +1182,8 @@ export const ListStoresResponseItem = zod.object({
   "slug": zod.string(),
   "location": zod.string(),
   "description": zod.string(),
+  "email": zod.string().email().optional(),
+  "phone": zod.string().optional(),
   "logoPath": zod.string().nullish(),
   "instagram": zod.string(),
   "website": zod.string(),
@@ -1231,6 +1233,8 @@ export const GetSellerStoreResponse = zod.object({
   "slug": zod.string(),
   "location": zod.string(),
   "description": zod.string(),
+  "email": zod.string().email().optional(),
+  "phone": zod.string().optional(),
   "logoPath": zod.string().nullish(),
   "instagram": zod.string(),
   "website": zod.string(),
@@ -1260,6 +1264,10 @@ export const updateSellerStoreBodyNameMax = 160;
 
 export const updateSellerStoreBodyLocationMax = 300;
 
+export const updateSellerStoreBodyEmailMax = 254;
+
+export const updateSellerStoreBodyPhoneMax = 40;
+
 export const updateSellerStoreBodyDescriptionMax = 1000;
 
 export const updateSellerStoreBodyInstagramMax = 200;
@@ -1284,6 +1292,8 @@ export const updateSellerStoreBodyVitrineThemeOneHeroOverlayMax = 0.85;
 export const UpdateSellerStoreBody = zod.object({
   "name": zod.string().min(1).max(updateSellerStoreBodyNameMax).optional(),
   "location": zod.string().min(1).max(updateSellerStoreBodyLocationMax).optional(),
+  "email": zod.string().email().max(updateSellerStoreBodyEmailMax).optional(),
+  "phone": zod.string().max(updateSellerStoreBodyPhoneMax).optional(),
   "description": zod.string().max(updateSellerStoreBodyDescriptionMax).optional(),
   "logoPath": zod.string().nullish(),
   "instagram": zod.string().max(updateSellerStoreBodyInstagramMax).optional(),
@@ -1323,6 +1333,8 @@ export const UpdateSellerStoreResponse = zod.object({
   "slug": zod.string(),
   "location": zod.string(),
   "description": zod.string(),
+  "email": zod.string().email().optional(),
+  "phone": zod.string().optional(),
   "logoPath": zod.string().nullish(),
   "instagram": zod.string(),
   "website": zod.string(),

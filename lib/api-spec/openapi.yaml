@@ -1218,6 +1218,11 @@ components:
           type: string
         description:
           type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
         logoPath:
           type: string
           nullable: true
@@ -1257,6 +1262,13 @@ components:
           type: string
           minLength: 1
           maxLength: 300
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 40
         description:
           type: string
           maxLength: 1000

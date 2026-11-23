@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { FulfillmentMethod } from './fulfillmentMethod';
+import type { OrderStatus } from './orderStatus';
 import type { PaymentMethod } from './paymentMethod';
 import type { PaymentStatus } from './paymentStatus';
 import type { SellerOrderDeliveryArea } from './sellerOrderDeliveryArea';
-import type { OrderStatus } from './orderStatus';
 import type { SellerOrderSummary } from './sellerOrderSummary';
 
 export type SellerOrder = SellerOrderSummary & ({

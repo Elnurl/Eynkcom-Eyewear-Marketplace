@@ -1,7 +1,7 @@
 import { useState, useRef, FormEvent, useMemo, ChangeEvent, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
 import { discardUpload } from '@workspace/api-client-react';
-import { useAuthSession } from '@/lib/auth-client';
+import { authClient, authErrorMessage, useAuthSession } from '@/lib/auth-client';
 import { 
   Plus, Search, MoreVertical, Edit2, Trash2, 
   Image as ImageIcon, Store, Settings, 
@@ -70,9 +70,16 @@ export default function SellerPanel() {
   } = useSellerWorkspace();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'store'>('products');
-  const [storeForm, setStoreForm] = useState({ name: '', location: '', description: '', instagram: '', website: '' });
+  const [storeForm, setStoreForm] = useState({ name: '', location: '', email: '', phone: '', description: '', instagram: '', website: '' });
   const [themeForm, setThemeForm] = useState<VitrineThemeForm>(DEFAULT_VITRINE_THEME);
   const [storeSaveMessage, setStoreSaveMessage] = useState('');
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [repeatPassword, setRepeatPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordNotice, setPasswordNotice] = useState('');
+  const [passwordPending, setPasswordPending] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [heroUploading, setHeroUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -106,12 +113,14 @@ export default function SellerPanel() {
     setStoreForm({
       name: store.name,
       location: store.location,
+      email: store.email ?? user?.email ?? '',
+      phone: store.phone ?? '',
       description: store.description,
       instagram: store.instagram,
       website: store.website,
     });
     setThemeForm(normalizeVitrineTheme(store.vitrineTheme));
-  }, [store]);
+  }, [store, user?.email]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p =>
@@ -190,6 +199,8 @@ export default function SellerPanel() {
       await updateStore({
         name: storeForm.name.trim(),
         location: storeForm.location.trim(),
+        email: storeForm.email.trim(),
+        phone: storeForm.phone.trim(),
         description: storeForm.description.trim(),
         instagram: storeForm.instagram.trim(),
         website: storeForm.website.trim(),
@@ -204,10 +215,43 @@ export default function SellerPanel() {
           heroOverlay: themeForm.heroOverlay,
         },
       });
-      setStoreSaveMessage('Mağaza və vitrin dizaynı yadda saxlanıldı.');
+      setStoreSaveMessage('Mağaza və vitrin dizaynı yadda saxlanıldı. Sifariş mailləri bu e-poçta gedəcək.');
     } catch {
       setStoreSaveMessage(errorMessage || 'Mağaza məlumatları saxlanmadı.');
     }
+  };
+
+  const saveStorePassword = async () => {
+    setPasswordError('');
+    setPasswordNotice('');
+    if (isPreview) {
+      setPasswordError('Önizəmədə şifrə dəyişmir.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError('Yeni şifrə ən azı 8 simvol olmalıdır.');
+      return;
+    }
+    if (newPassword !== repeatPassword) {
+      setPasswordError('Yeni şifrələr eyni deyil.');
+      return;
+    }
+    setPasswordPending(true);
+    const { error } = await authClient.changePassword({
+      currentPassword,
+      newPassword,
+      revokeOtherSessions: false,
+    });
+    setPasswordPending(false);
+    if (error) {
+      setPasswordError(authErrorMessage(error));
+      return;
+    }
+    setCurrentPassword('');
+    setNewPassword('');
+    setRepeatPassword('');
+    setPasswordOpen(false);
+    setPasswordNotice('Şifrə yeniləndi.');
   };
 
   const applySkin = (skin: VitrineThemeForm['skin']) => {
@@ -607,9 +651,31 @@ export default function SellerPanel() {
                 </div>
               </section>
               <form className="seller-form seller-store-profile-form" onSubmit={saveStoreProfile} noValidate>
-                <h2 className="seller-settings-section-title">Vitrin məlumatları</h2>
+                <h2 className="seller-settings-section-title">Əlaqə və hesab</h2>
+                <p className="field-help" style={{ gridColumn: '1 / -1', marginTop: -8 }}>Sifariş bildirişləri bu e-poçta gedir. Nömrə və ünvan mağaza məlumatı kimi saxlanır.</p>
+                <div className="field"><label htmlFor="store-profile-email">E-poçt</label><input id="store-profile-email" type="email" required autoComplete="email" value={storeForm.email} onChange={(event) => setStoreForm((form) => ({ ...form, email: event.target.value }))} data-testid="input-store-email" /></div>
+                <div className="field"><label htmlFor="store-profile-phone">Mobil nömrə</label><input id="store-profile-phone" type="tel" autoComplete="tel" placeholder="050 123 45 67" value={storeForm.phone} onChange={(event) => setStoreForm((form) => ({ ...form, phone: event.target.value }))} data-testid="input-store-phone" /></div>
+                <div className="field full"><label htmlFor="store-profile-location">Ünvan</label><input id="store-profile-location" required value={storeForm.location} onChange={(event) => setStoreForm((form) => ({ ...form, location: event.target.value }))} data-testid="input-store-location" /></div>
+                <div className="field full">
+                  <span className="seller-settings-label">Şifrə</span>
+                  <div className="seller-password-row">
+                    <input value="••••••••" type="password" readOnly aria-label="Şifrə" />
+                    <button className="btn btn-secondary" type="button" onClick={() => setPasswordOpen((open) => !open)} data-testid="button-store-change-password">Şifrəni dəyiş</button>
+                  </div>
+                  {passwordNotice ? <p className="field-help" role="status">{passwordNotice}</p> : null}
+                </div>
+                {passwordOpen ? (
+                  <div className="field full seller-password-fields">
+                    <div className="field"><label htmlFor="store-current-password">Cari şifrə</label><input id="store-current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} data-testid="input-store-current-password" /></div>
+                    <div className="field"><label htmlFor="store-new-password">Yeni şifrə</label><input id="store-new-password" type="password" autoComplete="new-password" minLength={8} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} data-testid="input-store-new-password" /></div>
+                    <div className="field"><label htmlFor="store-repeat-password">Yeni şifrəni təkrarla</label><input id="store-repeat-password" type="password" autoComplete="new-password" minLength={8} value={repeatPassword} onChange={(event) => setRepeatPassword(event.target.value)} data-testid="input-store-repeat-password" /></div>
+                    {passwordError ? <p className="field-help" role="alert" style={{ color: '#a33535' }}>{passwordError}</p> : null}
+                    <button className="btn btn-blue" type="button" disabled={passwordPending} onClick={() => void saveStorePassword()} data-testid="button-save-store-password">{passwordPending ? 'Yenilənir...' : 'Şifrəni yenilə'}</button>
+                  </div>
+                ) : null}
+
+                <h2 className="seller-settings-section-title" style={{ gridColumn: '1 / -1', marginTop: 8 }}>Vitrin məlumatları</h2>
                 <div className="field"><label htmlFor="store-profile-name">Mağaza adı</label><input id="store-profile-name" required value={storeForm.name} onChange={(event) => setStoreForm((form) => ({ ...form, name: event.target.value }))} data-testid="input-store-name" /></div>
-                <div className="field"><label htmlFor="store-profile-location">Ünvan</label><input id="store-profile-location" required value={storeForm.location} onChange={(event) => setStoreForm((form) => ({ ...form, location: event.target.value }))} data-testid="input-store-location" /></div>
                 <div className="field full"><label htmlFor="store-profile-description">Haqqında</label><textarea id="store-profile-description" value={storeForm.description} onChange={(event) => setStoreForm((form) => ({ ...form, description: event.target.value }))} data-testid="input-store-description" /></div>
                 <div className="field"><label htmlFor="store-profile-instagram">Instagram</label><input id="store-profile-instagram" value={storeForm.instagram} onChange={(event) => setStoreForm((form) => ({ ...form, instagram: event.target.value }))} data-testid="input-store-instagram" /></div>
                 <div className="field"><label htmlFor="store-profile-website">Veb-sayt</label><input id="store-profile-website" value={storeForm.website} onChange={(event) => setStoreForm((form) => ({ ...form, website: event.target.value }))} data-testid="input-store-website" /></div>

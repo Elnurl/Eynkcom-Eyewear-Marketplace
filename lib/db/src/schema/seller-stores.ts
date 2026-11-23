@@ -18,6 +18,7 @@ export const sellerStoresTable = pgTable(
   {
     id: text("id").primaryKey(),
     ownerEmail: text("owner_email").notNull(),
+    phone: text("phone").notNull().default(""),
     name: text("name").notNull(),
     slug: text("slug").notNull(),
     location: text("location").notNull(),

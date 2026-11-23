@@ -141,6 +141,7 @@ router.patch("/admin/seller-applications/:id", requireAuth, async (req, res): Pr
         .values({
           id: storeId,
           ownerEmail: email,
+          phone: application.phone.trim(),
           name: application.storeName,
           slug: makeSlug(application.storeName, storeId),
           location: application.address,
@@ -153,6 +154,7 @@ router.patch("/admin/seller-applications/:id", requireAuth, async (req, res): Pr
           target: sellerStoresTable.ownerEmail,
           set: {
             name: application.storeName,
+            phone: application.phone.trim(),
             location: application.address,
             description: application.business,
             instagram: application.instagram,

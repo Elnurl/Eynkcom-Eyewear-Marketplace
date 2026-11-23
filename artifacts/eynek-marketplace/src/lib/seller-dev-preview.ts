@@ -29,6 +29,8 @@ export function getSellerPreviewStore(): SellerStore {
     name: horizon.name,
     slug: horizon.slug,
     location: horizon.location,
+    email: 'eeenu7@gmail.com',
+    phone: '050 123 45 67',
     description: horizon.description,
     logoPath: horizon.logoPath ?? null,
     instagram: horizon.instagram,
