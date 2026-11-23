@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Check, ChevronDown, Clipboard, Package, RefreshCw, Truck } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown, Package, RefreshCw, Truck } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -17,7 +17,7 @@ import { getSellerPreviewOrders, sellerPanelPreviewEnabled } from '@/lib/seller-
 import { LoadingCard, OrderItemRow, QueryError, StatePill, boltSendLink, dateLabel, deliveryNoteWithoutGeo, fulfillmentLabel, mapsLink, money, parseDeliveryGeo, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
 import './order-pages.css';
 
-type Draft = { status: SellerOrderUpdateStatus; deliveryFeeAzN: string; trackingCode: string; collectedAtDelivery: boolean };
+type Draft = { status: SellerOrderUpdateStatus; deliveryFeeAzN: string; collectedAtDelivery: boolean };
 
 function statusesFor(order: SellerOrder): SellerOrderUpdateStatus[] {
   const pickup = order.fulfillmentMethod === 'store_pickup';
@@ -128,7 +128,6 @@ export default function SellerOrdersPage() {
   const draftFor = (order: SellerOrder): Draft => drafts[order.id] ?? {
     status: order.status === 'pending_confirmation' ? SellerOrderUpdateStatus.confirmed : (statusesFor(order)[0] ?? SellerOrderUpdateStatus.confirmed),
     deliveryFeeAzN: order.deliveryFeeAzN === null ? '' : String(order.deliveryFeeAzN),
-    trackingCode: order.trackingCode ?? '',
     collectedAtDelivery: ['payable', 'settled', 'adjusted', 'reversed'].includes(order.settlementStatus),
   };
 
@@ -151,7 +150,6 @@ export default function SellerOrdersPage() {
         : draft.deliveryFeeAzN.trim()
           ? { deliveryFeeAzN: Number(draft.deliveryFeeAzN) }
           : {}),
-      ...(draft.trackingCode.trim() ? { trackingCode: draft.trackingCode.trim() } : {}),
       collectedAtDelivery: status === SellerOrderUpdateStatus.delivered ? draft.collectedAtDelivery : false,
     };
     try {
@@ -248,6 +246,7 @@ export default function SellerOrdersPage() {
                                   ) : (
                                     <p className="seller-courier-bolt-hint">Alıcı xəritədə pin qoyanda «Kuryer çağır» Bolt-u ünvanla açacaq.</p>
                                   )}
+                                  <p className="seller-courier-bolt-hint">«Çatdırılmaya ver» düyməsi alıcıya status göndərir; ayrıca izləmə kodu yazmaq lazım deyil.</p>
                                 </div>
                               );
                             })() : null}
@@ -290,7 +289,6 @@ export default function SellerOrdersPage() {
                                 {forwardStatuses(order).length > 0 && (
                                   <div className="order-next-steps">
                                     {order.paymentMethod === 'pay_on_delivery' && forwardStatuses(order).includes(SellerOrderUpdateStatus.delivered) && order.settlementStatus === 'not_eligible' && <label className="collection-check"><input type="checkbox" checked={draft.collectedAtDelivery} onChange={(event) => setDraft(order.id, { collectedAtDelivery: event.target.checked })} data-testid={`checkbox-collected-at-delivery-${order.id}`} /><span>Nağd ödənişi almışam</span></label>}
-                                    {order.fulfillmentMethod !== 'store_pickup' && ['preparing', 'out_for_delivery'].includes(order.status) && <input aria-label="İzləmə kodu" maxLength={120} value={draft.trackingCode} placeholder="İzləmə kodu" onChange={(event) => setDraft(order.id, { trackingCode: event.target.value })} data-testid={`input-seller-tracking-${order.id}`} />}
                                     {forwardStatuses(order).map((status) => <button className="btn btn-blue" type="button" key={status} disabled={updateOrder.isPending} onClick={() => void save(order, status)} data-testid={`button-advance-seller-order-${order.id}-${status}`}>{nextStepLabel(status, order.fulfillmentMethod)}</button>)}
                                   </div>
                                 )}
@@ -300,7 +298,6 @@ export default function SellerOrdersPage() {
                                 <div><strong>{sellerStatusLabel(order.status, order.fulfillmentMethod)}</strong><span>{dateLabel(order.updatedAt)}</span></div>
                               </div>
                             )}
-                            {draft.trackingCode ? <span className="tracking-badge"><Clipboard size={13} /> {draft.trackingCode}</span> : null}
                           </div>
                         ) : null}
                       </article>

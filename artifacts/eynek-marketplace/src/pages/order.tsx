@@ -306,9 +306,9 @@ export default function OrderPage() {
                     <StatePill status={seller.status} label={statusLabel} />
                   </header>
                   <div className="seller-order-items">{seller.items.map((item) => <OrderItemRow key={item.productId} item={item} />)}</div>
-                  {seller.trackingCode ? (
+                  {seller.trackingCode && seller.trackingCode !== order.data.orderNumber ? (
                     <div className="seller-order-tracking" data-testid={`tracking-code-${seller.id}`}>
-                      <span className="seller-order-tracking-label">İzləmə kodu</span>
+                      <span className="seller-order-tracking-label">Kuryer istinadı</span>
                       <div className="seller-order-tracking-row">
                         <code className="seller-order-tracking-code">{seller.trackingCode}</code>
                         <button
