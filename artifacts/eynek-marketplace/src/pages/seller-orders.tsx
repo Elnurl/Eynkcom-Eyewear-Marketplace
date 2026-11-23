@@ -33,6 +33,7 @@ function statusesFor(order: SellerOrder): SellerOrderUpdateStatus[] {
 
 function forwardStatuses(order: SellerOrder): SellerOrderUpdateStatus[] {
   if (order.orderStatus === 'awaiting_buyer_approval') return [];
+  if (isFulfillmentStopped(order)) return [];
   return statusesFor(order).filter((status) => status !== order.status);
 }
 
@@ -55,6 +56,18 @@ function sellerSeesBuyerContact(status: SellerOrder['status']) {
 
 function isClosedSellerOrder(status: SellerOrder['status']) {
   return ['delivered', 'cancelled', 'declined'].includes(status);
+}
+
+function hasCancelRequest(order: SellerOrder) {
+  return order.status === 'cancellation_requested' || order.orderStatus === 'cancellation_requested';
+}
+
+function isFulfillmentStopped(order: SellerOrder) {
+  return (
+    isClosedSellerOrder(order.status) ||
+    hasCancelRequest(order) ||
+    order.orderStatus === 'cancelled'
+  );
 }
 
 type OrderTab = 'active' | 'closed';
@@ -85,8 +98,14 @@ export default function SellerOrdersPage() {
 
   const sellerOrders = sellerPanelPreviewEnabled ? getSellerPreviewOrders() : (orders.data ?? []);
   const totalEarnings = useMemo(() => sellerOrders.reduce((sum, order) => sum + (order.sellerEarningsAzN ?? 0), 0), [sellerOrders]);
-  const activeOrders = useMemo(() => sellerOrders.filter((order) => !isClosedSellerOrder(order.status)), [sellerOrders]);
-  const closedOrders = useMemo(() => sellerOrders.filter((order) => isClosedSellerOrder(order.status)), [sellerOrders]);
+  const activeOrders = useMemo(
+    () => sellerOrders.filter((order) => !isClosedSellerOrder(order.status) && order.orderStatus !== 'cancelled'),
+    [sellerOrders],
+  );
+  const closedOrders = useMemo(
+    () => sellerOrders.filter((order) => isClosedSellerOrder(order.status) || order.orderStatus === 'cancelled'),
+    [sellerOrders],
+  );
   const openOrders = activeOrders.length;
   const visibleOrders = tab === 'active' ? activeOrders : closedOrders;
 
@@ -195,7 +214,7 @@ export default function SellerOrdersPage() {
                         {open ? (
                           <div className="seller-order-body">
                             <div className="seller-order-meta-lines"><span><strong>Üsul:</strong> {fulfillmentLabel(order.fulfillmentMethod)}</span><span><strong>{order.fulfillmentMethod === 'store_pickup' ? 'Götürmə:' : 'Çatdırılma:'}</strong> {order.deliveryArea}, {order.deliveryAddress}</span><span><strong>Ödəniş:</strong> {paymentStatusLabel(order.paymentStatus, order.fulfillmentMethod)}</span></div>
-                            {order.fulfillmentMethod !== 'store_pickup' ? (() => {
+                            {order.fulfillmentMethod !== 'store_pickup' && !isFulfillmentStopped(order) ? (() => {
                               const drop = parseDeliveryGeo(order.deliveryNote);
                               const noteText = deliveryNoteWithoutGeo(order.deliveryNote);
                               const pickupAddress = store?.location?.trim() || 'Mağaza ünvanı vitrində';
@@ -246,21 +265,21 @@ export default function SellerOrdersPage() {
                             {order.returnRequest && <div className="return-box" data-testid={`status-seller-return-${order.id}`}><strong>Qaytarma sorğusu · {returnStatusLabel(order.returnRequest.status)}</strong><p>{order.returnRequest.reason}</p><small>Alıcı sorğunu EYNƏK-ə göndərib. Mağaza satıcı olaraq qalır; geri ödənişi platforma ayrıca qeyd edir.</small></div>}
                             <div className="order-meta-grid"><div><small>Məhsullar</small><strong>{money(order.productSubtotalAzN)}</strong></div><div><small>Çatdırılma</small><strong>{money(order.deliveryFeeAzN)}</strong></div><div><small>Komissiya</small><strong>{money(order.commissionAzN)}</strong></div><div><small>Qazanc</small><strong>{money(order.sellerEarningsAzN)}</strong></div><div><small>Hesablaşma</small><strong>{settlementStatusLabel(order.settlementStatus)}</strong></div></div>
                             {order.settlementReference ? <small>Hesablaşma istinadı: {order.settlementReference}</small> : null}
-                            {order.status === 'cancellation_requested' ? (
+                            {hasCancelRequest(order) && !isClosedSellerOrder(order.status) ? (
                               <div className="seller-cancel-request" data-testid={`cancellation-request-${order.id}`}>
-                                <p><strong>Alıcı ləğv sorğusu göndərib.</strong> Təsdiqləsən, sifariş ləğv olunacaq və stok geri qayıdacaq.</p>
+                                <p><strong>Alıcı ləğv sorğusu göndərib.</strong> Təsdiqləsən, sifariş ləğv olunacaq və stok geri qayıdacaq. Bu müddətdə hazırlama və kuryer bağlıdır.</p>
                                 <div className="order-next-steps">
                                   <button className="btn btn-blue" type="button" disabled={updateOrder.isPending} onClick={(event) => { event.stopPropagation(); void save(order, SellerOrderUpdateStatus.cancelled); }} data-testid={`button-approve-cancellation-${order.id}`}>Ləğvi təsdiqlə</button>
                                   <button className="btn btn-secondary" type="button" disabled={updateOrder.isPending} onClick={(event) => { event.stopPropagation(); void save(order, SellerOrderUpdateStatus.confirmed); }} data-testid={`button-reject-cancellation-${order.id}`}>Sorğunu rədd et</button>
                                 </div>
                               </div>
-                            ) : order.status === 'pending_confirmation' ? (
+                            ) : order.status === 'pending_confirmation' && !isFulfillmentStopped(order) ? (
                               <div className="order-actions">
                                 <div className="commerce-field"><label htmlFor={`status-${order.id}`}>Qərar</label><select id={`status-${order.id}`} data-testid={`select-seller-order-status-${order.id}`} value={draft.status} onChange={(event) => setDraft(order.id, { status: event.target.value as SellerOrderUpdateStatus })}>{statusesFor(order).map((status) => <option value={status} key={status}>{sellerStatusLabel(status, order.fulfillmentMethod)}</option>)}</select></div>
                                 {order.fulfillmentMethod === 'store_pickup' ? <div className="commerce-field"><label>Çatdırılma haqqı</label><input value="0.00" disabled data-testid={`input-seller-delivery-fee-${order.id}`} /><small style={{ color: '#7c8590' }}>Mağazadan götürmə pulsuzdur</small></div> : <div className="commerce-field"><label htmlFor={`fee-${order.id}`}>Çatdırılma haqqı (AZN)</label><input id={`fee-${order.id}`} type="number" min="0" max="1000" step="0.01" value={draft.deliveryFeeAzN} onChange={(event) => setDraft(order.id, { deliveryFeeAzN: event.target.value })} placeholder="Bolt-dan aldığınız məbləğ" data-testid={`input-seller-delivery-fee-${order.id}`} /><small style={{ color: '#7c8590' }}>Məhsul + bu məbləğ = alıcının ödənişi. Pulsuzdursa 0 yazın.</small></div>}
                                 <button className="btn btn-blue" type="button" onClick={() => void save(order)} disabled={updateOrder.isPending} data-testid={`button-save-seller-order-${order.id}`}>{savedId === order.id ? <Check size={15} /> : <RefreshCw size={15} />} {savedId === order.id ? 'Yadda saxlanıldı' : 'Qərarı saxla'}</button>
                               </div>
-                            ) : !isClosedSellerOrder(order.status) ? (
+                            ) : !isFulfillmentStopped(order) ? (
                               <div className="seller-status-log" data-testid={`log-seller-order-${order.id}`}>
                                 <div><strong>{sellerStatusLabel(order.status, order.fulfillmentMethod)}</strong><span>{dateLabel(order.updatedAt)}</span></div>
                                 {order.orderStatus === 'awaiting_buyer_approval' ? (
