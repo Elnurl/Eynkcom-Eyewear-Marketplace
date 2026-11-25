@@ -608,41 +608,41 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
             </div>
           </div>
           {heroSlides.length > 1 ? (
-            <div className="haven-hero-arrows">
+            <div className="haven-hero-pager" aria-label="Hero slaydları">
               <button
                 type="button"
-                className="haven-hero-arrow haven-hero-arrow--prev"
+                className="haven-hero-arrow"
                 aria-label="Əvvəlki slayd"
                 onClick={goHeroPrev}
                 data-testid="button-hero-prev"
               >
-                <ChevronLeft size={26} strokeWidth={1.75} aria-hidden />
+                <ChevronLeft size={22} strokeWidth={1.75} aria-hidden />
               </button>
+              <div className="haven-hero-pager-dashes" role="tablist" aria-label="Slayd göstəriciləri">
+                {heroSlides.map((slide, index) => (
+                  <button
+                    key={slide.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={index === heroIndex}
+                    aria-label={`Slayd ${index + 1}`}
+                    className={`haven-hero-pager-dash${index === heroIndex ? ' is-active' : ''}`}
+                    onClick={() => setHeroIndex(index)}
+                    data-testid={`button-hero-slide-${index + 1}`}
+                  />
+                ))}
+              </div>
               <button
                 type="button"
-                className="haven-hero-arrow haven-hero-arrow--next"
+                className="haven-hero-arrow"
                 aria-label="Növbəti slayd"
                 onClick={goHeroNext}
                 data-testid="button-hero-next"
               >
-                <ChevronRight size={26} strokeWidth={1.75} aria-hidden />
+                <ChevronRight size={22} strokeWidth={1.75} aria-hidden />
               </button>
             </div>
           ) : null}
-          <div className="haven-hero-pager" role="tablist" aria-label="Hero slaydları">
-            {heroSlides.map((slide, index) => (
-              <button
-                key={slide.id}
-                type="button"
-                role="tab"
-                aria-selected={index === heroIndex}
-                aria-label={`Slayd ${index + 1}`}
-                className={`haven-hero-pager-dash${index === heroIndex ? ' is-active' : ''}`}
-                onClick={() => setHeroIndex(index)}
-                data-testid={`button-hero-slide-${index + 1}`}
-              />
-            ))}
-          </div>
           <div className="haven-shell haven-hero-layout">
             <div className="haven-hero-copy">
               <h1
