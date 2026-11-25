@@ -1,4 +1,4 @@
-import { type CSSProperties, type FormEvent, type ReactNode, useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { signOutAndGo, useAuthSession, useClearQueriesOnUserChange } from '@/lib/auth-client';
 import {
@@ -544,13 +544,71 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
     [],
   );
   const [heroIndex, setHeroIndex] = useState(0);
+  const [heroDragPx, setHeroDragPx] = useState(0);
+  const [heroDragging, setHeroDragging] = useState(false);
+  const heroDragRef = useRef({ startX: 0, width: 0 });
+  const heroDraggingRef = useRef(false);
+  const heroAutoPausedUntil = useRef(0);
+
   useEffect(() => {
     if (heroSlides.length < 2) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) return;
-    const timer = window.setInterval(() => setHeroIndex((index) => (index + 1) % heroSlides.length), HERO_SLIDE_MS);
+    const timer = window.setInterval(() => {
+      if (Date.now() < heroAutoPausedUntil.current) return;
+      setHeroIndex((index) => (index + 1) % heroSlides.length);
+    }, HERO_SLIDE_MS);
     return () => window.clearInterval(timer);
-  }, [heroSlides.length, heroIndex]);
+  }, [heroSlides.length]);
+
+  const heroInteractiveTarget = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) return false;
+    return Boolean(target.closest('button, a, input, textarea, select, [role="tab"]'));
+  };
+
+  const pauseHeroAuto = useCallback(() => {
+    heroAutoPausedUntil.current = Date.now() + HERO_SLIDE_MS * 2;
+  }, []);
+
+  const onHeroPointerDown = useCallback((event: ReactPointerEvent<HTMLElement>) => {
+    if (event.button !== 0 || heroInteractiveTarget(event.target)) return;
+    const width = event.currentTarget.clientWidth || 1;
+    heroDragRef.current = { startX: event.clientX, width };
+    heroDraggingRef.current = true;
+    setHeroDragging(true);
+    setHeroDragPx(0);
+    pauseHeroAuto();
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, [pauseHeroAuto]);
+
+  const onHeroPointerMove = useCallback((event: ReactPointerEvent<HTMLElement>) => {
+    if (!heroDraggingRef.current) return;
+    let dx = event.clientX - heroDragRef.current.startX;
+    const max = heroDragRef.current.width * 0.45;
+    if (dx > max) dx = max;
+    if (dx < -max) dx = -max;
+    setHeroDragPx(dx);
+  }, []);
+
+  const onHeroPointerEnd = useCallback((event: ReactPointerEvent<HTMLElement>) => {
+    if (!heroDraggingRef.current) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    const width = heroDragRef.current.width || 1;
+    const threshold = Math.min(56, width * 0.1);
+    const dx = event.clientX - heroDragRef.current.startX;
+    if (dx < -threshold) {
+      setHeroIndex((index) => (index + 1) % heroSlides.length);
+    } else if (dx > threshold) {
+      setHeroIndex((index) => (index - 1 + heroSlides.length) % heroSlides.length);
+    }
+    setHeroDragPx(0);
+    heroDraggingRef.current = false;
+    setHeroDragging(false);
+    pauseHeroAuto();
+  }, [heroSlides.length, pauseHeroAuto]);
+
   const heroSlide = heroSlides[heroIndex] ?? heroSlides[0];
   const renderProduct = (product: Product) => (
     <ProductCard
@@ -567,10 +625,20 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
     <>
       <main className="haven-home">
         <section
-          className={`haven-hero haven-hero--editorial haven-hero--tone-${heroSlide.tone}`}
-          style={{ '--hero-index': heroIndex, '--hero-count': heroSlides.length } as CSSProperties}
+          className={`haven-hero haven-hero--editorial haven-hero--tone-${heroSlide.tone}${heroDragging ? ' is-dragging' : ''}`}
+          style={
+            {
+              '--hero-index': heroIndex,
+              '--hero-count': heroSlides.length,
+              '--hero-drag-px': `${heroDragPx}px`,
+            } as CSSProperties
+          }
           aria-roledescription="carousel"
           data-testid="hero-carousel"
+          onPointerDown={onHeroPointerDown}
+          onPointerMove={onHeroPointerMove}
+          onPointerUp={onHeroPointerEnd}
+          onPointerCancel={onHeroPointerEnd}
         >
           <div className="haven-hero-slides" aria-hidden="true">
             <div className="haven-hero-slides-track">
@@ -719,20 +787,143 @@ const emptyCatalogFilters = (): CatalogFilters => ({
   vtoOnly: false,
 });
 
+const FILTER_SECTION_KEYS = ['type', 'brand', 'seller', 'shape', 'color', 'gender', 'material', 'price', 'size'] as const;
+type FilterSectionKey = (typeof FILTER_SECTION_KEYS)[number];
+
+function FilterAccordionSection({
+  id,
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`filter-group filter-accordion${open ? ' is-open' : ''}`}>
+      <button
+        type="button"
+        className="filter-title"
+        aria-expanded={open}
+        aria-controls={`filter-section-${id}`}
+        onClick={onToggle}
+        data-testid={`button-filter-section-${id}`}
+      >
+        <span>{title}</span>
+        <ChevronDown size={14} className="filter-chevron" aria-hidden />
+      </button>
+      {open ? (
+        <div className="filter-body" id={`filter-section-${id}`}>
+          {children}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function Filters({ filters, setFilters, open, stores, priceCeiling, brands, colors }: { filters: CatalogFilters; setFilters: (filters: CatalogFilters) => void; open: boolean; stores: Vendor[]; priceCeiling: number; brands: string[]; colors: string[] }) {
+  const [openSections, setOpenSections] = useState<Record<FilterSectionKey, boolean>>(() =>
+    Object.fromEntries(FILTER_SECTION_KEYS.map((key) => [key, true])) as Record<FilterSectionKey, boolean>,
+  );
+  const toggleSection = (key: FilterSectionKey) => setOpenSections((current) => ({ ...current, [key]: !current[key] }));
   const update = (key: keyof CatalogFilters, value: string | number | boolean) => setFilters({ ...filters, [key]: value });
   return (
     <aside className={`filter-panel ${open ? 'open' : ''}`}>
-      <div className="filter-group"><div className="filter-title">Kateqoriya <ChevronDown size={14} /></div>{['Optik çərçivə', 'Gün eynəyi'].map((item) => <label className="check-row" key={item}><input type="radio" name="type" checked={filters.type === item} onChange={() => update('type', filters.type === item ? '' : item)} />{item}</label>)}</div>
-      {brands.length > 0 && <div className="filter-group"><div className="filter-title">Brend <ChevronDown size={14} /></div>{brands.map((item) => <label className="check-row" key={item}><input type="radio" name="brand" checked={filters.brand === item} onChange={() => update('brand', filters.brand === item ? '' : item)} />{item}</label>)}</div>}
-      <div className="filter-group"><div className="filter-title">Satıcı <ChevronDown size={14} /></div>{stores.map((vendor) => <label className="check-row" key={vendor.slug}><input type="radio" name="seller" checked={filters.seller === vendor.slug} onChange={() => update('seller', filters.seller === vendor.slug ? '' : vendor.slug)} />{vendor.name}</label>)}</div>
-      <div className="filter-group"><div className="filter-title">Forma <ChevronDown size={14} /></div>{shapes.map((item) => <label className="check-row" key={item}><input type="radio" name="shape" checked={filters.shape === item} onChange={() => update('shape', filters.shape === item ? '' : item)} />{item}</label>)}</div>
-      {colors.length > 0 && <div className="filter-group"><div className="filter-title">Rəng <ChevronDown size={14} /></div>{colors.map((item) => <label className="check-row" key={item}><input type="radio" name="color" checked={filters.color === item} onChange={() => update('color', filters.color === item ? '' : item)} />{item}</label>)}</div>}
-      <div className="filter-group"><div className="filter-title">Cins <ChevronDown size={14} /></div>{genders.map((item) => <label className="check-row" key={item}><input type="radio" name="gender" checked={filters.gender === item} onChange={() => update('gender', filters.gender === item ? '' : item)} />{item}</label>)}</div>
-      <div className="filter-group"><div className="filter-title">Material <ChevronDown size={14} /></div>{materials.map((item) => <label className="check-row" key={item}><input type="radio" name="material" checked={filters.material === item} onChange={() => update('material', filters.material === item ? '' : item)} />{item}</label>)}</div>
-      <div className="filter-group"><div className="filter-title">Maksimum qiymət</div><input type="range" min="0" max={priceCeiling} step="10" value={filters.maxPrice || priceCeiling} onChange={(event) => { const value = Number(event.target.value); update('maxPrice', value >= priceCeiling ? 0 : value); }} /><div className="range-labels"><span>0 AZN</span><span>{filters.maxPrice ? `${filters.maxPrice} AZN` : 'Limitsiz'}</span></div></div>
-      <div className="filter-group"><div className="filter-title">Ölçü <ChevronDown size={14} /></div>{['S', 'M', 'L'].map((item) => <label className="check-row" key={item}><input type="radio" name="size" checked={filters.size === item} onChange={() => update('size', filters.size === item ? '' : item)} />{item} çərçivə</label>)}</div>
-      <div className="filter-group"><label className="check-row"><input type="checkbox" checked={filters.vtoOnly} onChange={(event) => update('vtoOnly', event.target.checked)} />{az.collection.vtoFilter}</label></div>
+      <FilterAccordionSection id="type" title="Kateqoriya" open={openSections.type} onToggle={() => toggleSection('type')}>
+        {['Optik çərçivə', 'Gün eynəyi'].map((item) => (
+          <label className="check-row" key={item}>
+            <input type="radio" name="type" checked={filters.type === item} onChange={() => update('type', filters.type === item ? '' : item)} />
+            {item}
+          </label>
+        ))}
+      </FilterAccordionSection>
+      {brands.length > 0 ? (
+        <FilterAccordionSection id="brand" title="Brend" open={openSections.brand} onToggle={() => toggleSection('brand')}>
+          {brands.map((item) => (
+            <label className="check-row" key={item}>
+              <input type="radio" name="brand" checked={filters.brand === item} onChange={() => update('brand', filters.brand === item ? '' : item)} />
+              {item}
+            </label>
+          ))}
+        </FilterAccordionSection>
+      ) : null}
+      <FilterAccordionSection id="seller" title="Satıcı" open={openSections.seller} onToggle={() => toggleSection('seller')}>
+        {stores.map((vendor) => (
+          <label className="check-row" key={vendor.slug}>
+            <input type="radio" name="seller" checked={filters.seller === vendor.slug} onChange={() => update('seller', filters.seller === vendor.slug ? '' : vendor.slug)} />
+            {vendor.name}
+          </label>
+        ))}
+      </FilterAccordionSection>
+      <FilterAccordionSection id="shape" title="Forma" open={openSections.shape} onToggle={() => toggleSection('shape')}>
+        {shapes.map((item) => (
+          <label className="check-row" key={item}>
+            <input type="radio" name="shape" checked={filters.shape === item} onChange={() => update('shape', filters.shape === item ? '' : item)} />
+            {item}
+          </label>
+        ))}
+      </FilterAccordionSection>
+      {colors.length > 0 ? (
+        <FilterAccordionSection id="color" title="Rəng" open={openSections.color} onToggle={() => toggleSection('color')}>
+          {colors.map((item) => (
+            <label className="check-row" key={item}>
+              <input type="radio" name="color" checked={filters.color === item} onChange={() => update('color', filters.color === item ? '' : item)} />
+              {item}
+            </label>
+          ))}
+        </FilterAccordionSection>
+      ) : null}
+      <FilterAccordionSection id="gender" title="Cins" open={openSections.gender} onToggle={() => toggleSection('gender')}>
+        {genders.map((item) => (
+          <label className="check-row" key={item}>
+            <input type="radio" name="gender" checked={filters.gender === item} onChange={() => update('gender', filters.gender === item ? '' : item)} />
+            {item}
+          </label>
+        ))}
+      </FilterAccordionSection>
+      <FilterAccordionSection id="material" title="Material" open={openSections.material} onToggle={() => toggleSection('material')}>
+        {materials.map((item) => (
+          <label className="check-row" key={item}>
+            <input type="radio" name="material" checked={filters.material === item} onChange={() => update('material', filters.material === item ? '' : item)} />
+            {item}
+          </label>
+        ))}
+      </FilterAccordionSection>
+      <FilterAccordionSection id="price" title="Maksimum qiymət" open={openSections.price} onToggle={() => toggleSection('price')}>
+        <input
+          type="range"
+          min="0"
+          max={priceCeiling}
+          step="10"
+          value={filters.maxPrice || priceCeiling}
+          onChange={(event) => {
+            const value = Number(event.target.value);
+            update('maxPrice', value >= priceCeiling ? 0 : value);
+          }}
+        />
+        <div className="range-labels">
+          <span>0 AZN</span>
+          <span>{filters.maxPrice ? `${filters.maxPrice} AZN` : 'Limitsiz'}</span>
+        </div>
+      </FilterAccordionSection>
+      <FilterAccordionSection id="size" title="Ölçü" open={openSections.size} onToggle={() => toggleSection('size')}>
+        {['S', 'M', 'L'].map((item) => (
+          <label className="check-row" key={item}>
+            <input type="radio" name="size" checked={filters.size === item} onChange={() => update('size', filters.size === item ? '' : item)} />
+            {item} çərçivə
+          </label>
+        ))}
+      </FilterAccordionSection>
+      <div className="filter-group">
+        <label className="check-row">
+          <input type="checkbox" checked={filters.vtoOnly} onChange={(event) => update('vtoOnly', event.target.checked)} />
+          {az.collection.vtoFilter}
+        </label>
+      </div>
     </aside>
   );
 }

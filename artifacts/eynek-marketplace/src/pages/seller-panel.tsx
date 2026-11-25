@@ -1,5 +1,5 @@
 import { useState, useRef, FormEvent, useMemo, ChangeEvent, useEffect } from 'react';
-import { useLocation, Link } from 'wouter';
+import { useLocation, Link, useSearch } from 'wouter';
 import { discardUpload } from '@workspace/api-client-react';
 import { authClient, authErrorMessage, useAuthSession } from '@/lib/auth-client';
 import { 
@@ -69,7 +69,16 @@ export default function SellerPanel() {
     isPreview,
   } = useSellerWorkspace();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'store'>('products');
+  const search = useSearch();
+  const tabFromUrl = useMemo(() => {
+    const tab = new URLSearchParams(search).get('tab');
+    return tab === 'overview' || tab === 'products' || tab === 'store' ? tab : null;
+  }, [search]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'store'>(tabFromUrl ?? 'products');
+
+  useEffect(() => {
+    if (tabFromUrl) setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
   const [storeForm, setStoreForm] = useState({ name: '', location: '', email: '', phone: '', description: '', instagram: '', website: '' });
   const [themeForm, setThemeForm] = useState<VitrineThemeForm>(DEFAULT_VITRINE_THEME);
   const [storeSaveMessage, setStoreSaveMessage] = useState('');
