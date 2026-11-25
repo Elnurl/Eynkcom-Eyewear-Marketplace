@@ -1,4 +1,4 @@
-import { type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode, useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { type CSSProperties, type FormEvent, type ReactNode, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { signOutAndGo, useAuthSession, useClearQueriesOnUserChange } from '@/lib/auth-client';
 import {
@@ -544,10 +544,6 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
     [],
   );
   const [heroIndex, setHeroIndex] = useState(0);
-  const [heroDragPx, setHeroDragPx] = useState(0);
-  const [heroDragging, setHeroDragging] = useState(false);
-  const heroDragRef = useRef({ startX: 0, width: 0 });
-  const heroDraggingRef = useRef(false);
   const heroAutoPausedUntil = useRef(0);
 
   useEffect(() => {
@@ -561,52 +557,18 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
     return () => window.clearInterval(timer);
   }, [heroSlides.length]);
 
-  const heroInteractiveTarget = (target: EventTarget | null) => {
-    if (!(target instanceof HTMLElement)) return false;
-    return Boolean(target.closest('button, a, input, textarea, select, [role="tab"]'));
-  };
-
   const pauseHeroAuto = useCallback(() => {
     heroAutoPausedUntil.current = Date.now() + HERO_SLIDE_MS * 2;
   }, []);
 
-  const onHeroPointerDown = useCallback((event: ReactPointerEvent<HTMLElement>) => {
-    if (event.button !== 0 || heroInteractiveTarget(event.target)) return;
-    const width = event.currentTarget.clientWidth || 1;
-    heroDragRef.current = { startX: event.clientX, width };
-    heroDraggingRef.current = true;
-    setHeroDragging(true);
-    setHeroDragPx(0);
+  const goHeroPrev = useCallback(() => {
     pauseHeroAuto();
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }, [pauseHeroAuto]);
+    setHeroIndex((index) => (index - 1 + heroSlides.length) % heroSlides.length);
+  }, [heroSlides.length, pauseHeroAuto]);
 
-  const onHeroPointerMove = useCallback((event: ReactPointerEvent<HTMLElement>) => {
-    if (!heroDraggingRef.current) return;
-    let dx = event.clientX - heroDragRef.current.startX;
-    const max = heroDragRef.current.width * 0.45;
-    if (dx > max) dx = max;
-    if (dx < -max) dx = -max;
-    setHeroDragPx(dx);
-  }, []);
-
-  const onHeroPointerEnd = useCallback((event: ReactPointerEvent<HTMLElement>) => {
-    if (!heroDraggingRef.current) return;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-    const width = heroDragRef.current.width || 1;
-    const threshold = Math.min(56, width * 0.1);
-    const dx = event.clientX - heroDragRef.current.startX;
-    if (dx < -threshold) {
-      setHeroIndex((index) => (index + 1) % heroSlides.length);
-    } else if (dx > threshold) {
-      setHeroIndex((index) => (index - 1 + heroSlides.length) % heroSlides.length);
-    }
-    setHeroDragPx(0);
-    heroDraggingRef.current = false;
-    setHeroDragging(false);
+  const goHeroNext = useCallback(() => {
     pauseHeroAuto();
+    setHeroIndex((index) => (index + 1) % heroSlides.length);
   }, [heroSlides.length, pauseHeroAuto]);
 
   const heroSlide = heroSlides[heroIndex] ?? heroSlides[0];
@@ -625,20 +587,10 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
     <>
       <main className="haven-home">
         <section
-          className={`haven-hero haven-hero--editorial haven-hero--tone-${heroSlide.tone}${heroDragging ? ' is-dragging' : ''}`}
-          style={
-            {
-              '--hero-index': heroIndex,
-              '--hero-count': heroSlides.length,
-              '--hero-drag-px': `${heroDragPx}px`,
-            } as CSSProperties
-          }
+          className={`haven-hero haven-hero--editorial haven-hero--tone-${heroSlide.tone}`}
+          style={{ '--hero-index': heroIndex, '--hero-count': heroSlides.length } as CSSProperties}
           aria-roledescription="carousel"
           data-testid="hero-carousel"
-          onPointerDown={onHeroPointerDown}
-          onPointerMove={onHeroPointerMove}
-          onPointerUp={onHeroPointerEnd}
-          onPointerCancel={onHeroPointerEnd}
         >
           <div className="haven-hero-slides" aria-hidden="true">
             <div className="haven-hero-slides-track">
@@ -655,6 +607,28 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
               ))}
             </div>
           </div>
+          {heroSlides.length > 1 ? (
+            <div className="haven-hero-arrows">
+              <button
+                type="button"
+                className="haven-hero-arrow haven-hero-arrow--prev"
+                aria-label="Əvvəlki slayd"
+                onClick={goHeroPrev}
+                data-testid="button-hero-prev"
+              >
+                <ChevronLeft size={26} strokeWidth={1.75} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="haven-hero-arrow haven-hero-arrow--next"
+                aria-label="Növbəti slayd"
+                onClick={goHeroNext}
+                data-testid="button-hero-next"
+              >
+                <ChevronRight size={26} strokeWidth={1.75} aria-hidden />
+              </button>
+            </div>
+          ) : null}
           <div className="haven-hero-pager" role="tablist" aria-label="Hero slaydları">
             {heroSlides.map((slide, index) => (
               <button
