@@ -519,6 +519,8 @@ function HavenCard({ product, liked, onFavorite, onTryOn, onAdd, editorPick }: {
 
 const HERO_SLIDE_MS = 5500;
 
+const isProductLiked = (likedIds: Set<number | string>, id: number | string) => likedIds.has(id) || likedIds.has(String(id));
+
 function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: CommonProps & { onAdd: (product: Product) => void }) {
   const heroSlides = useMemo(
     () => [
@@ -576,7 +578,7 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
     <ProductCard
       key={product.id}
       product={product}
-      liked={likedIds.has(product.id)}
+      liked={isProductLiked(likedIds, product.id)}
       onFavorite={onFavorite}
       onQuickView={() => {}}
       onTryOn={onTryOn}
@@ -961,7 +963,7 @@ function Collection({ products, stores, likedIds, onFavorite, onQuickView, onTry
       <main className="collection-page"><div className="container">
         <div className="collection-intro"><div><div className="eyebrow">Shop</div><h1>Eynəyini<br />burada tap.</h1></div><p>Təsdiqlənmiş optik mağazaların məhsullarını marka, model, forma, satıcı və ölçü ilə axtar.</p></div>
         <div className="collection-tools"><div className="search-box"><Search size={16} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} onFocus={() => setFocused(true)} placeholder="Eynək, marka və ya model axtar..." data-testid="input-search-products" />{focused && <div className="search-suggestions"><h4>Tez axtarış</h4><div className="suggestion-row"><button onClick={() => suggestion('Gün eynəyi')} data-testid="button-suggestion-sunglasses">Gün eynəyi</button><button onClick={() => suggestion('Aviator')} data-testid="button-suggestion-aviator">Aviator</button><button onClick={() => suggestion('Optika')} data-testid="button-suggestion-optika">Optika</button></div><h4 style={{ marginTop: 16 }}>Formalar</h4><div className="suggestion-row">{shapes.slice(0, 4).map((item) => <button key={item} onClick={() => suggestion(item)}>{item}</button>)}</div></div>}</div><button className="btn btn-secondary filter-toggle" onClick={() => setFilterOpen(!filterOpen)} data-testid="button-toggle-filters"><SlidersHorizontal size={14} /> Filtrlər</button><select className="select-control" value={sort} onChange={(event) => setSort(event.target.value)} aria-label="Sıralama" data-testid="select-sort"><option>Tövsiyə olunan</option><option>Qiymət: aşağıdan yuxarı</option><option>Qiymət: yuxarıdan aşağı</option><option>Ada görə</option></select></div>
-        <div className="catalog-layout"><Filters filters={filters} setFilters={setFilters} open={filterOpen} stores={stores} priceCeiling={priceCeiling} brands={brands} colors={colorOptions} /><section><div className="catalog-head"><span><strong>{filtered.length}</strong> {az.collection.results}</span><button className="text-link" onClick={clearFilters} data-testid="button-clear-filters">{az.collection.clearFilters} <X size={12} /></button></div>{activeChips.length > 0 && <div className="mp-filter-chips">{activeChips.map((chip) => <span key={chip.key} className="mp-filter-chip">{chip.label}<button type="button" aria-label={`${chip.label} filtrini sil`} onClick={() => removeChip(chip.key)}><X size={12} /></button></span>)}</div>}<div className="product-grid">{filtered.length ? filtered.map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />) : <div className="empty-state"><Search size={22} /><h3>Bu axtarışa uyğun eynək tapılmadı.</h3><p>Axtarışı və ya filtrləri bir az yumşalt.</p><button className="btn btn-secondary" onClick={clearFilters} data-testid="button-empty-reset">Filtrləri sıfırla</button></div>}</div></section></div>
+        <div className="catalog-layout"><Filters filters={filters} setFilters={setFilters} open={filterOpen} stores={stores} priceCeiling={priceCeiling} brands={brands} colors={colorOptions} /><section><div className="catalog-head"><span><strong>{filtered.length}</strong> {az.collection.results}</span><button className="text-link" onClick={clearFilters} data-testid="button-clear-filters">{az.collection.clearFilters} <X size={12} /></button></div>{activeChips.length > 0 && <div className="mp-filter-chips">{activeChips.map((chip) => <span key={chip.key} className="mp-filter-chip">{chip.label}<button type="button" aria-label={`${chip.label} filtrini sil`} onClick={() => removeChip(chip.key)}><X size={12} /></button></span>)}</div>}<div className="product-grid">{filtered.length ? filtered.map((product) => <ProductCard key={product.id} product={product} liked={isProductLiked(likedIds, product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />) : <div className="empty-state"><Search size={22} /><h3>Bu axtarışa uyğun eynək tapılmadı.</h3><p>Axtarışı və ya filtrləri bir az yumşalt.</p><button className="btn btn-secondary" onClick={clearFilters} data-testid="button-empty-reset">Filtrləri sıfırla</button></div>}</div></section></div>
       </div></main><Footer />
     </>
   );
@@ -973,7 +975,7 @@ function StoresPage({ stores }: { stores: Vendor[] }) {
 
 function BrandsPage({ products, likedIds, onFavorite, onQuickView, onTryOn, onAdd }: CommonProps) {
   const brands = [...new Set(products.map((product) => product.brand.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  return <><main className="directory-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Brend kəşfi</div><h1>Brendlər.</h1></div><p>Mağazaların təsdiqlənmiş kataloqlarında olan brendlər və modellər.</p></div>{brands.length ? brands.map((brand) => <section className="section" style={{ paddingBottom: 0 }} key={brand}><div className="section-head"><div><div className="eyebrow">Brend</div><h2 className="section-title">{brand}</h2></div></div><div className="product-grid">{products.filter((product) => product.brand.trim() === brand).map((product) => <ProductCard key={product.id} product={product} liked={likedIds.has(product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />)}</div></section>) : <div className="empty-state"><Info size={20} /><h3>Hələ məhsul brendləri yoxdur.</h3><p>Satıcılar məhsullarını təsdiq üçün göndərdikdən sonra brendlər burada görünəcək.</p><Link href="/collection" className="btn btn-secondary">Məhsullara bax <ArrowRight size={14} /></Link></div>}</div></main><Footer /></>;
+  return <><main className="directory-page"><div className="container"><div className="directory-header"><div><div className="eyebrow">Brend kəşfi</div><h1>Brendlər.</h1></div><p>Mağazaların təsdiqlənmiş kataloqlarında olan brendlər və modellər.</p></div>{brands.length ? brands.map((brand) => <section className="section" style={{ paddingBottom: 0 }} key={brand}><div className="section-head"><div><div className="eyebrow">Brend</div><h2 className="section-title">{brand}</h2></div></div><div className="product-grid">{products.filter((product) => product.brand.trim() === brand).map((product) => <ProductCard key={product.id} product={product} liked={isProductLiked(likedIds, product.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />)}</div></section>) : <div className="empty-state"><Info size={20} /><h3>Hələ məhsul brendləri yoxdur.</h3><p>Satıcılar məhsullarını təsdiq üçün göndərdikdən sonra brendlər burada görünəcək.</p><Link href="/collection" className="btn btn-secondary">Məhsullara bax <ArrowRight size={14} /></Link></div>}</div></main><Footer /></>;
 }
 
 function VendorPage() {
@@ -1096,7 +1098,7 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
               <div className="detail-option"><div className="detail-option-label">{product.brand ? 'BREND · RƏNG' : 'RƏNG'}</div><div className="detail-color-row"><span className="detail-color-swatch" style={{ background: swatchColor }} aria-hidden="true" /><span>{product.brand ? `${product.brand} · ` : ''}{product.color}</span></div></div>
             </div>
             <div className="detail-quantity"><div><div className="detail-option-label">SAY</div><small>{product.previewOnly ? 'Bu model satış üçün deyil' : product.isAvailable ? `${product.stock} ədəd stokda` : 'Hazırda stokda yoxdur'}</small></div><div className="quantity-stepper"><button disabled={product.previewOnly || !product.isAvailable || quantity <= 1} onClick={() => setQuantity((count) => Math.max(1, count - 1))} aria-label="Sayı azalt">−</button><span aria-live="polite">{quantity}</span><button disabled={product.previewOnly || !product.isAvailable || quantity >= Math.min(10, product.stock)} onClick={() => setQuantity((count) => Math.min(10, product.stock, count + 1))} aria-label="Sayı artır">+</button></div></div>
-            <div className="detail-purchase"><button className={`detail-favorite ${likedIds.has(product.id) ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label="Seçilmişlərə əlavə et" data-testid="button-detail-favorite"><Heart size={19} fill={likedIds.has(product.id) ? 'currentColor' : 'none'} /></button><button className="detail-add" disabled={product.previewOnly || !product.isAvailable} onClick={() => onAdd(product, `${quantity} ədəd ${product.name} səbətə əlavə edildi`, quantity)} data-testid="button-add-cart-detail"><ShoppingBag size={17} /> {product.previewOnly ? 'Nümunə model' : product.isAvailable ? `Səbətə əlavə et · ${money(product.price * quantity)}` : 'Stokda yoxdur'}</button><button className="detail-buy-now" disabled={product.previewOnly || !product.isAvailable} onClick={() => onBuyNow(product, quantity)} data-testid="button-buy-now-detail">İndi sifariş et <ArrowRight size={16} /></button></div>
+            <div className="detail-purchase"><button className={`detail-favorite ${isProductLiked(likedIds, product.id) ? 'liked' : ''}`} onClick={() => onFavorite(product.id)} aria-label="Seçilmişlərə əlavə et" data-testid="button-detail-favorite"><Heart size={19} fill={isProductLiked(likedIds, product.id) ? 'currentColor' : 'none'} /></button><button className="detail-add" disabled={product.previewOnly || !product.isAvailable} onClick={() => onAdd(product, `${quantity} ədəd ${product.name} səbətə əlavə edildi`, quantity)} data-testid="button-add-cart-detail"><ShoppingBag size={17} /> {product.previewOnly ? 'Nümunə model' : product.isAvailable ? `Səbətə əlavə et · ${money(product.price * quantity)}` : 'Stokda yoxdur'}</button><button className="detail-buy-now" disabled={product.previewOnly || !product.isAvailable} onClick={() => onBuyNow(product, quantity)} data-testid="button-buy-now-detail">İndi sifariş et <ArrowRight size={16} /></button></div>
             <p className="detail-disclaimer">{az.payment.productDisclaimer}</p>
           </div>
         </div>
@@ -1122,7 +1124,7 @@ function ProductDetail({ products, stores, onAdd, onBuyNow, onTryOn, onQuickView
             <p>{az.product.reviewsEmptyCta}</p>
           </div>
         </section>
-        <section className="detail-related"><div className="section-head"><h2>Digər modellər</h2><Link href="/collection" className="home-count">Hamısına bax <ArrowRight size={14} /></Link></div><div className="product-grid">{related.map((item) => <ProductCard key={item.id} product={item} liked={likedIds.has(item.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />)}</div></section>
+        <section className="detail-related"><div className="section-head"><h2>Digər modellər</h2><Link href="/collection" className="home-count">Hamısına bax <ArrowRight size={14} /></Link></div><div className="product-grid">{related.map((item) => <ProductCard key={item.id} product={item} liked={isProductLiked(likedIds, item.id)} onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />)}</div></section>
       </div>
     </main>
     <Footer />
@@ -1189,7 +1191,7 @@ function SellerPage() {
 }
 
 function WishlistPage({ products, likedIds, onFavorite, onQuickView, onTryOn, onAdd }: CommonProps) {
-  const items = products.filter((product) => likedIds.has(product.id));
+  const items = products.filter((product) => isProductLiked(likedIds, product.id));
   return <><main className="collection-page"><div className="container"><div className="collection-intro"><div><div className="eyebrow">Seçilmişlər</div><h1>Saxladığınız<br />modellər.</h1></div></div><div className="product-grid wishlist-grid">{items.length ? items.map((product) => <ProductCard key={product.id} product={product} liked onFavorite={onFavorite} onQuickView={onQuickView} onTryOn={onTryOn} onAdd={onAdd} />) : <div className="empty-state"><Heart size={22} /><h3>Hələ seçilmiş model yoxdur.</h3><Link href="/collection" className="btn btn-secondary" data-testid="link-empty-wishlist">Eynəklərə bax</Link></div>}</div></div></main><Footer /></>;
 }
 
@@ -1595,14 +1597,16 @@ function Storefront() {
   const showToast = (message: string) => { setToast(message); window.setTimeout(() => setToast(''), 2300); };
   const toggleFavorite = (id: number | string) => { setLikedIds((current) => { const next = new Set(current); if (next.has(id) || next.has(String(id))) { next.delete(id); next.delete(String(id)); showToast('Seçilmişlərdən çıxarıldı'); } else { next.add(id); showToast('Seçilmişlərə əlavə edildi'); } return next; }); };
   const setFavorite = (id: number | string, liked: boolean) => {
+    const key = String(id);
+    const canonical = productsById.get(key)?.id ?? id;
     setLikedIds((current) => {
       const next = new Set(current);
-      const key = String(id);
-      const has = next.has(id) || next.has(key);
+      const has = next.has(canonical) || next.has(id) || next.has(key);
       if (liked && !has) {
-        next.add(id);
+        next.add(canonical);
         showToast('Seçilmişlərə əlavə edildi');
       } else if (!liked && has) {
+        next.delete(canonical);
         next.delete(id);
         next.delete(key);
         showToast('Seçilmişlərdən çıxarıldı');
