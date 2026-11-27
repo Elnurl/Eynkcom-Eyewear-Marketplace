@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buyerNotice, normalizeAzMobile, noticeForSellerStatus } from "../src/lib/buyer-notices.ts";
+import {
+  buyerNotice,
+  normalizeAzMobile,
+  noticeForSellerStatus,
+  shouldNotifyWhenOrderCreated,
+} from "../src/lib/buyer-notices.ts";
 
 test("Azerbaijan mobiles become Sinch numbers", () => {
   assert.equal(normalizeAzMobile("050 123 45 67"), "994501234567");
@@ -32,5 +37,20 @@ test("a new order tells the buyer to wait for store confirmation", () => {
   const copy = buyerNotice("EYN-AB12", { kind: "placed" });
   assert.match(copy.sms, /EYN-AB12/);
   assert.match(copy.sms, /təsdiqini gözləyir/);
-  assert.match(copy.intro, /Ödəniş/);
+  assert.match(copy.intro, /təsdiqini gözləyirsən/);
+});
+
+test("placement notifications wait for card courier checkout without prescription", () => {
+  assert.equal(
+    shouldNotifyWhenOrderCreated({ fulfillmentMethod: "courier", paymentMethod: "card", hasPrescription: false }),
+    false,
+  );
+  assert.equal(
+    shouldNotifyWhenOrderCreated({ fulfillmentMethod: "courier", paymentMethod: "card", hasPrescription: true }),
+    true,
+  );
+  assert.equal(
+    shouldNotifyWhenOrderCreated({ fulfillmentMethod: "store_pickup", paymentMethod: "pay_on_delivery", hasPrescription: false }),
+    true,
+  );
 });

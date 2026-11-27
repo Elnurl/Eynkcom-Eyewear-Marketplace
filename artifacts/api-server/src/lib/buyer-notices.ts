@@ -50,6 +50,18 @@ function paymentDetailRow(
 }
 
 /** Azerbaijan mobile numbers as Sinch expects them: 994XXXXXXXXX. */
+/** Kuryer + online ödəniş (resept yox) → ödənişdən sonra bildiriş. Resept və ya mağazadan götürmə → sifariş anında. */
+export function shouldNotifyWhenOrderCreated(input: {
+  fulfillmentMethod: "courier" | "store_pickup";
+  paymentMethod: string;
+  hasPrescription: boolean;
+}): boolean {
+  if (input.hasPrescription) return true;
+  if (input.fulfillmentMethod === "store_pickup") return true;
+  if (input.paymentMethod === "card") return false;
+  return true;
+}
+
 export function normalizeAzMobile(raw: string): string | null {
   const digits = raw.replace(/\D/g, "");
   let local = digits;
@@ -85,10 +97,10 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): BuyerNoti
       return {
         subject: `EYNƏK — sifariş ${orderNumber} qəbul olundu`,
         sms: `EYNƏK: Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiqini gözləyir (30 dəq).`,
-        intro: `Sifariş ${orderNumber} qəbul olundu. Ödəniş mağaza stoku təsdiqləyənə qədər açılmır.`,
+        intro: `Sifariş ${orderNumber} qəbul olundu. Mağaza təsdiqini gözləyirsən.`,
         badge: "Sifariş qəbul olundu",
         headline: "Sifarişin qəbul olundu.",
-        body: "Mağaza stoku təsdiqləyəndən sonra 15 dəqiqə ərzində ödəniş linki aktiv olacaq. Vəziyyəti saytdan və e-poçtdan izləyə bilərsən.",
+        body: "Mağaza sifarişi (və varsa optik resepti) yoxlayır. Vəziyyəti saytdan və e-poçtdan izləyə bilərsən.",
         details: orderDetails(orderNumber, "Mağazanın təsdiqini gözləyir"),
         accent: "success",
       };

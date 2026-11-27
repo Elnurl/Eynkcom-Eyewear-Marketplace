@@ -54,7 +54,7 @@ import {
 } from "../lib/marketplaceOrders";
 import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 import { notifyBuyer } from "../lib/buyer-notifications";
-import { noticeForSellerStatus, type BuyerNotice } from "../lib/buyer-notices";
+import { noticeForSellerStatus, shouldNotifyWhenOrderCreated, type BuyerNotice } from "../lib/buyer-notices";
 import { notifyMarketplaceStaff } from "../lib/seller-notifications";
 import {
   PAYMENT_WINDOW_MS,
@@ -565,20 +565,27 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
     res.status(500).json({ error: "Sifariş yaradıldı, lakin məlumatını yükləmək alınmadı." });
     return;
   }
-  notifyBuyer({
-    email: saved.customerEmail,
-    phone: saved.customerPhone,
-    orderNumber: saved.orderNumber,
-    orderId: saved.id,
-    accessToken: body.data.guestAccessToken,
-    notice: { kind: "placed" },
+  const notifyOnCreate = shouldNotifyWhenOrderCreated({
+    fulfillmentMethod,
+    paymentMethod,
+    hasPrescription: Boolean(prescriptionPath),
   });
-  notifyMarketplaceStaff({
-    sellerIds: await sellerIdsForOrder(saved.id),
-    orderNumber: saved.orderNumber,
-    customerName: saved.customerName,
-    noticeKind: "new_order",
-  });
+  if (notifyOnCreate) {
+    notifyBuyer({
+      email: saved.customerEmail,
+      phone: saved.customerPhone,
+      orderNumber: saved.orderNumber,
+      orderId: saved.id,
+      accessToken: body.data.guestAccessToken,
+      notice: { kind: "placed" },
+    });
+    notifyMarketplaceStaff({
+      sellerIds: await sellerIdsForOrder(saved.id),
+      orderNumber: saved.orderNumber,
+      customerName: saved.customerName,
+      noticeKind: "new_order",
+    });
+  }
   res.status(201).json(CreateGuestOrderResponse.parse(saved));
 });
 
