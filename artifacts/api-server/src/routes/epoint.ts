@@ -5,6 +5,7 @@ import { db, marketplaceOrderEventsTable, marketplaceOrdersTable, marketplaceSel
 import { tokenMatches } from "../lib/marketplaceOrders";
 import { notifyBuyer } from "../lib/buyer-notifications";
 import { buildCardCheckout, decodeEpointData, epointReady, epointSignatureMatches } from "../lib/epoint";
+import { parsePrescriptionPath } from "../lib/prescription";
 import { logger } from "../lib/logger";
 import { notifyMarketplaceStaff } from "../lib/seller-notifications";
 import { optionalAuth } from "../middlewares/requireAuth";
@@ -52,8 +53,22 @@ router.post("/orders/:orderId/epoint", optionalAuth, async (req, res): Promise<v
     res.status(409).json({ error: "Bu sifariş artıq ödənilib." });
     return;
   }
-  if (order.status !== "awaiting_payment" && order.paymentStatus !== "pending_payment") {
-    res.status(400).json({ error: "Ödəniş hələ aktiv deyil. Mağaza təsdiqini gözləyin." });
+  const prescriptionOnOrder = Boolean(parsePrescriptionPath(order.deliveryNote));
+  const checkoutImmediatePay =
+    !prescriptionOnOrder &&
+    order.status === "pending_confirmation" &&
+    order.paymentMethod === "card" &&
+    order.paymentStatus === "unpaid";
+  if (
+    order.status !== "awaiting_payment" &&
+    order.paymentStatus !== "pending_payment" &&
+    !checkoutImmediatePay
+  ) {
+    res.status(400).json({
+      error: prescriptionOnOrder
+        ? "Resept təsdiqlənəndən sonra ödəniş açılacaq."
+        : "Ödəniş hələ aktiv deyil. Mağaza təsdiqini gözləyin.",
+    });
     return;
   }
   if (order.paymentDueAt && Date.now() > order.paymentDueAt.getTime()) {

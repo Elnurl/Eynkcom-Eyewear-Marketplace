@@ -13,6 +13,7 @@ import {
 import type { BuyerOrder, BuyerSellerOrderSummary } from '@workspace/api-client-react';
 import { BrandLogo } from '@/components/brand-logo';
 import { clearPaymentFailedQuery, isPaymentFailedReturn } from '@/lib/last-placed-order';
+import { redirectToEpointCheckout } from '@/lib/epoint-pay';
 import { LoadingCard, OrderItemRow, OrderTimeline, QueryError, StatePill, dateLabel, fulfillmentLabel, money, orderStatusLabel, parsePrescriptionPath, paymentStatusLabel, prescriptionFileUrl, returnStatusLabel, sellerStatusLabel } from './order-ui';
 import './order-pages.css';
 
@@ -156,29 +157,8 @@ export default function OrderPage() {
     setPayError('');
     setPayPending(true);
     try {
-      const pay = await fetch(`/api/orders/${orderId}/epoint`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: paymentToken ? { 'X-Order-Access-Token': paymentToken } : {},
-      });
-      const session = (await pay.json().catch(() => ({}))) as { error?: string; data?: string; signature?: string; checkoutUrl?: string };
-      if (!pay.ok || !session.data || !session.signature || !session.checkoutUrl) {
-        setPayError(session.error || 'Ödəniş səhifəsi açılmadı.');
-        return;
-      }
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = session.checkoutUrl;
-      form.acceptCharset = 'utf-8';
-      for (const [name, value] of [['data', session.data], ['signature', session.signature]] as const) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = name;
-        input.value = value;
-        form.appendChild(input);
-      }
-      document.body.appendChild(form);
-      form.submit();
+      const payError = await redirectToEpointCheckout(orderId, paymentToken || undefined);
+      if (payError) setPayError(payError);
     } finally {
       setPayPending(false);
     }
@@ -266,17 +246,27 @@ export default function OrderPage() {
           );
         })()}
         {order.data.status === 'awaiting_buyer_approval' && <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}><div className="commerce-card-heading"><div><h2>Yenilənmiş sifariş təsdiqinizi gözləyir</h2><p>Mağazalardan biri məhsul və ya çatdırılma detallarını dəyişib. Sifarişi təsdiqləyin və ya ləğv edin.</p></div><ClipboardCheck size={19} color="#9b5c36" /></div><div style={{ display: 'flex', gap: 9, marginTop: 18, flexWrap: 'wrap' }}><button className="btn btn-blue" disabled={decideRevision.isPending} onClick={() => void decide(true)} data-testid="button-approve-revision"><Check size={15} /> {decideRevision.isPending ? 'Göndərilir...' : 'Yenilənmiş sifarişi təsdiqlə'}</button><button className="btn btn-secondary" disabled={decideRevision.isPending} onClick={() => void decide(false)} data-testid="button-cancel-revision"><RotateCcw size={15} /> Sifarişi ləğv et</button></div>{decisionError && <QueryError message={decisionError} />}</section>}
-        {order.data.status === 'awaiting_payment' && order.data.paymentMethod === 'card' && (
+        {(() => {
+          const rxPath = parsePrescriptionPath(order.data.deliveryNote);
+          const canPayOnline =
+            order.data.paymentMethod === 'card'
+            && !['captured', 'paid_on_delivery'].includes(order.data.paymentStatus)
+            && (order.data.status === 'awaiting_payment'
+              || (order.data.status === 'pending_confirmation' && !rxPath));
+          if (!canPayOnline) return null;
+          return (
           <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="section-order-payment">
             <div className="commerce-card-heading">
               <div>
                 <h2>Ödənişi tamamla</h2>
                 <p>
-                  {parsePrescriptionPath(order.data.deliveryNote)
+                  {rxPath
                     ? 'Mağaza resepti/məhsulu təsdiqlədi. İndi online ödənişi tamamlayın.'
-                    : 'Mağaza stoku təsdiqlədi. Məhsul və çatdırılma bir yekun məbləğ üçün 15 dəqiqə ərzində ödəyin.'}
+                    : order.data.status === 'pending_confirmation'
+                      ? 'Sifariş qəbul olundu. Online ödənişi indi tamamlaya bilərsiniz.'
+                      : 'Ödənişi bank kartı ilə tamamlayın.'}
                 </p>
-                {order.data.paymentDueAt ? (
+                {order.data.paymentDueAt && order.data.status === 'awaiting_payment' ? (
                   <p style={{ marginTop: 8, color: '#7a8490', fontSize: 11 }}>
                     Son tarix: {dateLabel(order.data.paymentDueAt)}
                   </p>
@@ -298,7 +288,8 @@ export default function OrderPage() {
             </div>
             {payError ? <QueryError message={payError} /> : null}
           </section>
-        )}
+          );
+        })()}
         {cancellationPending(order.data) && !canRequestCancellation(order.data) && order.data.status !== 'cancelled' && (
           <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="status-cancellation-pending">
             <div className="commerce-card-heading"><div><h2>Ləğv sorğusu mağazada</h2><p>Mağaza sorğunu təsdiqləyəndə sifariş ləğv olunacaq. Təsdiq gözləyən mərhələdə sifariş hələ davam edir.</p></div><RotateCcw size={19} color="#9b5c36" /></div>

@@ -1646,7 +1646,11 @@ function Storefront() {
   };
   const catalogError = productsQuery.error || storesQuery.error;
   if (location === '/checkout') {
-    return <CheckoutPage items={checkoutItems} stores={stores} onClearCart={() => setCartIds([])} />;
+    return (
+      <div className="checkout-shell">
+        <CheckoutPage items={checkoutItems} stores={stores} onClearCart={() => setCartIds([])} />
+      </div>
+    );
   }
   if (location.startsWith('/order/')) return <OrderPage />;
   const photoSrc = (path: string) => (path.startsWith('data:') || path.startsWith('http') ? path : assetUrl(path));

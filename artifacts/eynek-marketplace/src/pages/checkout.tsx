@@ -30,6 +30,7 @@ import { BrandLogo } from '@/components/brand-logo';
 import { az } from '@/i18n/az';
 import { FREE_DELIVERY_FROM_AZN, STANDARD_DELIVERY_FEE_AZN, deliveryFeeAzN } from '@/lib/delivery-pricing';
 import { buildDeliverySlots, slotTag, type DeliveryWindow } from '@/lib/delivery-slots';
+import { checkoutShouldPayImmediately, redirectToEpointCheckout } from '@/lib/epoint-pay';
 import { clearPaymentFailedQuery, isPaymentFailedReturn, lastPlacedOrderHref, saveLastPlacedOrder } from '@/lib/last-placed-order';
 import {
   cartNeedsPrescriptionSection,
@@ -124,6 +125,7 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
   const [formError, setFormError] = useState('');
   const [placedOrder, setPlacedOrder] = useState<{ id: string; orderNumber: string; token: string } | null>(null);
   const [payNote, setPayNote] = useState('');
+  const [paymentRedirecting, setPaymentRedirecting] = useState(false);
   const [deliveryPin, setDeliveryPin] = useState<AddressMapValue | null>(null);
   const deliverySlots = useMemo(() => buildDeliverySlots({ weekdayCount: 4 }), []);
   const [deliverySlotId, setDeliverySlotId] = useState(() => deliverySlots[0]?.id ?? '');
@@ -282,11 +284,29 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
       sessionStorage.setItem(`eynek:order-token:${order.id}`, guestAccessToken);
       saveLastPlacedOrder({ id: order.id, orderNumber: order.orderNumber, token: guestAccessToken });
       onClearCart();
+
+      const payNow = checkoutShouldPayImmediately({
+        pickup,
+        paymentMethod: resolvedPayment,
+        prescriptionDeferredPay,
+      });
+      if (payNow) {
+        setPaymentRedirecting(true);
+        const payError = await redirectToEpointCheckout(order.id, guestAccessToken);
+        if (!payError) return;
+        setPaymentRedirecting(false);
+        setPayNote('Sifariş qəbul edildi, amma ödəniş səhifəsi açılmadı. İzləmə səhifəsindən yenidən cəhd edin.');
+        setPlacedOrder({ id: order.id, orderNumber: order.orderNumber, token: guestAccessToken });
+        return;
+      }
+
       setPayNote(
         prescriptionDeferredPay
           ? 'Resept mağazaya göndərildi. Ödəniş düyməsi mağaza məhsulu/resepti təsdiqləyəndən sonra izləmə səhifəsində açılacaq.'
-          : resolvedPayment === 'card'
-            ? 'Mağaza stoku təsdiqləyəndən sonra 15 dəqiqə ərzində ödəniş linki e-poçtunuza və aşağıdakı izləmə səhifəsinə gələcək.'
+          : pickup
+            ? resolvedPayment === PaymentMethod.pay_on_delivery
+              ? 'Sifariş qeydə alındı. Məhsulu mağazadan götürəndə nağd ödəyəcəksiniz.'
+              : 'Sifariş qeydə alındı. Mağazadan götürəndə ödənişi orada edə bilərsiniz.'
             : '',
       );
       setPlacedOrder({ id: order.id, orderNumber: order.orderNumber, token: guestAccessToken });
@@ -296,15 +316,24 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
     }
   };
 
+  const placeOrderLabel = createOrder.isPending
+    ? 'Sifariş yaradılır...'
+    : paymentRedirecting
+      ? 'Ödənişə keçid...'
+      : 'Sifariş ver';
+
   if (placedOrder) {
     return (
-      <main className="commerce-page">
-        <div className="commerce-wrap">
+      <main className="commerce-page commerce-page--checkout">
+        <div className="checkout-wrap">
           <section className="commerce-card commerce-card-pad order-complete">
             <CheckCircle2 size={28} color="#1f8a4c" />
             <div className="eyebrow">Sifariş qəbul edildi</div>
             <h1>Sifarişin tamamlandı.</h1>
-            <p>{payNote || `Sifariş ${placedOrder.orderNumber} qeydə alındı. Mağaza stok təsdiqini gözləyir (30 dəq). İzləmə səhifəsindən vəziyyəti izləyə bilərsiniz.`}</p>
+            <p>
+              {payNote
+                || `Sifariş ${placedOrder.orderNumber} qeydə alındı. İzləmə səhifəsindən vəziyyəti izləyə bilərsiniz.`}
+            </p>
             <button className="btn btn-blue" type="button" data-testid="link-track-order" onClick={() => setLocation(`/order/${placedOrder.id}#${placedOrder.token}`)}>Sifarişi izlə <ArrowRight size={16} /></button>
           </section>
         </div>
@@ -313,15 +342,18 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
   }
 
   return (
-    <main className="commerce-page">
-      <div className="commerce-wrap">
-        <header className="commerce-header">
-          <div>
+    <main className="commerce-page commerce-page--checkout">
+      <div className="checkout-wrap">
+        <Link href="/cart" className="checkout-back text-link" data-testid="link-checkout-back">
+          ← Səbətə qayıt
+        </Link>
+        <header className="commerce-header commerce-header--checkout">
+          <div className="checkout-header-main">
             <Link href="/" className="brand" data-testid="link-checkout-brand"><BrandLogo /></Link>
-            <div className="eyebrow" style={{ marginTop: 25 }}>Sifarişin tamamlanması</div>
-            <h1>Sifarişini<br />rahat tamamla.</h1>
+            <div className="eyebrow checkout-eyebrow">Sifarişin tamamlanması</div>
+            <h1 className="checkout-title">Sifarişini rahat tamamla.</h1>
           </div>
-          <p>Kuryer ilə Bakı və Abşerona çatdıra, və ya məhsulları satan optik mağazadan pulsuz götürə bilərsiniz.</p>
+          <p className="checkout-lead">Kuryer ilə Bakı və Abşerona çatdırılır; mağazadan götürmə pulsuzdur.</p>
         </header>
 
         {paymentFailedReturn ? (
@@ -344,10 +376,12 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
           </div>
         ) : null}
 
-        {checkoutOptions.isLoading ? (
+        {paymentRedirecting ? (
+          <LoadingCard lines={4} />
+        ) : checkoutOptions.isLoading ? (
           <LoadingCard lines={5} />
         ) : (
-          <form className="commerce-grid" onSubmit={submit}>
+          <form id="eynek-checkout-form" className="commerce-grid commerce-grid--checkout" onSubmit={submit}>
             {checkoutOffline ? (
               <div className="info-ribbon" style={{ gridColumn: '1 / -1' }}>
                 <Info size={16} />
@@ -360,7 +394,7 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
                 </span>
               </div>
             ) : null}
-            <div>
+            <div className="checkout-main">
               <section className="commerce-card commerce-card-pad">
                 <div className="commerce-card-heading"><div><h2>Əlaqə məlumatları</h2><p>Mağaza və ya EYNƏK sifarişlə bağlı bu məlumatlarla sizinlə əlaqə saxlayacaq.</p></div><ShieldCheck size={19} color="#5b719a" /></div>
                 <div className="commerce-form">
@@ -560,11 +594,23 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
               </section>
             </div>
 
-            <aside>
-              <section className="commerce-card commerce-card-pad">
+            <aside className="checkout-aside">
+              <section className="commerce-card commerce-card-pad checkout-summary-card">
                 <div className="commerce-card-heading"><div><h2>Sifariş xülasəsi</h2><p>{items.length} məhsul · {pickup ? 'mağazadan götürmə' : 'kuryer çatdırılması'}</p></div><PackageCheck size={19} color="#5b719a" /></div>
-                <div className="checkout-items">{items.map((item, index) => <div className="checkout-item" key={`${item.productId}-${index}`} data-testid={`row-checkout-item-${item.productId}`}><div><strong>{item.productName ?? item.name ?? `Məhsul ${item.productId}`}</strong><small>{item.sellerName ? `${item.sellerName} · ` : ''}Say: {item.quantity}</small></div><span className="checkout-item-price">{money(item.lineTotalAzN ?? (item.unitPriceAzN ?? 0) * item.quantity)}</span></div>)}</div>
-                <div className="summary-lines">
+                {items.length > 0 ? (
+                  <div className="checkout-items">
+                    {items.map((item, index) => (
+                      <div className="checkout-item" key={`${item.productId}-${index}`} data-testid={`row-checkout-item-${item.productId}`}>
+                        <div>
+                          <strong>{item.productName ?? item.name ?? `Məhsul ${item.productId}`}</strong>
+                          <small>{item.sellerName ? `${item.sellerName} · ` : ''}Say: {item.quantity}</small>
+                        </div>
+                        <span className="checkout-item-price">{money(item.lineTotalAzN ?? (item.unitPriceAzN ?? 0) * item.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <div className={`summary-lines${items.length ? '' : ' summary-lines--compact'}`}>
                   <div className="summary-line"><span>Məhsullar</span><strong>{money(subtotal)}</strong></div>
                   <div className="summary-line">
                     <span>Çatdırılma</span>
@@ -579,8 +625,11 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
                   ) : null}
                   <div className="summary-line total"><span>Cəmi</span><strong data-testid="text-checkout-total">{money(orderTotal)}</strong></div>
                 </div>
-                <div className="commerce-submit"><button className="btn btn-blue" type="submit" disabled={createOrder.isPending || !items.length} data-testid="button-place-order">{createOrder.isPending ? 'Sifariş yaradılır...' : 'Sifarişi təsdiqlə'} <ArrowRight size={15} /></button><p className="commerce-note">Sifarişi təsdiqləməklə <Link href="/qaydalar">istifadə şərtləri</Link> və <Link href="/mexfilik">məxfilik</Link> qaydaları ilə razılaşırsınız.</p></div>
-                {formError && <div className="commerce-error" role="alert" data-testid="status-checkout-error"><AlertCircle size={16} /><span>{formError}</span></div>}
+                <div className="commerce-submit checkout-submit--desktop">
+                  <button className="btn btn-blue" type="submit" disabled={createOrder.isPending || paymentRedirecting || !items.length} data-testid="button-place-order">{placeOrderLabel} <ArrowRight size={15} /></button>
+                  <p className="commerce-note">Sifarişi təsdiqləməklə <Link href="/qaydalar">istifadə şərtləri</Link> və <Link href="/mexfilik">məxfilik</Link> qaydaları ilə razılaşırsınız.</p>
+                </div>
+                {formError ? <div className="commerce-error checkout-error--aside" role="alert" data-testid="status-checkout-error"><AlertCircle size={16} /><span>{formError}</span></div> : null}
               </section>
               {pickup ? (
                 <div className="info-ribbon" style={{ marginTop: 14 }}>
@@ -592,6 +641,31 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
             </aside>
           </form>
         )}
+        {!placedOrder && !paymentRedirecting && !checkoutOptions.isLoading ? (
+          <div className="checkout-mobile-bar" data-testid="checkout-mobile-bar">
+            {formError ? (
+              <div className="commerce-error checkout-mobile-error" role="alert">
+                <AlertCircle size={14} />
+                <span>{formError}</span>
+              </div>
+            ) : null}
+            <div className="checkout-mobile-bar-row">
+              <div className="checkout-mobile-total">
+                <span>Cəmi</span>
+                <strong data-testid="text-checkout-mobile-total">{money(orderTotal)}</strong>
+              </div>
+              <button
+                className="btn btn-blue checkout-mobile-submit"
+                type="submit"
+                form="eynek-checkout-form"
+                disabled={createOrder.isPending || paymentRedirecting || !items.length}
+                data-testid="button-place-order-mobile"
+              >
+                {placeOrderLabel}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </main>
   );

@@ -7,7 +7,12 @@ const PRESCRIPTION_TAG = /\[prescription:(\/objects\/uploads\/[a-f0-9-]{36})\]/i
 const PRESCRIPTION_PATH = /^\/objects\/uploads\/[a-f0-9-]{36}$/i;
 
 export function isOpticalCategory(category?: string | null) {
-  return (category ?? '').trim() === OPTICAL_CATEGORY;
+  const raw = (category ?? '').trim();
+  if (!raw) return false;
+  if (raw === OPTICAL_CATEGORY) return true;
+  const lower = raw.toLocaleLowerCase('az');
+  if (lower.includes('gün eynəy') || lower.includes('gun eyne')) return false;
+  return lower.includes('optik');
 }
 
 export function cartNeedsPrescriptionSection(categories: Array<string | undefined | null>) {
