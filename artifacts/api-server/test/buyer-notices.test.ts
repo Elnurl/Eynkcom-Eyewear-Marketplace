@@ -20,7 +20,8 @@ test("seller status maps to a buyer notice, preparing stays quiet", () => {
   assert.equal(ready && buyerNotice("EYN-1", ready).sms.includes("götürməyə hazırdır"), true);
   const sent = noticeForSellerStatus("out_for_delivery", "Optika", false, "pay_on_delivery", "due_on_delivery");
   const codCopy = sent && buyerNotice("EYN-1", sent);
-  assert.equal(codCopy?.sms.includes("qapıdadır"), true);
+  assert.equal(codCopy?.sms.includes("hazırdır"), true);
+  assert.equal(codCopy?.body.includes("EYNƏK kuryeri"), true);
   const paid = noticeForSellerStatus("out_for_delivery", "Optika", false, "card", "captured");
   const paidCopy = paid && buyerNotice("EYN-1", paid);
   assert.equal(paidCopy?.body.includes("qapıda"), false);

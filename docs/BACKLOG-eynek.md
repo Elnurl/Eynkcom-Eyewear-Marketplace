@@ -1,45 +1,93 @@
-# EYNƏK / eynek.store — açıq işlər və məhsul axını (yeniləmə: 2025-11-23)
+# EYNƏK / eynek.store — açıq işlər və məhsul axını (yeniləmə: 2026-11-26)
 
-## İstifadəçinin prioritet siyahısı
+## Qərarlaşmış əməliyyat modeli (kod gözləyir)
 
-1. **SMS bildirişi** — alıcı və satıcı
-2. **E-mail bildirişi** — alıcı + operator/admin (sənin üçün mağaza/sifariş mailləri)
-3. **Mobil UI** — daha sadə vitrin/checkout/sifariş
-4. **Çatdırılma** — Bolt inteqrasiyası, qiymət, kuryer axını
-5. **Online ödəniş** — pulların bölüşdürülməsi: platforma, **kuryer (Bolt)**, **satıcı**
-6. **VTO** — tryon-wa: yerləşdirmə, templlər, PD, marketplace sync (hələ toxunma)
-7. **Horizon** — məhsul/kataloq doldurulması (import, şəkillər)
+### Kuryer və vaxt
 
-## Danışıqda qalan / deploy gözləyən (kodda var və ya yaxın)
+- Kuryeri **satıcı çağırmır** — **platforma (sən)** sifarişi verir və nəzarət edir.
+- **Kod (lokal):** satıcı paneldə «Kuryer çağır» yoxdur; axın stok təsdiqi → hazırlanma → **Hazırdır**; admin `/seller-admin/orders` → **Çatdırılma üçün gözləyənlər** (Bolt aç + çatdırıldı bağla).
+- Bolt-da **API yoxdur**; hər kuryer sifarişi **əl ilə** nəzarət edilir.
+- Çatdırılma **alışın eyni günü olmur** — **ən tezi növbəti gün**.
+- **Həftəsonu** sifariş verilibsə → çatdırılma **ən tezi növbəti həftə içi** gündə.
+- Standart vaxt pəncərələri (özün müəyyən edəcəksən) — hər vaxtın özünə görə ödəniş/əlavə ola bilər (gələcək).
+- **Checkout UI:** «Çatdırılma tarixi və vaxtı» kartı — **ünvan/qeyd kartının altında**, **ödəniş üsulunun üstündə**; saytın commerce dizaynında; müvəqqəti pəncərələr `09:00–15:00` və `15:00–21:00` (tarixlər dinamik).
 
-- Checkout xəritə autocomplete + metro (deploy edilib və ya gözləyir)
-- Ödəniş **failed** bildirişi + redirect `order/?payment=failed` (commit gözləyir)
+### Ödəniş qaydaları
+
+- **Çatdırılma seçilibsə** → ödəniş **mütləq onlayn** (Epoint). **Qapıda ödəniş yoxdur.** *(checkout UI + API enforce — lokal)*
+- **Mağazadan götürmə** (özü götürəcək) → **nağd** mümkündür *(və ya online)*.
+- Məhsul məbləği **≥ 200 AZN** → çatdırılma **pulsuz**.
+- **&lt; 200 AZN** → çatdırılma haqqı Bakı/Abşeron orta xərcə görə **6–10 AZN** aralığında dəqiqləşdiriləcək; **müvəqqəti standart: 8 AZN**.
+- **Kod (lokal):** checkout xülasəsi + sifariş yaradılarkən `deliveryTotalQepik` / satıcı sətirində platforma tarifi; satıcı Bolt məbləğini əl ilə yazmır.
+
+### Standart (reseptsiz) sifariş axını
+
+1. Alıcı sifariş verir + (çatdırılmada) **məhsul + çatdırılma** onlayn ödəyir.
+2. Satıcı **stokda var** təsdiqləyir.
+3. Sifariş **hazırlanma** statusuna keçir; satıcı **hazırdır** göstərir.
+4. Platforma kuryeri sifariş edir və çatdırır.
+
+### Optik eynək + resept axını (yalnız optik)
+
+1. Checkout-da alıcı resepti **qeyd edir**: PDF yükləyir və ya şəkil çəkir (yalnız optik eynək alınanda). **Gün eynəyində resept bloku yoxdur.**
+2. Satıcı (optik mağaza) resepti görür, məhsulu hazırlayır → **hazırlanma** → **hazırdır**.
+3. **Reseptlə sorğu göndəriləndə ödəniş əvvəlcə olmur** — satıcı məhsulu təsdiqləyəndən sonra alıcıda **«Ödəniş et»** düyməsi açılır; ödəniş sonra edilir.
+4. Ödənişdən sonra platforma kuryer / təhvil (çatdırılma və ya götürmə qaydalarına uyğun).
+5. **Kod (lokal):** checkout resept kartı + `/api/storage/uploads/prescription` + deliveryNote `[prescription:…]`; satıcı/alıcı baxışı; ödəniş `awaiting_payment` sonrası.
+
+### Hüquqi
+
+- [ ] **Epoint müqavilə / şərtlər** mətnləri satıcı və alıcı üçün təqdim etdiyimiz **şərtlər / hüquqi sənədlərə** əlavə olunacaq (yadda saxlanılıb — sənəd + sonra kod/UI).
+
+### Açık / hələ dəqiqləşməyən
+
+| Mövzu | Status |
+|--------|--------|
+| Satıcıya pul: ay sonu / dərhal / Epoint split | **Hələ qərar yoxdur** — yaxın günlərdə dəqiqləşəcək |
+| Bolt ödənişi | API yoxdur; **özün nəzarət** (əl ilə / ay sonu faktura) |
+| SMS | Şirkətlə danışıq; razılıq olsa bərpa; **həftə gözləmədə** |
+| Çatdırılma 6–10 AZN dəqiq qiymət | Müvəqqəti **8 AZN**; sonra dəqiqləşdiriləcək |
+| Çox-optika səbət (hər mağazaya ayrı çatdırılma) | Əvvəlki plan; bu sessiya təsdiqlənmədi — ayrıca qərar |
+
+### Bir səbət, bir neçə optika (köhnə plan — ayrıca təsdiq lazım)
+
+- [ ] Hər optika = ayrı bağlama = ayrı çatdırılma haqqı
+- [ ] Səbətdə göstərmək: `A optikasından: X AZN`, `B optikasından: X AZN`
+- [ ] Mətn: eyni optikadan əlavə məhsul — çatdırılma yenə bir dəfə (siyasət dəqiqləşdirilsin)
+
+### Mobil tətbiq (native) — gələcək
+
+- [ ] iOS/Android sonra; hazırkı işlər yalnız **veb**
+- [ ] Mobilə keçəndə çatdırılma, resept, SMS, ödəniş yenidən nəzərdən keçiriləcək
+
+---
+
+## İstifadəçinin prioritet siyahısı (yenilənmiş istiqamət)
+
+1. **Çatdırılma + ödəniş qaydaları** (8 AZN / 200+ pulsuz, onlayn məcburi, növbəti gün, kuryer platforma)
+2. **Reseptli optik axını** (upload → satıcı təsdiqi → sonra ödəniş)
+3. **Epoint mətnləri** hüquqi sənədlərə
+4. **Email** (artıq böyük hissəsi var)
+5. **SMS** — şirkət razılığı gözləmədə
+6. **Mobil UI (veb)**
+7. **Satıcı ödəniş split** — qərar gözləyir
+8. **VTO** — hələ toxunma
+9. **Horizon** / kataloq
+10. **Native app** — sonra
+
+## Danışıqda qalan / texniki qalıqlar
+
+- Ödəniş **failed** bildirişi + redirect
 - Epoint: Render `EPOINT_*`, kabinet URL/callback
-- Satıcı **hesablaşma** paneli (qazanc/komissiya) — real pul köçürməsi yoxdur, admin `settlementReference`
-- Lokal dev: `DATABASE_URL`
+- Satıcı hesablaşma paneli (qazanc/komissiya) — real köçürmə yox
+- Lokal `DATABASE_URL`
 
-## Təsvir edilən alıcı axını (Variant B + Bolt + Epoint)
+## Köhnə Variant B qeydi (köhnəlib — istinad)
 
-1. Alıcı saytda sifariş verir (kuryer / mağazadan götürmə).
-2. Sorğu **mağazaya** gedir; mağaza **stoku təsdiq/ləğv** edir.
-3. Mağaza **çatdırılma ünvanına** baxır; **Bolt “Open with Bolt”** (və ya ekvivalent) — mağaza öz lokasiyasını / ünvanı seçir, alıcının xəritədə qeyd etdiyi nöqtə Bolt-da ötürülür.
-4. **Kuryer qiyməti** + məhsul yekunu hesablanır → alıcıya **15 dəq** ödəniş pəncərəsi → **Epoint**.
-5. Ödəniş Epoint tacir balansına düşür; **split** hələ müzakirə:
-   - **Kuryer (Bolt):** ayın axırında Bolt-a toplu ödəniş?
-   - **Satıcı:** ay sonu bank / dərhal bank / Epoint split — **qərar gözləyir**.
-
-## Açıq biznes/qərar mövzuları
-
-| Mövzu | Variantlar |
-|--------|------------|
-| Satıcı ödənişi | Ay sonu bank · dərhal köçürmə · Epoint split-request |
-| Kuryer (Bolt) | Ay sonu faktura · Bolt API avtomatik |
-| SMS | Sinch (plugin) / başqa provayder, hadisələr: sifariş, təsdiq, çatdırılma, ödəniş |
-| Komissiya | Epoint ~3% + marketplace komissiya satıcıdan |
+Əvvəlki model: satıcı Bolt çağırırdı, eyni gün / 15 dəq ödəniş pəncərəsi. **Yeni model yuxarıdakı bölmədir** — kuryer platforma, növbəti gün, resept üçün gecikmiş ödəniş.
 
 ## Siyahıda yox, amma arxa planda
 
-- Guest order + kart ödənişi axını (işləyir, test olundu)
-- Bolt PDF təqdimat / Variant B sənədləri
-- Vitrin böyük hero + demo mağazalar (lokal fallback)
+- Guest order + kart ödənişi axını (işləyir)
+- Bolt PDF təqdimat
 - Qonaq sifariş izləmə tokeni (# hash)

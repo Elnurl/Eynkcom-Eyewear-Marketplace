@@ -89,8 +89,15 @@ export function parseDeliveryGeo(note?: string | null) {
 
 export function deliveryNoteWithoutGeo(note?: string | null) {
   if (!note) return '';
-  return note.replace(geoTagPattern, '').trim();
+  return note
+    .replace(geoTagPattern, '')
+    .replace(/\n?\[slot:[^\]]+\]/g, '')
+    .replace(/\n?\[prescription:[^\]]+\]/gi, '')
+    .replace(/\n{2,}/g, '\n')
+    .trim();
 }
+
+export { parsePrescriptionPath, prescriptionFileUrl } from '@/lib/prescription';
 
 export function mapsLink(lat: number, lng: number) {
   return `https://www.google.com/maps?q=${lat},${lng}`;
@@ -123,6 +130,9 @@ export function sellerStatusLabel(status: SellerOrderStatus, fulfillment?: Fulfi
   if (fulfillment === 'store_pickup') {
     if (status === 'out_for_delivery') return 'Götürməyə hazırdır';
     if (status === 'delivered') return 'Götürüldü';
+  }
+  if (fulfillment !== 'store_pickup' && status === 'out_for_delivery') {
+    return 'Çatdırılma üçün hazırdır';
   }
   return sellerLabels[status] ?? status;
 }

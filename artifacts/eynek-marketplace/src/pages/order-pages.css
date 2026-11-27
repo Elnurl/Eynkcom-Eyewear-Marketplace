@@ -72,6 +72,15 @@
   padding-bottom: 18px;
   border-bottom: 1px solid #edf0f4;
 }
+.commerce-heading-icon,
+.commerce-choice-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: #2a2a28;
+  opacity: 0.72;
+}
+.commerce-choice-icon { color: #3a3a38; opacity: 0.85; }
+.payment-choice.selected .commerce-choice-icon { opacity: 1; color: #14171b; }
 
 .commerce-card-heading p {
   margin: 6px 0 0;
@@ -403,6 +412,77 @@
   .legal-wrap { width: min(100% - 28px, 560px); }
   .legal-card { padding: 24px 20px 28px; border-radius: 22px; }
 }
+
+.delivery-slot-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.delivery-slot-card {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 118px;
+  min-height: 72px;
+  padding: 12px 14px;
+  border: 1px solid #e4e8ef;
+  border-radius: 14px;
+  background: #fff;
+  color: #171b22;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.delivery-slot-card:hover {
+  border-color: #c5db5a;
+  box-shadow: 0 6px 16px rgba(23, 26, 58, 0.06);
+}
+.delivery-slot-card.is-selected {
+  border-color: #c5db5a;
+  background: #fcfef5;
+  box-shadow: 0 0 0 1px #c5db5a;
+}
+.delivery-slot-time {
+  color: #6d7784;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.delivery-slot-date {
+  color: #14171b;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.delivery-slot-card.is-selected .delivery-slot-time,
+.delivery-slot-card.is-selected .delivery-slot-date {
+  color: #8fa82e;
+}
+
+.prescription-upload { padding-top: 16px; }
+.prescription-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid #e4e8ef;
+  border-radius: 14px;
+  background: #fbfcfa;
+}
+.prescription-file strong { display: block; color: #171b22; font-size: 13px; }
+.prescription-file span { display: block; margin-top: 4px; color: #6d7784; font-size: 11px; line-height: 1.45; }
+.prescription-file a { display: inline-block; margin-top: 8px; color: #355d91; font-size: 12px; font-weight: 700; }
 
 .checkout-items { display: grid; gap: 0; margin-top: 16px; }
 .checkout-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid #edf0f4; }

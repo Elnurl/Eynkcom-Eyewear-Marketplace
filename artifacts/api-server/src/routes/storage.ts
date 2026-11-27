@@ -10,13 +10,15 @@ import express, { Router, type IRouter, type Request, type Response } from "expr
 import { isObjectStorageConfigured, ObjectNotFoundError, ObjectStorageService } from "../lib/objectStorage";
 import { isPublishedImage, removeUnusedImage } from "../lib/productImages";
 import { requireUserEmail } from "./access";
-import { requireAuth } from "../middlewares/requireAuth";
+import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
 const storage = new ObjectStorageService();
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_PRESCRIPTION_BYTES = 10 * 1024 * 1024;
 
 type UploadImageType = "image/jpeg" | "image/png" | "image/gif";
+type PrescriptionType = UploadImageType | "application/pdf";
 
 function imageContentType(header: string | undefined): UploadImageType | null {
   const value = header?.split(";")[0]?.trim().toLowerCase();
@@ -26,6 +28,12 @@ function imageContentType(header: string | undefined): UploadImageType | null {
   return null;
 }
 
+function prescriptionContentType(header: string | undefined): PrescriptionType | null {
+  const value = header?.split(";")[0]?.trim().toLowerCase();
+  if (value === "application/pdf") return "application/pdf";
+  return imageContentType(header);
+}
+
 function matchesImageMagic(contentType: UploadImageType, header: Buffer): boolean {
   const isJpeg = header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
   const isPng = header.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
@@ -33,6 +41,13 @@ function matchesImageMagic(contentType: UploadImageType, header: Buffer): boolea
   if (contentType === "image/jpeg") return isJpeg;
   if (contentType === "image/png") return isPng;
   return isGif;
+}
+
+function matchesPrescriptionMagic(contentType: PrescriptionType, header: Buffer): boolean {
+  if (contentType === "application/pdf") {
+    return header.subarray(0, 4).toString("utf8") === "%PDF";
+  }
+  return matchesImageMagic(contentType, header);
 }
 
 async function approvedStore(req: Request, res: Response) {
@@ -89,6 +104,50 @@ router.post(
     } catch (error) {
       req.log.error({ err: error }, "Direct product image upload failed");
       res.status(500).json({ error: "Şəkil yüklənmədi. Yenidən cəhd edin." });
+    }
+  },
+);
+
+/** Qonaq/checkout — optik resept (şəkil və ya PDF). */
+router.post(
+  "/storage/uploads/prescription",
+  optionalAuth,
+  express.raw({
+    limit: MAX_PRESCRIPTION_BYTES,
+    type: (req) => prescriptionContentType(req.headers["content-type"] ?? undefined) !== null,
+  }),
+  async (req: Request, res: Response): Promise<void> => {
+    const contentType = prescriptionContentType(req.headers["content-type"]);
+    if (!contentType) {
+      res.status(400).json({ error: "Yalnız JPG, PNG və ya PDF qəbul olunur." });
+      return;
+    }
+    const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    if (!body.length) {
+      res.status(400).json({ error: "Resept faylı boşdur." });
+      return;
+    }
+    if (body.length > MAX_PRESCRIPTION_BYTES) {
+      res.status(413).json({ error: "Fayl ölçüsü maksimum 10 MB ola bilər." });
+      return;
+    }
+    if (!matchesPrescriptionMagic(contentType, body.subarray(0, 8))) {
+      res.status(400).json({ error: "Fayl JPG, PNG və ya PDF deyil." });
+      return;
+    }
+    try {
+      const { objectPath } = await storage.putNewUpload(body, contentType);
+      await db.insert(supportImageUploadsTable).values({
+        objectPath,
+        ownerId: req.dbUser?.id ?? "guest",
+        contentType,
+        size: body.length,
+        finalizedAt: new Date(),
+      });
+      res.json({ objectPath });
+    } catch (error) {
+      req.log.error({ err: error }, "Prescription upload failed");
+      res.status(500).json({ error: "Resept yüklənmədi. Yenidən cəhd edin." });
     }
   },
 );

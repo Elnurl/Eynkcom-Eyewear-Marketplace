@@ -64,6 +64,8 @@ import {
   releaseInventory,
   reserveInventoryForSellerOrder,
 } from "../lib/orderLifecycle";
+import { deliveryFeeAzN } from "../lib/delivery-pricing";
+import { hasOpticalInProducts, isPrescriptionPath, parsePrescriptionPath } from "../lib/prescription";
 
 const router: IRouter = Router();
 type OrderTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -201,7 +203,12 @@ async function refreshParentOrder(tx: OrderTransaction, orderId: string): Promis
   );
   const allFeesKnown = active.every((sellerOrder) => sellerOrder.deliveryFeeQepik !== null);
   const deliveryTotalQepik = allFeesKnown
-    ? active.reduce((sum, sellerOrder) => sum + (sellerOrder.deliveryFeeQepik ?? 0), 0)
+    ? Math.round(
+        deliveryFeeAzN({
+          fulfillmentMethod: order.fulfillmentMethod,
+          productSubtotalAzN: productSubtotalQepik / 100,
+        }) * 100,
+      )
     : null;
   const totalQepik =
     deliveryTotalQepik === null ? null : productSubtotalQepik + deliveryTotalQepik;
@@ -333,12 +340,28 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: "Sifariş məlumatları düzgün deyil." });
     return;
   }
-  const paymentMethod = body.data.paymentMethod ?? "pay_on_delivery";
+  const fulfillmentMethod = body.data.fulfillmentMethod ?? "courier";
+  const prescriptionPath = parsePrescriptionPath(body.data.deliveryNote ?? "");
+  if (prescriptionPath && !isPrescriptionPath(prescriptionPath)) {
+    res.status(400).json({ error: "Resept faylı düzgün deyil." });
+    return;
+  }
+  const paymentMethod =
+    prescriptionPath || fulfillmentMethod === "courier"
+      ? "card"
+      : (body.data.paymentMethod ?? "pay_on_delivery");
   if (paymentMethod !== "pay_on_delivery" && paymentMethod !== "card") {
     res.status(400).json({ error: "Ödəniş üsulu düzgün deyil." });
     return;
   }
-  const fulfillmentMethod = body.data.fulfillmentMethod ?? "courier";
+  if (fulfillmentMethod === "courier" && body.data.paymentMethod === "pay_on_delivery") {
+    res.status(400).json({ error: "Kuryer çatdırılmasında qapıda ödəniş yoxdur. Yalnız online ödəniş seçin." });
+    return;
+  }
+  if (prescriptionPath && body.data.paymentMethod === "pay_on_delivery") {
+    res.status(400).json({ error: "Reseptli sifarişdə ödəniş satıcı təsdiqindən sonra online edilir." });
+    return;
+  }
   if (fulfillmentMethod === "courier") {
     const address = body.data.deliveryAddress?.trim() ?? "";
     if (!body.data.deliveryArea || address.length < 5) {
@@ -391,6 +414,10 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
       products.push(product);
     }
 
+    if (prescriptionPath && !hasOpticalInProducts(products)) {
+      return { kind: "prescription-not-optical" as const };
+    }
+
     const sellers = new Map<string, typeof products>();
     for (const product of products) {
       const group = sellers.get(product.sellerId) ?? [];
@@ -429,6 +456,12 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
       (sum, group) => sum + group.subtotalQepik,
       0,
     );
+    const deliveryFee = deliveryFeeAzN({
+      fulfillmentMethod,
+      productSubtotalAzN: productSubtotalQepik / 100,
+    });
+    const deliveryTotalQepik = Math.round(deliveryFee * 100);
+    const totalQepik = productSubtotalQepik + deliveryTotalQepik;
 
     const deliveryArea =
       fulfillmentMethod === "store_pickup"
@@ -455,8 +488,8 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
       paymentStatus: paymentMethod === "card" ? "unpaid" : "due_on_delivery",
       status: "pending_confirmation",
       productSubtotalQepik,
-      deliveryTotalQepik: null,
-      totalQepik: null,
+      deliveryTotalQepik,
+      totalQepik,
       sellerConfirmDueAt: new Date(Date.now() + SELLER_CONFIRM_WINDOW_MS),
     });
     await addEvent(tx, orderId, "received", "Sifariş EYNƏK tərəfindən qəbul edildi.");
@@ -466,16 +499,27 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
       "pending_confirmation",
       "Sifariş mağazaların təsdiqini gözləyir.",
     );
+    if (prescriptionPath) {
+      await addEvent(
+        tx,
+        orderId,
+        "pending_confirmation",
+        "Optik resept əlavə olunub. Ödəniş mağaza təsdiqindən sonra açılacaq.",
+      );
+    }
 
-    for (const group of groups) {
+    for (const [index, group] of groups.entries()) {
       const sellerOrderId = randomUUID();
+      // Platforma bir çatdırılma haqqı: ilk aktiv satıcı sətirində saxlanılır.
+      const sellerDeliveryFeeQepik =
+        fulfillmentMethod === "store_pickup" ? 0 : index === 0 ? deliveryTotalQepik : 0;
       await tx.insert(marketplaceSellerOrdersTable).values({
         id: sellerOrderId,
         orderId,
         sellerId: group.sellerId,
         status: "pending_confirmation",
         productSubtotalQepik: group.subtotalQepik,
-        deliveryFeeQepik: null,
+        deliveryFeeQepik: sellerDeliveryFeeQepik,
         commissionQepik: null,
         sellerEarningsQepik: null,
       });
@@ -506,6 +550,12 @@ router.post("/orders", optionalAuth, async (req, res): Promise<void> => {
   if (result.kind === "unavailable") {
     res.status(409).json({
       error: "Məhsullardan biri artıq mövcud deyil və ya kifayət qədər stokda qalmayıb.",
+    });
+    return;
+  }
+  if (result.kind === "prescription-not-optical") {
+    res.status(400).json({
+      error: "Resept yalnız optik çərçivə sifarişində əlavə oluna bilər.",
     });
     return;
   }
@@ -984,12 +1034,25 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
     if (nextStatus === "confirmed") {
       if (
         sellerOrder.status !== "pending_confirmation" ||
-        parent.status !== "pending_confirmation" ||
-        (!pickupOrder && body.data.deliveryFeeAzN === undefined)
+        parent.status !== "pending_confirmation"
       ) {
         return { kind: "invalid-state" as const };
       }
-      const fee = pickupOrder ? 0 : aznToQepik(body.data.deliveryFeeAzN!);
+      let fee: number | null;
+      if (pickupOrder) {
+        fee = 0;
+      } else if (body.data.deliveryFeeAzN !== undefined) {
+        fee = aznToQepik(body.data.deliveryFeeAzN);
+      } else if (sellerOrder.deliveryFeeQepik !== null) {
+        fee = sellerOrder.deliveryFeeQepik;
+      } else {
+        fee = Math.round(
+          deliveryFeeAzN({
+            fulfillmentMethod: parent.fulfillmentMethod,
+            productSubtotalAzN: parent.productSubtotalQepik / 100,
+          }) * 100,
+        );
+      }
       if (fee === null) return { kind: "invalid-fee" as const };
       const reserve = await reserveInventoryForSellerOrder(tx, sellerOrder.id);
       if (!reserve.ok) return { kind: "out-of-stock" as const };
@@ -1052,7 +1115,8 @@ router.patch("/seller/orders/:id", requireAuth, async (req, res): Promise<void> 
       const allowedNext: Record<string, string[]> = {
         confirmed: ["preparing"],
         preparing: pickupOrder ? ["out_for_delivery", "delivered"] : ["out_for_delivery"],
-        out_for_delivery: ["delivered"],
+        // Kuryer: satıcı «hazırdır»da dayanır; çatdırıldı statusunu admin bağlayır.
+        out_for_delivery: pickupOrder ? ["delivered"] : [],
         delivered: ["delivered"],
       };
       const allowed = allowedNext[sellerOrder.status] ?? [];
@@ -1191,6 +1255,97 @@ router.get("/admin/orders", requireAuth, async (req, res): Promise<void> => {
   if (!requireMarketplaceAdmin(req, res)) return;
   res.json(ListAdminOrdersResponse.parse(await listAdminOrders()));
 });
+
+/** Platforma kuryer çatdırılmasını bağlayır (satıcı yalnız «hazırdır» deyir). */
+router.patch(
+  "/admin/orders/:id/seller-orders/:sellerOrderId/deliver",
+  requireAuth,
+  async (req, res): Promise<void> => {
+    if (!requireMarketplaceAdmin(req, res)) return;
+    const orderId = String(req.params.id ?? "");
+    const sellerOrderId = String(req.params.sellerOrderId ?? "");
+    if (!orderId || !sellerOrderId) {
+      res.status(400).json({ error: "Sifariş və mağaza sətri tələb olunur." });
+      return;
+    }
+
+    const result = await db.transaction(async (tx) => {
+      const [sellerOrder] = await tx
+        .select()
+        .from(marketplaceSellerOrdersTable)
+        .where(eq(marketplaceSellerOrdersTable.id, sellerOrderId))
+        .limit(1);
+      if (!sellerOrder || sellerOrder.orderId !== orderId) return { kind: "missing" as const };
+      const [parent] = await tx
+        .select()
+        .from(marketplaceOrdersTable)
+        .where(eq(marketplaceOrdersTable.id, orderId))
+        .limit(1);
+      if (!parent) return { kind: "missing" as const };
+      if (parent.fulfillmentMethod === "store_pickup") {
+        return { kind: "pickup" as const };
+      }
+      if (sellerOrder.status !== "out_for_delivery") {
+        return { kind: "invalid-state" as const };
+      }
+      const [store] = await tx
+        .select()
+        .from(sellerStoresTable)
+        .where(eq(sellerStoresTable.id, sellerOrder.sellerId))
+        .limit(1);
+      await tx
+        .update(marketplaceSellerOrdersTable)
+        .set({
+          status: "delivered",
+          deliveredAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(marketplaceSellerOrdersTable.id, sellerOrder.id));
+      await addEvent(
+        tx,
+        parent.id,
+        "delivered",
+        `EYNƏK kuryer çatdırılmasını bağladı (${store?.name ?? "mağaza"}).`,
+        sellerOrder.id,
+      );
+      const refreshed = await refreshParentOrder(tx, parent.id);
+      const notice = noticeForSellerStatus(
+        "delivered",
+        store?.name ?? "Mağaza",
+        false,
+        refreshed.order?.paymentMethod ?? parent.paymentMethod,
+        refreshed.order?.paymentStatus ?? parent.paymentStatus,
+      );
+      return {
+        kind: "updated" as const,
+        notice: notice
+          ? {
+              email: parent.customerEmail,
+              phone: parent.customerPhone,
+              orderNumber: parent.orderNumber,
+              orderId: parent.id,
+              notice,
+            }
+          : null,
+      };
+    });
+
+    if (result.kind === "missing") {
+      res.status(404).json({ error: "Sifariş tapılmadı." });
+      return;
+    }
+    if (result.kind === "pickup") {
+      res.status(400).json({ error: "Mağazadan götürməni satıcı bağlayır." });
+      return;
+    }
+    if (result.kind === "invalid-state") {
+      res.status(400).json({ error: "Yalnız «çatdırılma üçün hazır» kuryer sifarişləri bağlana bilər." });
+      return;
+    }
+    if (result.notice) notifyBuyer(result.notice);
+    res.json(ListAdminOrdersResponse.parse(await listAdminOrders()));
+  },
+);
 
 router.patch("/admin/orders/:id/refund", requireAuth, async (req, res): Promise<void> => {
   if (!requireMarketplaceAdmin(req, res)) return;

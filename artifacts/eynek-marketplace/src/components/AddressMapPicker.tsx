@@ -181,7 +181,6 @@ export function AddressMapPicker({ value, onChange, onSuggestAddress, disabled }
       <label className="address-map-label" htmlFor="address-map-search">
         Çatdırılma nöqtəsi
       </label>
-      <p className="address-map-hint">Ünvan yazın — təkliflər inputun altında; seçəndə marker xəritədə görünür.</p>
 
       <div className="address-map-search-wrap" ref={searchWrapRef}>
         <div className="address-map-search address-map-search--combo">

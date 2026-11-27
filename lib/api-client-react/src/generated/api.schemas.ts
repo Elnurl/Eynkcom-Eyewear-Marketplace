@@ -827,6 +827,10 @@ export interface AdminOrder {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  deliveryArea?: string;
+  deliveryAddress?: string;
+  /** @nullable */
+  deliveryNote?: string | null;
   productSubtotalAzN: number;
   /** @nullable */
   deliveryTotalAzN: number | null;

@@ -14,7 +14,7 @@ import { SellerPanelShell } from '@/components/seller/SellerPanelShell';
 import { SellerSupportWidget } from '@/components/seller-support-widget';
 import { useSellerWorkspace } from '@/hooks/use-seller-workspace';
 import { getSellerPreviewOrders, sellerPanelPreviewEnabled } from '@/lib/seller-dev-preview';
-import { LoadingCard, OrderItemRow, QueryError, StatePill, boltSendLink, dateLabel, deliveryNoteWithoutGeo, fulfillmentLabel, mapsLink, money, parseDeliveryGeo, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
+import { LoadingCard, OrderItemRow, QueryError, StatePill, dateLabel, deliveryNoteWithoutGeo, fulfillmentLabel, money, parseDeliveryGeo, parsePrescriptionPath, paymentStatusLabel, prescriptionFileUrl, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
 import './order-pages.css';
 
 type Draft = { status: SellerOrderUpdateStatus; deliveryFeeAzN: string; collectedAtDelivery: boolean };
@@ -23,10 +23,17 @@ function statusesFor(order: SellerOrder): SellerOrderUpdateStatus[] {
   const pickup = order.fulfillmentMethod === 'store_pickup';
   if (order.status === 'pending_confirmation') return [SellerOrderUpdateStatus.confirmed, SellerOrderUpdateStatus.declined];
   if (order.status === 'confirmed') return [SellerOrderUpdateStatus.preparing];
-  if (order.status === 'preparing') return pickup
-    ? [SellerOrderUpdateStatus.preparing, SellerOrderUpdateStatus.out_for_delivery, SellerOrderUpdateStatus.delivered]
-    : [SellerOrderUpdateStatus.preparing, SellerOrderUpdateStatus.out_for_delivery];
-  if (order.status === 'out_for_delivery') return [SellerOrderUpdateStatus.out_for_delivery, SellerOrderUpdateStatus.delivered];
+  if (order.status === 'preparing') {
+    return pickup
+      ? [SellerOrderUpdateStatus.preparing, SellerOrderUpdateStatus.out_for_delivery, SellerOrderUpdateStatus.delivered]
+      : [SellerOrderUpdateStatus.preparing, SellerOrderUpdateStatus.out_for_delivery];
+  }
+  // Kuryer: satıcı «hazırdır»da dayanır — çatdırılmanı platforma bağlayır.
+  if (order.status === 'out_for_delivery') {
+    return pickup
+      ? [SellerOrderUpdateStatus.out_for_delivery, SellerOrderUpdateStatus.delivered]
+      : [SellerOrderUpdateStatus.out_for_delivery];
+  }
   if (order.status === 'delivered') return [SellerOrderUpdateStatus.delivered];
   return [];
 }
@@ -39,7 +46,7 @@ function forwardStatuses(order: SellerOrder): SellerOrderUpdateStatus[] {
 
 function nextStepLabel(status: SellerOrderUpdateStatus, fulfillment?: string) {
   if (status === 'preparing') return 'Hazırlanmağa keç';
-  if (status === 'out_for_delivery') return fulfillment === 'store_pickup' ? 'Götürməyə hazır et' : 'Çatdırılmaya ver';
+  if (status === 'out_for_delivery') return fulfillment === 'store_pickup' ? 'Götürməyə hazır et' : 'Hazırdır (çatdırılma üçün)';
   if (status === 'delivered') return fulfillment === 'store_pickup' ? 'Götürüldü kimi bağla' : 'Çatdırıldı kimi bağla';
   if (status === 'declined') return 'Qəbul etmə';
   return sellerStatusLabel(status, fulfillment);
@@ -139,17 +146,17 @@ export default function SellerOrdersPage() {
     setError('');
     setSavedId('');
     const pickup = order.fulfillmentMethod === 'store_pickup';
-    if (status === SellerOrderUpdateStatus.confirmed && !pickup && !draft.deliveryFeeAzN.trim()) {
-      setError('Təsdiqləmək üçün çatdırılma haqqını yazın. Pulsuzdursa 0 yazın.');
-      return;
-    }
     const data: SellerOrderUpdate = {
       status,
-      ...(pickup && status === SellerOrderUpdateStatus.confirmed
-        ? { deliveryFeeAzN: 0 }
-        : draft.deliveryFeeAzN.trim()
-          ? { deliveryFeeAzN: Number(draft.deliveryFeeAzN) }
-          : {}),
+      ...(status === SellerOrderUpdateStatus.confirmed
+        ? pickup
+          ? { deliveryFeeAzN: 0 }
+          : draft.deliveryFeeAzN.trim()
+            ? { deliveryFeeAzN: Number(draft.deliveryFeeAzN) }
+            : order.deliveryFeeAzN !== null
+              ? { deliveryFeeAzN: order.deliveryFeeAzN }
+              : {}
+        : {}),
       collectedAtDelivery: status === SellerOrderUpdateStatus.delivered ? draft.collectedAtDelivery : false,
     };
     try {
@@ -218,35 +225,21 @@ export default function SellerOrdersPage() {
                               const pickupAddress = store?.location?.trim() || 'Mağaza ünvanı vitrində';
                               return (
                                 <div className="seller-courier-box" data-testid={`courier-route-${order.id}`}>
-                                  <div className="seller-courier-head"><Truck size={16} aria-hidden /><strong>Kuryer marşrutu</strong></div>
+                                  <div className="seller-courier-head"><Truck size={16} aria-hidden /><strong>Çatdırılma ünvanı</strong></div>
                                   <dl className="seller-courier-dl">
-                                    <div><dt>Götürmə (siz)</dt><dd>{pickupAddress}</dd></div>
-                                    <div><dt>Çatdırılma (alıcı)</dt><dd>{order.deliveryAddress}</dd></div>
+                                    <div><dt>Götürmə (sizin mağaza)</dt><dd>{pickupAddress}</dd></div>
+                                    <div><dt>Alıcı ünvanı</dt><dd>{order.deliveryAddress}</dd></div>
                                     {drop ? (
                                       <div>
                                         <dt>Xəritə nöqtəsi</dt>
-                                        <dd>
-                                          {drop.lat.toFixed(5)}, {drop.lng.toFixed(5)}{' '}
-                                          <a href={mapsLink(drop.lat, drop.lng)} target="_blank" rel="noopener noreferrer" className="text-link">Xəritədə aç</a>
-                                        </dd>
+                                        <dd>{drop.lat.toFixed(5)}, {drop.lng.toFixed(5)}</dd>
                                       </div>
-                                    ) : (
-                                      <div><dt>Xəritə nöqtəsi</dt><dd>Alıcı pin qoymayıb — ünvana görə kuryer planlaşdırın.</dd></div>
-                                    )}
+                                    ) : null}
                                     {noteText ? <div><dt>Alıcı qeydi</dt><dd>{noteText}</dd></div> : null}
                                   </dl>
-                                  {drop ? (
-                                    <a
-                                      className="btn btn-blue seller-courier-bolt"
-                                      href={boltSendLink({ lat: drop.lat, lng: drop.lng, title: order.deliveryAddress })}
-                                      data-testid={`button-open-bolt-${order.id}`}
-                                    >
-                                      <Truck size={16} aria-hidden /> Kuryer çağır
-                                    </a>
-                                  ) : (
-                                    <p className="seller-courier-bolt-hint">Alıcı xəritədə pin qoyanda «Kuryer çağır» Bolt-u ünvanla açacaq.</p>
-                                  )}
-                                  <p className="seller-courier-bolt-hint">«Çatdırılmaya ver» düyməsi alıcıya status göndərir; ayrıca izləmə kodu yazmaq lazım deyil.</p>
+                                  <p className="seller-courier-bolt-hint">
+                                    Kuryeri EYNƏK sifariş edir. Siz stoku təsdiqləyin → hazırlayın → «Hazırdır» deyin; sonra admin paneldə çatdırılma növbəsinə düşür.
+                                  </p>
                                 </div>
                               );
                             })() : null}
@@ -255,11 +248,28 @@ export default function SellerOrdersPage() {
                                 <div><small>Alıcı</small><strong>{order.customerName}</strong></div>
                                 <div><small>Telefon</small><strong>{order.customerPhone || '—'}</strong></div>
                                 <div><small>E-poçt</small><strong>{order.customerEmail || '—'}</strong></div>
-                                {order.deliveryNote ? <div className="seller-buyer-note"><small>Qeyd</small><strong>{order.deliveryNote}</strong></div> : null}
+                                {deliveryNoteWithoutGeo(order.deliveryNote) ? <div className="seller-buyer-note"><small>Qeyd</small><strong>{deliveryNoteWithoutGeo(order.deliveryNote)}</strong></div> : null}
                               </div>
                             ) : (
                               <p className="seller-buyer-pending" data-testid={`buyer-contact-pending-${order.id}`}>Mağaza təsdiq etdikdən sonra alıcının telefonu və e-poçtu burada görünəcək.</p>
                             )}
+                            {(() => {
+                              const rx = parsePrescriptionPath(order.deliveryNote);
+                              if (!rx) return null;
+                              return (
+                                <div className="seller-buyer-note" data-testid={`prescription-${order.id}`} style={{ marginTop: 12 }}>
+                                  <small>Optik resept</small>
+                                  <strong>
+                                    <a href={prescriptionFileUrl(rx)} target="_blank" rel="noopener noreferrer" className="text-link">
+                                      Reseptə bax (PDF/şəkil)
+                                    </a>
+                                  </strong>
+                                  <span style={{ display: 'block', marginTop: 6, color: '#6d7784', fontSize: 11 }}>
+                                    Təsdiqləyəndən sonra alıcıda «Ödəniş et» açılacaq.
+                                  </span>
+                                </div>
+                              );
+                            })()}
                             <div className="order-items">{order.items.map((item) => <OrderItemRow key={item.productId} item={item} />)}</div>
                             {order.returnRequest && <div className="return-box" data-testid={`status-seller-return-${order.id}`}><strong>Qaytarma sorğusu · {returnStatusLabel(order.returnRequest.status)}</strong><p>{order.returnRequest.reason}</p><small>Alıcı sorğunu EYNƏK-ə göndərib. Mağaza satıcı olaraq qalır; geri ödənişi platforma ayrıca qeyd edir.</small></div>}
                             <div className="order-meta-grid"><div><small>Məhsullar</small><strong>{money(order.productSubtotalAzN)}</strong></div><div><small>Çatdırılma</small><strong>{money(order.deliveryFeeAzN)}</strong></div><div><small>Komissiya</small><strong>{money(order.commissionAzN)}</strong></div><div><small>Qazanc</small><strong>{money(order.sellerEarningsAzN)}</strong></div><div><small>Hesablaşma</small><strong>{settlementStatusLabel(order.settlementStatus)}</strong></div></div>
@@ -275,7 +285,34 @@ export default function SellerOrdersPage() {
                             ) : order.status === 'pending_confirmation' && !isFulfillmentStopped(order) ? (
                               <div className="order-actions">
                                 <div className="commerce-field"><label htmlFor={`status-${order.id}`}>Qərar</label><select id={`status-${order.id}`} data-testid={`select-seller-order-status-${order.id}`} value={draft.status} onChange={(event) => setDraft(order.id, { status: event.target.value as SellerOrderUpdateStatus })}>{statusesFor(order).map((status) => <option value={status} key={status}>{sellerStatusLabel(status, order.fulfillmentMethod)}</option>)}</select></div>
-                                {order.fulfillmentMethod === 'store_pickup' ? <div className="commerce-field"><label>Çatdırılma haqqı</label><input value="0.00" disabled data-testid={`input-seller-delivery-fee-${order.id}`} /><small style={{ color: '#7c8590' }}>Mağazadan götürmə pulsuzdur</small></div> : <div className="commerce-field"><label htmlFor={`fee-${order.id}`}>Çatdırılma haqqı (AZN)</label><input id={`fee-${order.id}`} type="number" min="0" max="1000" step="0.01" value={draft.deliveryFeeAzN} onChange={(event) => setDraft(order.id, { deliveryFeeAzN: event.target.value })} placeholder="Bolt-dan aldığınız məbləğ" data-testid={`input-seller-delivery-fee-${order.id}`} /><small style={{ color: '#7c8590' }}>Məhsul + bu məbləğ = alıcının ödənişi. Pulsuzdursa 0 yazın.</small></div>}
+                                {order.fulfillmentMethod === 'store_pickup' ? (
+                                  <div className="commerce-field">
+                                    <label>Çatdırılma haqqı</label>
+                                    <input value="0.00" disabled data-testid={`input-seller-delivery-fee-${order.id}`} />
+                                    <small style={{ color: '#7c8590' }}>Mağazadan götürmə pulsuzdur</small>
+                                  </div>
+                                ) : (
+                                  <div className="commerce-field">
+                                    <label htmlFor={`fee-${order.id}`}>Çatdırılma haqqı (AZN)</label>
+                                    <input
+                                      id={`fee-${order.id}`}
+                                      type="number"
+                                      min="0"
+                                      max="1000"
+                                      step="0.01"
+                                      value={draft.deliveryFeeAzN}
+                                      disabled={order.deliveryFeeAzN !== null}
+                                      onChange={(event) => setDraft(order.id, { deliveryFeeAzN: event.target.value })}
+                                      placeholder="Platforma tarifi"
+                                      data-testid={`input-seller-delivery-fee-${order.id}`}
+                                    />
+                                    <small style={{ color: '#7c8590' }}>
+                                      {order.deliveryFeeAzN !== null
+                                        ? 'Platforma tarifi (kuryeri EYNƏK sifariş edir). Satıcı dəyişdirmir.'
+                                        : 'Platforma tarifi təyin olunmayıbsa əl ilə yazın. Pulsuzdursa 0.'}
+                                    </small>
+                                  </div>
+                                )}
                                 <button className="btn btn-blue" type="button" onClick={() => void save(order)} disabled={updateOrder.isPending} data-testid={`button-save-seller-order-${order.id}`}>{savedId === order.id ? <Check size={15} /> : <RefreshCw size={15} />} {savedId === order.id ? 'Yadda saxlanıldı' : 'Qərarı saxla'}</button>
                               </div>
                             ) : !isFulfillmentStopped(order) ? (

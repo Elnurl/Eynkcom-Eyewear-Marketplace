@@ -184,21 +184,21 @@ export function buyerNotice(orderNumber: string, notice: BuyerNotice): BuyerNoti
             accent: "success",
           }
         : {
-            subject: `EYNƏK — sifariş ${orderNumber} yoldadır`,
+            subject: `EYNƏK — sifariş ${orderNumber} çatdırılma üçün hazırdır`,
             sms: paidOnline
-              ? `EYNƏK: Sifariş ${orderNumber} çatdırılmaya verildi.`
-              : `EYNƏK: Sifariş ${orderNumber} çatdırılmaya verildi. Ödəniş qapıdadır.`,
+              ? `EYNƏK: Sifariş ${orderNumber} hazırdır; tezliklə kuryer təyin olunacaq.`
+              : `EYNƏK: Sifariş ${orderNumber} hazırdır; tezliklə kuryer təyin olunacaq.`,
             intro: paidOnline
-              ? `${notice.storeName} sifariş ${orderNumber} üçün məhsulu çatdırılmaya verdi. Ödəniş artıq onlayn edilib.`
-              : `${notice.storeName} sifariş ${orderNumber} üçün məhsulu çatdırılmaya verdi. Ödəniş kuryerə, qapıda edilir.`,
-            badge: "Çatdırılma yoldadır",
-            headline: "Sifariş yola çıxdı.",
+              ? `${notice.storeName} sifariş ${orderNumber} üçün məhsulu hazırladı. EYNƏK kuryeri təyin edəcək. Ödəniş onlayn tamamlanıb.`
+              : `${notice.storeName} sifariş ${orderNumber} üçün məhsulu hazırladı. EYNƏK kuryeri təyin edəcək.`,
+            badge: "Çatdırılma üçün hazırdır",
+            headline: "Mağaza məhsulu hazırladı.",
             body: paidOnline
-              ? `${notice.storeName} sifariş ${orderNumber} üçün məhsulu kuryerə təhvil verdi. Çatdırılmanı gözləyin.`
-              : `${notice.storeName} sifariş ${orderNumber} üçün məhsulu kuryerə təhvil verdi. Ödəniş qapıda edilir.`,
+              ? `${notice.storeName} sifariş ${orderNumber} üçün məhsulu çatdırılma növbəsinə verdi. Kuryeri EYNƏK sifariş edir.`
+              : `${notice.storeName} sifariş ${orderNumber} üçün məhsulu çatdırılma növbəsinə verdi. Kuryeri EYNƏK sifariş edir.`,
             details: orderDetails(
               orderNumber,
-              "Kuryerə verildi",
+              "Çatdırılma üçün hazırdır",
               paymentDetailRow(notice.paymentMethod, notice.paymentStatus, false),
             ),
             accent: "success",

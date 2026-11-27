@@ -30,6 +30,7 @@ import {
 import { Link, Redirect, Route, Router as WouterRouter, Switch, useLocation, useParams, useSearch } from 'wouter';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { BrandFooterLogo, BrandLogo, BrandWord } from '@/components/brand-logo';
+import { IconFaceScan, IconGlasses, IconShield } from '@/components/commerce-icons';
 import { HeaderSearch } from '@/components/header-search';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -672,21 +673,21 @@ function Home({ products, stores, likedIds, onFavorite, onTryOn, onAdd }: Common
               </h2>
               <ul>
                 <li>
-                  <Glasses size={18} />
+                  <IconGlasses size={18} />
                   <div>
                     <strong>Model seç</strong>
                     <span>İstənilən məhsul kartında «Üzündə önizlə» düyməsinə toxun.</span>
                   </div>
                 </li>
                 <li>
-                  <ScanFace size={18} />
+                  <IconFaceScan size={18} />
                   <div>
                     <strong>Modellər arasında keçid et</strong>
                     <span>Bir toxunuşla başqa çərçivəyə bax və müqayisə et.</span>
                   </div>
                 </li>
                 <li>
-                  <ShieldCheck size={18} />
+                  <IconShield size={18} />
                   <div>
                     <strong>Əmin qərar ver</strong>
                     <span>Bəyəndiyini səbətə at.</span>
@@ -1570,6 +1571,7 @@ function Storefront() {
       productName: string;
       sellerName: string;
       sellerLocation: string;
+      category: string;
       quantity: number;
       unitPriceAzN: number;
       lineTotalAzN: number;
@@ -1584,9 +1586,10 @@ function Storefront() {
         grouped.set(id, {
           productId: id,
           productName: product.name,
-        sellerName: product.vendor,
-        sellerLocation: product.location,
-        quantity: 1,
+          sellerName: product.vendor,
+          sellerLocation: product.location,
+          category: product.type,
+          quantity: 1,
           unitPriceAzN: product.price,
           lineTotalAzN: product.price,
         });

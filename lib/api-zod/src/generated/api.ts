@@ -42,7 +42,7 @@ export const createGuestOrderBodyCustomerPhoneMax = 40;
 export const createGuestOrderBodyDeliveryAddressMin = 5;
 export const createGuestOrderBodyDeliveryAddressMax = 500;
 
-export const createGuestOrderBodyDeliveryNoteMax = 500;
+export const createGuestOrderBodyDeliveryNoteMax = 1200;
 
 export const createGuestOrderBodyGuestAccessTokenMin = 64;
 export const createGuestOrderBodyGuestAccessTokenMax = 128;
@@ -730,6 +730,9 @@ export const ListAdminOrdersResponseItem = zod.object({
   "customerName": zod.string(),
   "customerEmail": zod.string(),
   "customerPhone": zod.string(),
+  "deliveryArea": zod.string().optional(),
+  "deliveryAddress": zod.string().optional(),
+  "deliveryNote": zod.string().nullish(),
   "productSubtotalAzN": zod.number(),
   "deliveryTotalAzN": zod.number().nullable(),
   "totalAzN": zod.number().nullable(),

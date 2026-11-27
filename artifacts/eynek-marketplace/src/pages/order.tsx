@@ -13,7 +13,7 @@ import {
 import type { BuyerOrder, BuyerSellerOrderSummary } from '@workspace/api-client-react';
 import { BrandLogo } from '@/components/brand-logo';
 import { clearPaymentFailedQuery, isPaymentFailedReturn } from '@/lib/last-placed-order';
-import { LoadingCard, OrderItemRow, OrderTimeline, QueryError, StatePill, dateLabel, fulfillmentLabel, money, orderStatusLabel, paymentStatusLabel, returnStatusLabel, sellerStatusLabel } from './order-ui';
+import { LoadingCard, OrderItemRow, OrderTimeline, QueryError, StatePill, dateLabel, fulfillmentLabel, money, orderStatusLabel, parsePrescriptionPath, paymentStatusLabel, prescriptionFileUrl, returnStatusLabel, sellerStatusLabel } from './order-ui';
 import './order-pages.css';
 
 function readAccessToken(orderId: string) {
@@ -244,13 +244,38 @@ export default function OrderPage() {
     {order.isLoading ? <LoadingCard lines={6} /> : order.isError || !order.data ? <div><QueryError message="Sifariş tapılmadı və ya giriş kodu düzgün deyil." onRetry={() => void order.refetch()} /><button className="btn btn-secondary" type="button" style={{ marginTop: 12 }} onClick={forgetToken}>Kodu yenidən yaz</button></div> : (
       <>
         <section className="commerce-card order-hero"><div><div className="order-number">SİFARİŞ {order.data.orderNumber}</div><h1>{orderStatusLabel(order.data.status, order.data.fulfillmentMethod)}</h1><p>Yaradılıb: {dateLabel(order.data.createdAt)} · {fulfillmentLabel(order.data.fulfillmentMethod)} · {order.data.deliveryArea}</p></div><StatePill status={order.data.status} label={orderStatusLabel(order.data.status, order.data.fulfillmentMethod)} /></section>
+        {(() => {
+          const rx = parsePrescriptionPath(order.data.deliveryNote);
+          if (!rx) return null;
+          return (
+            <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="section-order-prescription">
+              <div className="commerce-card-heading">
+                <div>
+                  <h2>Optik resept</h2>
+                  <p>
+                    {order.data.status === 'pending_confirmation'
+                      ? 'Resept mağazaya göndərilib. Ödəniş düyməsi mağaza təsdiqindən sonra açılacaq.'
+                      : order.data.status === 'awaiting_payment'
+                        ? 'Mağaza təsdiqlədi — aşağıdan ödənişi tamamlayın.'
+                        : 'Sifarişə əlavə etdiyiniz resept.'}
+                  </p>
+                </div>
+              </div>
+              <a className="text-link" href={prescriptionFileUrl(rx)} target="_blank" rel="noopener noreferrer">Reseptə bax</a>
+            </section>
+          );
+        })()}
         {order.data.status === 'awaiting_buyer_approval' && <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}><div className="commerce-card-heading"><div><h2>Yenilənmiş sifariş təsdiqinizi gözləyir</h2><p>Mağazalardan biri məhsul və ya çatdırılma detallarını dəyişib. Sifarişi təsdiqləyin və ya ləğv edin.</p></div><ClipboardCheck size={19} color="#9b5c36" /></div><div style={{ display: 'flex', gap: 9, marginTop: 18, flexWrap: 'wrap' }}><button className="btn btn-blue" disabled={decideRevision.isPending} onClick={() => void decide(true)} data-testid="button-approve-revision"><Check size={15} /> {decideRevision.isPending ? 'Göndərilir...' : 'Yenilənmiş sifarişi təsdiqlə'}</button><button className="btn btn-secondary" disabled={decideRevision.isPending} onClick={() => void decide(false)} data-testid="button-cancel-revision"><RotateCcw size={15} /> Sifarişi ləğv et</button></div>{decisionError && <QueryError message={decisionError} />}</section>}
         {order.data.status === 'awaiting_payment' && order.data.paymentMethod === 'card' && (
           <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="section-order-payment">
             <div className="commerce-card-heading">
               <div>
                 <h2>Ödənişi tamamla</h2>
-                <p>Mağaza stoku təsdiqlədi. Məhsul və çatdırılma bir yekun məbləğ üçün 15 dəqiqə ərzində ödəyin.</p>
+                <p>
+                  {parsePrescriptionPath(order.data.deliveryNote)
+                    ? 'Mağaza resepti/məhsulu təsdiqlədi. İndi online ödənişi tamamlayın.'
+                    : 'Mağaza stoku təsdiqlədi. Məhsul və çatdırılma bir yekun məbləğ üçün 15 dəqiqə ərzində ödəyin.'}
+                </p>
                 {order.data.paymentDueAt ? (
                   <p style={{ marginTop: 8, color: '#7a8490', fontSize: 11 }}>
                     Son tarix: {dateLabel(order.data.paymentDueAt)}
@@ -340,7 +365,36 @@ export default function OrderPage() {
           </div>
           <aside>
             <section className="commerce-card commerce-card-pad"><div className="commerce-card-heading"><div><h2>Məlumatlar</h2><p>{accessToken ? 'Qonaq sifarişi' : 'Hesab sifarişi'}</p></div><ShieldCheck size={19} color="#5b719a" /></div><dl className="sidebar-summary" style={{ padding: '18px 0 0' }}><div><dt>Üsul</dt><dd>{fulfillmentLabel(order.data.fulfillmentMethod)}</dd></div><div><dt>Müştəri</dt><dd>{order.data.customerName}</dd></div><div><dt>Telefon</dt><dd>{order.data.customerPhone}</dd></div><div><dt>{order.data.fulfillmentMethod === 'store_pickup' ? 'Götürmə yeri' : 'Ünvan'}</dt><dd style={{ textAlign: 'right', maxWidth: 170 }}>{order.data.deliveryAddress}</dd></div><div><dt>Ödəniş</dt><dd>{paymentStatusLabel(order.data.paymentStatus, order.data.fulfillmentMethod)}</dd></div></dl></section>
-            <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}><div className="commerce-card-heading"><div><h2>Yekun məbləğ</h2><p>{order.data.status === 'awaiting_payment' ? 'Ödənişə hazır yekun (məhsul + çatdırılma).' : order.data.fulfillmentMethod === 'store_pickup' ? 'Mağazadan götürmə pulsuzdur.' : 'Mağazalar təsdiq etdikcə dəqiqləşir.'}</p></div></div><div className="summary-lines"><div className="summary-line"><span>Məhsullar</span><strong>{money(order.data.productSubtotalAzN)}</strong></div><div className="summary-line"><span>Çatdırılma</span><strong>{order.data.fulfillmentMethod === 'store_pickup' ? money(0) : money(order.data.deliveryTotalAzN)}</strong></div><div className="summary-line total"><span>Cəmi</span><strong>{money(order.data.totalAzN)}</strong></div></div></section>
+            <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }}>
+              <div className="commerce-card-heading">
+                <div>
+                  <h2>Yekun məbləğ</h2>
+                  <p>
+                    {order.data.status === 'awaiting_payment'
+                      ? 'Ödənişə hazır yekun (məhsul + çatdırılma).'
+                      : order.data.fulfillmentMethod === 'store_pickup'
+                        ? 'Mağazadan götürmə pulsuzdur.'
+                        : order.data.deliveryTotalAzN !== null
+                          ? 'Çatdırılma platforma tarifinə görə hesablanıb.'
+                          : 'Mağazalar təsdiq etdikcə dəqiqləşir.'}
+                  </p>
+                </div>
+              </div>
+              <div className="summary-lines">
+                <div className="summary-line"><span>Məhsullar</span><strong>{money(order.data.productSubtotalAzN)}</strong></div>
+                <div className="summary-line">
+                  <span>Çatdırılma</span>
+                  <strong>
+                    {order.data.fulfillmentMethod === 'store_pickup'
+                      ? money(0)
+                      : order.data.deliveryTotalAzN === 0
+                        ? 'Pulsuz'
+                        : money(order.data.deliveryTotalAzN)}
+                  </strong>
+                </div>
+                <div className="summary-line total"><span>Cəmi</span><strong>{money(order.data.totalAzN)}</strong></div>
+              </div>
+            </section>
           </aside>
         </div>
         {(() => {

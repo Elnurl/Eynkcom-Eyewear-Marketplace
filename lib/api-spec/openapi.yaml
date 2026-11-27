@@ -1447,7 +1447,7 @@ components:
           maxLength: 500
         deliveryNote:
           type: string
-          maxLength: 500
+          maxLength: 1200
         paymentMethod:
           $ref: "#/components/schemas/PaymentMethod"
         guestAccessToken:
@@ -1713,6 +1713,12 @@ components:
           type: string
         customerPhone:
           type: string
+        deliveryArea:
+          type: string
+        deliveryAddress:
+          type: string
+        deliveryNote:
+          type: ["string", "null"]
         productSubtotalAzN:
           type: number
         deliveryTotalAzN:

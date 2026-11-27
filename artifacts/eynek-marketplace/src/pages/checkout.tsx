@@ -1,5 +1,20 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { AlertCircle, ArrowRight, CheckCircle2, CreditCard, Info, MapPin, PackageCheck, ShieldCheck, Store, Truck } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import {
+  AlertCircle,
+  ArrowRight,
+  Banknote,
+  CalendarDays,
+  CheckCircle2,
+  CreditCard,
+  FileUp,
+  Info,
+  MapPin,
+  PackageCheck,
+  ShieldCheck,
+  Store,
+  Truck,
+  X,
+} from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import {
   CheckoutOptionsCardPaymentStatus,
@@ -13,9 +28,37 @@ import type { CheckoutOptions, GuestOrderInput } from '@workspace/api-client-rea
 import { AddressMapPicker, type AddressMapValue } from '@/components/AddressMapPicker';
 import { BrandLogo } from '@/components/brand-logo';
 import { az } from '@/i18n/az';
+import { FREE_DELIVERY_FROM_AZN, STANDARD_DELIVERY_FEE_AZN, deliveryFeeAzN } from '@/lib/delivery-pricing';
+import { buildDeliverySlots, slotTag, type DeliveryWindow } from '@/lib/delivery-slots';
 import { clearPaymentFailedQuery, isPaymentFailedReturn, lastPlacedOrderHref, saveLastPlacedOrder } from '@/lib/last-placed-order';
+import {
+  cartNeedsPrescriptionSection,
+  prescriptionFileUrl,
+  prescriptionTag,
+} from '@/lib/prescription';
 import { LoadingCard, money } from './order-ui';
 import './order-pages.css';
+
+async function uploadPrescription(file: File): Promise<string> {
+  const type = file.type === 'application/pdf'
+    ? 'application/pdf'
+    : file.type === 'image/png'
+      ? 'image/png'
+      : 'image/jpeg';
+  const response = await fetch('/api/storage/uploads/prescription', {
+    method: 'POST',
+    headers: { 'Content-Type': type },
+    body: file,
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(payload.error || 'Resept yüklənmədi.');
+  }
+  const payload = (await response.json()) as { objectPath?: string };
+  if (!payload.objectPath) throw new Error('Resept yüklənmədi.');
+  return payload.objectPath;
+}
 
 export interface CheckoutCartItem {
   productId: string | number;
@@ -23,6 +66,8 @@ export interface CheckoutCartItem {
   name?: string;
   sellerName?: string;
   sellerLocation?: string;
+  /** `Optik çərçivə` | `Gün eynəyi` — resept yalnız optikdə. */
+  category?: string;
   quantity: number;
   unitPriceAzN?: number;
   lineTotalAzN?: number;
@@ -75,23 +120,53 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
     deliveryNote: string;
   }>(defaultValues);
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>(FulfillmentMethod.courier);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.pay_on_delivery);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.card);
   const [formError, setFormError] = useState('');
   const [placedOrder, setPlacedOrder] = useState<{ id: string; orderNumber: string; token: string } | null>(null);
   const [payNote, setPayNote] = useState('');
   const [deliveryPin, setDeliveryPin] = useState<AddressMapValue | null>(null);
+  const deliverySlots = useMemo(() => buildDeliverySlots({ weekdayCount: 4 }), []);
+  const [deliverySlotId, setDeliverySlotId] = useState(() => deliverySlots[0]?.id ?? '');
+  const [prescriptionPath, setPrescriptionPath] = useState('');
+  const [prescriptionName, setPrescriptionName] = useState('');
+  const [prescriptionUploading, setPrescriptionUploading] = useState(false);
+  const prescriptionInputRef = useRef<HTMLInputElement>(null);
   const [paymentFailedReturn] = useState(() => typeof window !== 'undefined' && isPaymentFailedReturn());
   const lastOrderHref = useMemo(() => (typeof window !== 'undefined' ? lastPlacedOrderHref() : null), [paymentFailedReturn]);
+  const selectedSlot = useMemo(
+    () => deliverySlots.find((slot) => slot.id === deliverySlotId) ?? deliverySlots[0] ?? null,
+    [deliverySlotId, deliverySlots],
+  );
+  const showPrescription = useMemo(
+    () => cartNeedsPrescriptionSection(items.map((item) => item.category)),
+    [items],
+  );
+  const prescriptionDeferredPay = Boolean(showPrescription && prescriptionPath);
 
   useEffect(() => {
     if (paymentFailedReturn) clearPaymentFailedQuery();
   }, [paymentFailedReturn]);
+
+  useEffect(() => {
+    if (!deliverySlots.some((slot) => slot.id === deliverySlotId) && deliverySlots[0]) {
+      setDeliverySlotId(deliverySlots[0].id);
+    }
+  }, [deliverySlotId, deliverySlots]);
 
   const options = (checkoutOptions.data ?? FALLBACK_CHECKOUT_OPTIONS) as CheckoutOptions;
   const areas = options.deliveryAreas;
   const checkoutOffline = checkoutOptions.isError && !checkoutOptions.data;
   const pickup = fulfillmentMethod === FulfillmentMethod.store_pickup;
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + (item.lineTotalAzN ?? (item.unitPriceAzN ?? 0) * item.quantity), 0), [items]);
+  const deliveryFee = useMemo(
+    () =>
+      deliveryFeeAzN({
+        fulfillmentMethod,
+        productSubtotalAzN: subtotal,
+      }),
+    [fulfillmentMethod, subtotal],
+  );
+  const orderTotal = subtotal + deliveryFee;
   const pickupShops = useMemo(() => {
     const unique = new Map<string, { name: string; location: string }>();
     for (const item of items) {
@@ -107,7 +182,41 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
     if (!areas.includes(form.deliveryArea)) setForm((current) => ({ ...current, deliveryArea: areas[0] ?? GuestOrderInputDeliveryArea.Bakı }));
   }, [areas, form.deliveryArea]);
 
+  useEffect(() => {
+    if ((!pickup || prescriptionDeferredPay) && paymentMethod !== PaymentMethod.card) {
+      setPaymentMethod(PaymentMethod.card);
+    }
+  }, [pickup, paymentMethod, prescriptionDeferredPay]);
+
   const update = (key: keyof typeof defaultValues, value: string) => setForm((current) => ({ ...current, [key]: value }));
+
+  const setFulfillment = (method: FulfillmentMethod) => {
+    setFulfillmentMethod(method);
+    if (method === FulfillmentMethod.courier || prescriptionDeferredPay) setPaymentMethod(PaymentMethod.card);
+  };
+
+  const onPrescriptionFile = async (file: File | null) => {
+    if (!file) return;
+    const okType = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'].includes(file.type)
+      || /\.(jpe?g|png|pdf)$/i.test(file.name);
+    if (!okType) {
+      setFormError('Resept üçün JPG, PNG və ya PDF seçin.');
+      return;
+    }
+    setFormError('');
+    setPrescriptionUploading(true);
+    try {
+      const path = await uploadPrescription(file);
+      setPrescriptionPath(path);
+      setPrescriptionName(file.name);
+      setPaymentMethod(PaymentMethod.card);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Resept yüklənmədi.');
+    } finally {
+      setPrescriptionUploading(false);
+      if (prescriptionInputRef.current) prescriptionInputRef.current.value = '';
+    }
+  };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -124,20 +233,41 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
       setFormError('Çatdırılma üçün xəritədə nöqtə seçin.');
       return;
     }
+    if (!pickup && !selectedSlot) {
+      setFormError('Çatdırılma tarixi və vaxtını seçin.');
+      return;
+    }
+    const resolvedPayment = prescriptionDeferredPay || !pickup ? PaymentMethod.card : paymentMethod;
+    if ((!pickup || prescriptionDeferredPay) && resolvedPayment !== PaymentMethod.card) {
+      setFormError(prescriptionDeferredPay
+        ? 'Reseptli sifarişdə ödəniş satıcı təsdiqindən sonra online edilir.'
+        : 'Kuryer çatdırılmasında yalnız online ödəniş mümkündür.');
+      return;
+    }
     const guestAccessToken = createGuestToken();
     const input: GuestOrderInput = {
       customerName: form.customerName,
       customerEmail: form.customerEmail,
       customerPhone: form.customerPhone,
       fulfillmentMethod,
-      paymentMethod,
+      paymentMethod: resolvedPayment,
       guestAccessToken,
       items: items.map((item) => ({ productId: String(item.productId), quantity: item.quantity })),
       ...(() => {
         const note = form.deliveryNote.trim();
-        if (pickup) return note ? { deliveryNote: note } : {};
+        const rx = prescriptionPath
+          ? [`Resept: yüklənib (${prescriptionName || 'fayl'})`, prescriptionTag(prescriptionPath)]
+          : [];
+        if (pickup) {
+          const merged = [note, ...rx].filter(Boolean).join('\n');
+          return merged ? { deliveryNote: merged } : {};
+        }
         const geo = deliveryPin ? `[geo:${deliveryPin.lat.toFixed(6)},${deliveryPin.lng.toFixed(6)}]` : '';
-        const merged = [note, geo].filter(Boolean).join('\n');
+        const slot = selectedSlot ? slotTag(selectedSlot) : '';
+        const humanSlot = selectedSlot
+          ? `Çatdırılma: ${selectedSlot.dateLabel}, ${selectedSlot.timeLabel}`
+          : '';
+        const merged = [note, humanSlot, slot, ...rx, geo].filter(Boolean).join('\n');
         return merged ? { deliveryNote: merged } : {};
       })(),
       ...(pickup
@@ -153,9 +283,11 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
       saveLastPlacedOrder({ id: order.id, orderNumber: order.orderNumber, token: guestAccessToken });
       onClearCart();
       setPayNote(
-        paymentMethod === 'card'
-          ? 'Mağaza stoku təsdiqləyəndən sonra 15 dəqiqə ərzində ödəniş linki e-poçtunuza və aşağıdakı izləmə səhifəsinə gələcək.'
-          : '',
+        prescriptionDeferredPay
+          ? 'Resept mağazaya göndərildi. Ödəniş düyməsi mağaza məhsulu/resepti təsdiqləyəndən sonra izləmə səhifəsində açılacaq.'
+          : resolvedPayment === 'card'
+            ? 'Mağaza stoku təsdiqləyəndən sonra 15 dəqiqə ərzində ödəniş linki e-poçtunuza və aşağıdakı izləmə səhifəsinə gələcək.'
+            : '',
       );
       setPlacedOrder({ id: order.id, orderNumber: order.orderNumber, token: guestAccessToken });
     } catch (error) {
@@ -242,13 +374,19 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
                 <div className="commerce-card-heading"><div><h2>Çatdırılma üsulu</h2><p>Kuryer haqqı sifarişdən sonra dəqiqləşir. Mağazadan götürmə pulsuzdur.</p></div><Truck size={19} color="#5b719a" /></div>
                 <div style={{ paddingTop: 17 }}>
                   <label className={`payment-choice ${!pickup ? 'selected' : ''}`} data-testid="choice-fulfillment-courier">
-                    <input type="radio" name="fulfillmentMethod" checked={!pickup} onChange={() => setFulfillmentMethod(FulfillmentMethod.courier)} />
-                    <span><strong>Kuryer ilə çatdırılma</strong><span>Bakı və Abşeron. Haqq mağaza təsdiqindən sonra görünəcək.</span></span>
+                    <input type="radio" name="fulfillmentMethod" checked={!pickup} onChange={() => setFulfillment(FulfillmentMethod.courier)} />
+                    <span>
+                      <strong>Kuryer ilə çatdırılma</strong>
+                      <span>
+                        Bakı və Abşeron · {STANDARD_DELIVERY_FEE_AZN} AZN
+                        {` · ${FREE_DELIVERY_FROM_AZN} AZN-dən pulsuz`} · yalnız online ödəniş
+                      </span>
+                    </span>
                     <Truck size={17} color="#5b719a" />
                   </label>
                   <label className={`payment-choice ${pickup ? 'selected' : ''}`} data-testid="choice-fulfillment-pickup">
-                    <input type="radio" name="fulfillmentMethod" checked={pickup} onChange={() => setFulfillmentMethod(FulfillmentMethod.store_pickup)} />
-                    <span><strong>Mağazadan pulsuz götürmə</strong><span>Məhsulu satan optikadan özünüz götürün. Çatdırılma haqqı 0 AZN.</span></span>
+                    <input type="radio" name="fulfillmentMethod" checked={pickup} onChange={() => setFulfillment(FulfillmentMethod.store_pickup)} />
+                    <span><strong>Mağazadan pulsuz götürmə</strong><span>Məhsulu satan optikadan özünüz götürün. Nağd və ya online ödəyə bilərsiniz.</span></span>
                     <Store size={17} color="#5b719a" />
                   </label>
                 </div>
@@ -289,11 +427,135 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
                 </section>
               )}
 
+              {!pickup ? (
+                <section className="commerce-card commerce-card-pad" data-testid="section-delivery-slots">
+                  <div className="commerce-card-heading">
+                    <div>
+                      <h2>Çatdırılma tarixi və vaxtı</h2>
+                    </div>
+                    <CalendarDays size={19} color="#5b719a" />
+                  </div>
+                  <div className="delivery-slot-row" role="listbox" aria-label="Çatdırılma tarixi və vaxtı">
+                    {deliverySlots.map((slot: DeliveryWindow) => {
+                      const selected = slot.id === (selectedSlot?.id ?? '');
+                      return (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          role="option"
+                          aria-selected={selected}
+                          className={`delivery-slot-card${selected ? ' is-selected' : ''}`}
+                          onClick={() => setDeliverySlotId(slot.id)}
+                          data-testid={`button-delivery-slot-${slot.id}`}
+                        >
+                          <span className="delivery-slot-time">{slot.timeLabel}</span>
+                          <strong className="delivery-slot-date">{slot.dateLabel}</strong>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null}
+
+              {showPrescription ? (
+                <section className="commerce-card commerce-card-pad" data-testid="section-prescription">
+                  <div className="commerce-card-heading">
+                    <div>
+                      <h2>Optik resept</h2>
+                      <p>Yalnız optik çərçivə üçün. Gün eynəyində lazım deyil. PDF və ya şəkil (istəyə görə).</p>
+                    </div>
+                    <FileUp size={19} color="#5b719a" />
+                  </div>
+                  <input
+                    ref={prescriptionInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
+                    hidden
+                    onChange={(event) => void onPrescriptionFile(event.target.files?.[0] ?? null)}
+                    data-testid="input-prescription-file"
+                  />
+                  {prescriptionPath ? (
+                    <div className="prescription-file" data-testid="status-prescription-ready">
+                      <div>
+                        <strong>{prescriptionName || 'Resept yükləndi'}</strong>
+                        <span>Ödəniş mağaza təsdiqindən sonra açılacaq.</span>
+                        <a href={prescriptionFileUrl(prescriptionPath)} target="_blank" rel="noreferrer">Fayla bax</a>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          setPrescriptionPath('');
+                          setPrescriptionName('');
+                        }}
+                        data-testid="button-prescription-remove"
+                      >
+                        <X size={15} /> Sil
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="prescription-upload">
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        disabled={prescriptionUploading}
+                        onClick={() => prescriptionInputRef.current?.click()}
+                        data-testid="button-prescription-upload"
+                      >
+                        <FileUp size={14} /> {prescriptionUploading ? 'Yüklənir...' : 'Resept yüklə (PDF/şəkil)'}
+                      </button>
+                      <p className="commerce-note" style={{ margin: '10px 0 0' }}>
+                        Resept yükləsəniz, indi ödəniş olunmur — mağaza təsdiqləyəndən sonra «Ödəniş et» açılır.
+                      </p>
+                    </div>
+                  )}
+                </section>
+              ) : null}
+
               <section className="commerce-card commerce-card-pad">
-                <div className="commerce-card-heading"><div><h2>Ödəniş üsulu</h2><p>{az.payment.checkoutIntro}</p></div><CreditCard size={19} color="#5b719a" /></div>
+                <div className="commerce-card-heading">
+                  <div>
+                    <h2>Ödəniş üsulu</h2>
+                    <p>
+                      {prescriptionDeferredPay
+                        ? 'Reseptli sifariş: ödəniş mağaza təsdiqindən sonra online açılır.'
+                        : pickup
+                          ? az.payment.checkoutIntroPickup
+                          : az.payment.checkoutIntroCourier}
+                    </p>
+                  </div>
+                  <CreditCard size={19} color="#5b719a" />
+                </div>
                 <div style={{ paddingTop: 17 }}>
-                  <label className={`payment-choice ${paymentMethod === PaymentMethod.pay_on_delivery ? 'selected' : ''}`}><input type="radio" name="paymentMethod" checked={paymentMethod === PaymentMethod.pay_on_delivery} onChange={() => setPaymentMethod(PaymentMethod.pay_on_delivery)} /><span><strong>{pickup ? 'Götürəndə nağd ödəniş' : 'Çatdırılmada nağd ödəniş'}</strong><span>{pickup ? 'Məhsulu mağazadan götürəndə nağd ödəyin.' : 'Sifariş qapınıza çatanda kuryerə nağd ödəyin.'}</span></span><CheckCircle2 size={17} color="#2a7045" /></label>
-                  <label className={`payment-choice ${paymentMethod === PaymentMethod.card ? 'selected' : ''}`} data-testid="choice-payment-card"><input type="radio" name="paymentMethod" checked={paymentMethod === PaymentMethod.card} onChange={() => setPaymentMethod(PaymentMethod.card)} /><span><strong>Bank kartı ilə online ödəniş</strong><span>Sifariş qəbul olunduqdan sonra online ödənişi tamamlayın.</span></span><CreditCard size={17} color="#5b719a" /></label>
+                  {pickup && !prescriptionDeferredPay ? (
+                    <label className={`payment-choice ${paymentMethod === PaymentMethod.pay_on_delivery ? 'selected' : ''}`} data-testid="choice-payment-cash">
+                      <input type="radio" name="paymentMethod" checked={paymentMethod === PaymentMethod.pay_on_delivery} onChange={() => setPaymentMethod(PaymentMethod.pay_on_delivery)} />
+                      <span>
+                        <strong>Götürəndə nağd ödəniş</strong>
+                        <span>Məhsulu mağazadan götürəndə nağd ödəyin.</span>
+                      </span>
+                      <Banknote size={17} color="#5b719a" />
+                    </label>
+                  ) : null}
+                  <label className={`payment-choice ${paymentMethod === PaymentMethod.card ? 'selected' : ''}`} data-testid="choice-payment-card">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      checked={paymentMethod === PaymentMethod.card}
+                      onChange={() => setPaymentMethod(PaymentMethod.card)}
+                    />
+                    <span>
+                      <strong>Bank kartı ilə online ödəniş</strong>
+                      <span>
+                        {prescriptionDeferredPay
+                          ? 'İndi ödəniş yoxdur. Mağaza təsdiqindən sonra izləmə səhifəsində «Ödəniş et» açılacaq.'
+                          : pickup
+                            ? 'İstəsəniz online ödəyib mağazadan götürün.'
+                            : 'Kuryer çatdırılmasında yalnız online ödəniş mümkündür.'}
+                      </span>
+                    </span>
+                    <CreditCard size={17} color="#5b719a" />
+                  </label>
                 </div>
               </section>
             </div>
@@ -302,14 +564,30 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
               <section className="commerce-card commerce-card-pad">
                 <div className="commerce-card-heading"><div><h2>Sifariş xülasəsi</h2><p>{items.length} məhsul · {pickup ? 'mağazadan götürmə' : 'kuryer çatdırılması'}</p></div><PackageCheck size={19} color="#5b719a" /></div>
                 <div className="checkout-items">{items.map((item, index) => <div className="checkout-item" key={`${item.productId}-${index}`} data-testid={`row-checkout-item-${item.productId}`}><div><strong>{item.productName ?? item.name ?? `Məhsul ${item.productId}`}</strong><small>{item.sellerName ? `${item.sellerName} · ` : ''}Say: {item.quantity}</small></div><span className="checkout-item-price">{money(item.lineTotalAzN ?? (item.unitPriceAzN ?? 0) * item.quantity)}</span></div>)}</div>
-                <div className="summary-lines"><div className="summary-line"><span>Məhsullar</span><strong>{money(subtotal)}</strong></div><div className="summary-line"><span>Çatdırılma</span><strong>{pickup ? money(0) : 'Sifarişdən sonra'}</strong></div><div className="summary-line total"><span>Cəmi</span><strong>{money(subtotal)}</strong></div></div>
+                <div className="summary-lines">
+                  <div className="summary-line"><span>Məhsullar</span><strong>{money(subtotal)}</strong></div>
+                  <div className="summary-line">
+                    <span>Çatdırılma</span>
+                    <strong data-testid="text-checkout-delivery-fee">
+                      {pickup ? money(0) : deliveryFee <= 0 ? 'Pulsuz' : money(deliveryFee)}
+                    </strong>
+                  </div>
+                  {!pickup && deliveryFee <= 0 && subtotal >= FREE_DELIVERY_FROM_AZN ? (
+                    <p className="commerce-note" style={{ margin: 0 }} data-testid="text-free-delivery-hint">
+                      {FREE_DELIVERY_FROM_AZN} AZN və daha çoxu üçün çatdırılma pulsuzdur.
+                    </p>
+                  ) : null}
+                  <div className="summary-line total"><span>Cəmi</span><strong data-testid="text-checkout-total">{money(orderTotal)}</strong></div>
+                </div>
                 <div className="commerce-submit"><button className="btn btn-blue" type="submit" disabled={createOrder.isPending || !items.length} data-testid="button-place-order">{createOrder.isPending ? 'Sifariş yaradılır...' : 'Sifarişi təsdiqlə'} <ArrowRight size={15} /></button><p className="commerce-note">Sifarişi təsdiqləməklə <Link href="/qaydalar">istifadə şərtləri</Link> və <Link href="/mexfilik">məxfilik</Link> qaydaları ilə razılaşırsınız.</p></div>
                 {formError && <div className="commerce-error" role="alert" data-testid="status-checkout-error"><AlertCircle size={16} /><span>{formError}</span></div>}
               </section>
-              <div className="info-ribbon" style={{ marginTop: 14 }}>
-                {pickup ? <Store size={16} /> : <Truck size={16} />}
-                <span>{pickup ? 'Mağaza sifarişi təsdiqləyəndən sonra götürməyə hazır olduğunu izləmə səhifəsində görəcəksiniz.' : 'Mağazalar sifarişi təsdiqlədikdən sonra yekun çatdırılma haqqı sifarişinizdə ayrıca göstəriləcək.'}</span>
-              </div>
+              {pickup ? (
+                <div className="info-ribbon" style={{ marginTop: 14 }}>
+                  <Store size={15} />
+                  <span>Mağaza sifarişi təsdiqləyəndən sonra götürməyə hazır olduğunu izləmə səhifəsində görəcəksiniz.</span>
+                </div>
+              ) : null}
               {createOrder.isSuccess && <div className="info-ribbon" style={{ marginTop: 14 }}><Info size={16} /><span>Sifarişiniz yaradıldı. İzləmə səhifəsinə yönləndirilirsiniz.</span></div>}
             </aside>
           </form>

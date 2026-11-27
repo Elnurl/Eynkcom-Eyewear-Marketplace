@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CircleDollarSign, ClipboardList, LogOut, RefreshCw, ShieldCheck } from 'lucide-react';
+import { AlertCircle, CircleDollarSign, ClipboardList, LogOut, RefreshCw, ShieldCheck, Truck } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -14,8 +14,32 @@ import {
 import type { AdminOrder, OrderRefundInput, OrderReturnUpdate, OrderSettlementInput } from '@workspace/api-client-react';
 import { signOutAndGo, useAuthSession } from '@/lib/auth-client';
 import { BrandLogo } from '@/components/brand-logo';
-import { LoadingCard, QueryError, StatePill, dateLabel, fulfillmentLabel, money, orderStatusLabel, paymentStatusLabel, returnStatusLabel, sellerStatusLabel, settlementStatusLabel } from './order-ui';
+import {
+  LoadingCard,
+  QueryError,
+  StatePill,
+  boltSendLink,
+  dateLabel,
+  deliveryNoteWithoutGeo,
+  fulfillmentLabel,
+  mapsLink,
+  money,
+  orderStatusLabel,
+  parseDeliveryGeo,
+  parsePrescriptionPath,
+  paymentStatusLabel,
+  prescriptionFileUrl,
+  returnStatusLabel,
+  sellerStatusLabel,
+  settlementStatusLabel,
+} from './order-ui';
 import './order-pages.css';
+
+type DeliveryQueueItem = {
+  order: AdminOrder;
+  sellerOrderId: string;
+  sellerName: string;
+};
 
 type RefundDraft = { sellerOrderId: string; amount: string; productAmount: string; reference: string; reason: string };
 type SettleDraft = { sellerOrderId: string; reference: string };
@@ -45,6 +69,7 @@ export default function SellerAdminOrdersPage() {
   const [settleDrafts, setSettleDrafts] = useState<Record<string, SettleDraft>>({});
   const [error, setError] = useState('');
   const [savedId, setSavedId] = useState('');
+  const [deliveringId, setDeliveringId] = useState('');
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -58,12 +83,46 @@ export default function SellerAdminOrdersPage() {
   }, [adminAccess.error, isLoaded, isSignedIn, setLocation]);
 
   const list = orders.data ?? [];
+  const deliveryQueue = useMemo(() => {
+    const rows: DeliveryQueueItem[] = [];
+    for (const order of list) {
+      if (order.fulfillmentMethod !== 'courier') continue;
+      for (const seller of order.sellerOrders) {
+        if (seller.status === 'out_for_delivery') {
+          rows.push({ order, sellerOrderId: seller.id, sellerName: seller.sellerName });
+        }
+      }
+    }
+    return rows;
+  }, [list]);
   const totalGross = useMemo(() => list.reduce((sum, order) => sum + (order.totalAzN ?? 0), 0), [list]);
   const totalRefunded = useMemo(() => list.reduce((sum, order) => sum + order.refundedAzN, 0), [list]);
   const payableCount = useMemo(
     () => list.reduce((sum, order) => sum + order.sellerOrders.filter((seller) => ['payable', 'adjusted'].includes(seller.settlementStatus)).length, 0),
     [list],
   );
+
+  const markDelivered = async (item: DeliveryQueueItem) => {
+    setError('');
+    setSavedId('');
+    setDeliveringId(item.sellerOrderId);
+    try {
+      const response = await fetch(
+        `/api/admin/orders/${encodeURIComponent(item.order.id)}/seller-orders/${encodeURIComponent(item.sellerOrderId)}/deliver`,
+        { method: 'PATCH', credentials: 'include' },
+      );
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(payload.error || 'Çatdırılma bağlanmadı.');
+      }
+      await queryClient.invalidateQueries({ queryKey: getListAdminOrdersQueryKey() });
+      setSavedId(`deliver-${item.sellerOrderId}`);
+    } catch (deliverError) {
+      setError(deliverError instanceof Error ? deliverError.message : errorText(deliverError));
+    } finally {
+      setDeliveringId('');
+    }
+  };
   const draftFor = (order: AdminOrder): RefundDraft => drafts[order.id] ?? {
     sellerOrderId: order.sellerOrders.find((seller) => seller.status === 'delivered')?.id ?? '',
     amount: '',
@@ -160,9 +219,86 @@ export default function SellerAdminOrdersPage() {
       <div className="seller-sidebar-footer"><Link href="/" className="seller-nav-item">Mağazaya qayıt</Link><button className="seller-nav-item text-danger" onClick={() => void signOutAndGo('/')} data-testid="button-admin-orders-logout"><LogOut size={18} /> Çıxış et</button></div>
     </aside>
     <main className="seller-main"><div className="seller-content">
-      <div className="management-toolbar"><div><div className="eyebrow">Maliyyə nəzarəti</div><h1>Sifarişlər, qaytarma və hesablaşma.</h1></div><p>Ödəniş, qaytarma və mağaza hesablaşmasını burada qeyd edin. Hesablaşma düyməsi pul köçürmür.</p></div>
-      <div className="stat-strip"><div className="stat-tile"><small>Sifarişlər</small><strong>{list.length}</strong></div><div className="stat-tile"><small>Brüt məbləğ</small><strong>{money(totalGross)}</strong></div><div className="stat-tile"><small>Geri qaytarılıb</small><strong>{money(totalRefunded)}</strong></div><div className="stat-tile"><small>Açıq hesablaşma</small><strong>{payableCount}</strong></div></div>
+      <div className="management-toolbar"><div><div className="eyebrow">Maliyyə nəzarəti</div><h1>Sifarişlər, qaytarma və hesablaşma.</h1></div><p>Ödəniş, qaytarma və mağaza hesablaşmasını burada qeyd edin. Kuryer çatdırılmasını da bu paneldən bağlayırsınız.</p></div>
+      <div className="stat-strip"><div className="stat-tile"><small>Sifarişlər</small><strong>{list.length}</strong></div><div className="stat-tile"><small>Brüt məbləğ</small><strong>{money(totalGross)}</strong></div><div className="stat-tile"><small>Geri qaytarılıb</small><strong>{money(totalRefunded)}</strong></div><div className="stat-tile"><small>Açıq hesablaşma</small><strong>{payableCount}</strong></div><div className="stat-tile"><small>Çatdırılma növbəsi</small><strong>{deliveryQueue.length}</strong></div></div>
       {error && <div className="commerce-error" role="alert" data-testid="status-admin-order-error"><AlertCircle size={16} />{error}</div>}
+
+      {!orders.isLoading && !orders.isError ? (
+        <section className="commerce-card commerce-card-pad" style={{ marginTop: 16 }} data-testid="section-admin-delivery-queue">
+          <div className="commerce-card-heading">
+            <div>
+              <h2>Çatdırılma üçün gözləyənlər</h2>
+              <p>Satıcı «hazırdır» dediyi kuryer sifarişləri. Kuryeri burada sifariş edin və bağlayın.</p>
+            </div>
+            <Truck size={19} color="#5b719a" />
+          </div>
+          {deliveryQueue.length === 0 ? (
+            <p className="commerce-note" style={{ marginTop: 14 }}>Hazırda növbədə sifariş yoxdur.</p>
+          ) : (
+            <div className="admin-delivery-queue" style={{ marginTop: 16, display: 'grid', gap: 12 }}>
+              {deliveryQueue.map((item) => {
+                const drop = parseDeliveryGeo(item.order.deliveryNote);
+                const note = deliveryNoteWithoutGeo(item.order.deliveryNote);
+                const rx = parsePrescriptionPath(item.order.deliveryNote);
+                return (
+                  <article
+                    key={`${item.order.id}-${item.sellerOrderId}`}
+                    className="seller-courier-box"
+                    data-testid={`card-admin-delivery-${item.sellerOrderId}`}
+                  >
+                    <div className="seller-courier-head">
+                      <Truck size={16} aria-hidden />
+                      <strong>{item.order.orderNumber} · {item.sellerName}</strong>
+                    </div>
+                    <dl className="seller-courier-dl">
+                      <div><dt>Alıcı</dt><dd>{item.order.customerName} · {item.order.customerPhone}</dd></div>
+                      <div><dt>Ünvan</dt><dd>{item.order.deliveryArea ? `${item.order.deliveryArea}, ` : ''}{item.order.deliveryAddress || '—'}</dd></div>
+                      {drop ? (
+                        <div>
+                          <dt>Xəritə</dt>
+                          <dd>
+                            {drop.lat.toFixed(5)}, {drop.lng.toFixed(5)}{' '}
+                            <a href={mapsLink(drop.lat, drop.lng)} target="_blank" rel="noopener noreferrer" className="text-link">Xəritədə aç</a>
+                          </dd>
+                        </div>
+                      ) : null}
+                      {note ? <div><dt>Qeyd</dt><dd>{note}</dd></div> : null}
+                      {rx ? (
+                        <div>
+                          <dt>Resept</dt>
+                          <dd><a href={prescriptionFileUrl(rx)} target="_blank" rel="noopener noreferrer" className="text-link">Bax</a></dd>
+                        </div>
+                      ) : null}
+                      <div><dt>Yekun</dt><dd>{money(item.order.totalAzN)}</dd></div>
+                    </dl>
+                    <div className="order-next-steps" style={{ marginTop: 12 }}>
+                      {drop ? (
+                        <a
+                          className="btn btn-secondary"
+                          href={boltSendLink({ lat: drop.lat, lng: drop.lng, title: item.order.deliveryAddress || item.order.orderNumber })}
+                          data-testid={`button-admin-bolt-${item.sellerOrderId}`}
+                        >
+                          <Truck size={15} /> Bolt aç
+                        </a>
+                      ) : null}
+                      <button
+                        className="btn btn-blue"
+                        type="button"
+                        disabled={deliveringId === item.sellerOrderId}
+                        onClick={() => void markDelivered(item)}
+                        data-testid={`button-admin-deliver-${item.sellerOrderId}`}
+                      >
+                        {savedId === `deliver-${item.sellerOrderId}` ? 'Bağlandı' : deliveringId === item.sellerOrderId ? 'Bağlanır...' : 'Çatdırıldı kimi bağla'}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      ) : null}
+
       {orders.isLoading ? <LoadingCard lines={6} /> : orders.isError ? <QueryError message="Admin sifarişləri yüklənmədi." onRetry={() => void orders.refetch()} /> : list.length ? <div className="admin-order-list" style={{ marginTop: 16 }}>{list.map((order) => {
         const draft = draftFor(order);
         const settleDraft = settleDraftFor(order);
