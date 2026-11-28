@@ -52,7 +52,7 @@ import { az } from '@/i18n/az';
 import CheckoutPage from '@/pages/checkout';
 import { LegalPage } from '@/pages/legal';
 import { HelpPage } from '@/pages/help';
-import { AccountAddressSection, AccountPaymentSection, AccountSettingsButton, AccountSettingsPanel, useBuyerProfile } from '@/pages/account-settings';
+import { AccountAddressSection, AccountSettingsButton, AccountSettingsPanel, useBuyerProfile } from '@/pages/account-settings';
 import OrderPage from '@/pages/order';
 import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
@@ -1311,7 +1311,6 @@ function AccountPage() {
               {profileState.error && <p className="account-form-error" role="alert" data-testid="status-account-profile-error">{profileState.error}</p>}
               {profileState.notice && <p className="account-form-note" role="status" data-testid="status-account-profile-saved">{profileState.notice}</p>}
               <AccountAddressSection profile={profileState.profile} setProfile={profileState.setProfile} onSave={saveProfile} pending={saving || !profileState.ready} />
-              <AccountPaymentSection />
             </div>
           </section>
         )}

@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react';
-import { CreditCard, MapPin, Settings } from 'lucide-react';
+import { MapPin, Settings } from 'lucide-react';
 import { authClient, authErrorMessage } from '@/lib/auth-client';
 
 export type BuyerProfile = {
@@ -237,25 +237,3 @@ export function AccountAddressSection({
   );
 }
 
-export function AccountPaymentSection() {
-  return (
-    <section className="account-panel" id="account-payment" aria-labelledby="account-payment-heading" data-testid="panel-account-payment">
-      <div className="account-panel-head">
-        <div>
-          <div className="home-overline">Ödəniş</div>
-          <h2 id="account-payment-heading"><CreditCard size={18} /> Ödəniş üsulu</h2>
-        </div>
-      </div>
-      <div className="account-payment-list">
-        <label className="account-payment-choice is-selected">
-          <input type="radio" name="account-payment" checked readOnly data-testid="choice-pay-on-delivery" />
-          <span><strong>Çatdırılmada nağd ödəniş</strong><small>Qapıda və ya mağazadan götürəndə nağd ödəyə bilərsiniz.</small></span>
-        </label>
-        <label className="account-payment-choice">
-          <input type="radio" name="account-payment" readOnly data-testid="choice-card" />
-          <span><strong>Bank kartı ilə online ödəniş</strong><small>Sifariş zamanı checkout-da seçə bilərsiniz.</small></span>
-        </label>
-      </div>
-    </section>
-  );
-}

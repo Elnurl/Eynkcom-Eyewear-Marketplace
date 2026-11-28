@@ -350,10 +350,8 @@ export default function CheckoutPage({ items, stores = [], onClearCart }: Checko
         <header className="commerce-header commerce-header--checkout">
           <div className="checkout-header-main">
             <Link href="/" className="brand" data-testid="link-checkout-brand"><BrandLogo /></Link>
-            <div className="eyebrow checkout-eyebrow">Sifarişin tamamlanması</div>
             <h1 className="checkout-title">Sifarişini rahat tamamla.</h1>
           </div>
-          <p className="checkout-lead">Kuryer ilə Bakı və Abşerona çatdırılır; mağazadan götürmə pulsuzdur.</p>
         </header>
 
         {paymentFailedReturn ? (

@@ -102,15 +102,6 @@
 .account-form-note { color: #1f6b3a; }
 .account-form-error { margin: 0; color: #9b2c2c; font-size: 13px; }
 .account-form .account-cta { justify-self: start; }
-.account-payment-list { display: grid; gap: 10px; margin-top: 16px; }
-.account-payment-choice { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1px solid #eceae4; border-radius: 14px; }
-.account-payment-choice.is-selected { border-color: #142232; }
-.account-payment-choice.is-disabled { color: #8a919a; }
-.account-payment-choice span { display: grid; gap: 3px; }
-.account-payment-choice strong { color: #142232; font-size: 14px; }
-.account-payment-choice small { color: #6c737e; font-size: 12px; line-height: 1.4; }
-.account-payment-choice.is-disabled strong,
-.account-payment-choice.is-disabled small { color: #8a919a; }
 
 .account-orders { padding-top: 56px; scroll-margin-top: 90px; }
 .account-orders-page .account-orders { padding-top: 48px; padding-bottom: 64px; }
