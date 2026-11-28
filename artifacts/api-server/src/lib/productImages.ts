@@ -1,5 +1,5 @@
 import { and, eq, isNotNull, or, sql } from "drizzle-orm";
-import { db, productImageUploadsTable, sellerProductsTable, sellerStoresTable, sellerSupportTicketsTable, supportImageUploadsTable } from "@workspace/db";
+import { db, productImageUploadsTable, sellerProductsTable, sellerStoresTable, sellerSupportTicketsTable, supportImageUploadsTable, usersTable } from "@workspace/db";
 import { ObjectNotFoundError, ObjectStorageService } from "./objectStorage";
 import { logger } from "./logger";
 
@@ -65,7 +65,13 @@ export async function isPublishedImage(path: string): Promise<boolean> {
     .from(sellerStoresTable)
     .where(sql`${sellerStoresTable.vitrineTheme}->>'heroMediaPath' = ${path}`)
     .limit(1);
-  return Boolean(heroMedia);
+  if (heroMedia) return true;
+  const [profilePhoto] = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.image, path))
+    .limit(1);
+  return Boolean(profilePhoto);
 }
 
 export async function removeUnusedImage(path: string, sellerId: string): Promise<void> {

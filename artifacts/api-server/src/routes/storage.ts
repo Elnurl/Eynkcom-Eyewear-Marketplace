@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db, productImageUploadsTable, sellerStoresTable, supportImageUploadsTable } from "@workspace/db";
+import { db, productImageUploadsTable, sellerStoresTable, supportImageUploadsTable, usersTable } from "@workspace/db";
 import {
   CompleteUploadBody,
   CompleteUploadResponse,
@@ -15,6 +15,7 @@ import { optionalAuth, requireAuth } from "../middlewares/requireAuth";
 const router: IRouter = Router();
 const storage = new ObjectStorageService();
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const MAX_PRESCRIPTION_BYTES = 10 * 1024 * 1024;
 
 type UploadImageType = "image/jpeg" | "image/png" | "image/gif";
@@ -104,6 +105,55 @@ router.post(
     } catch (error) {
       req.log.error({ err: error }, "Direct product image upload failed");
       res.status(500).json({ error: "Şəkil yüklənmədi. Yenidən cəhd edin." });
+    }
+  },
+);
+
+/** Alıcı hesabı — profil şəkli (JPG/PNG). */
+router.post(
+  "/storage/uploads/avatar",
+  requireAuth,
+  express.raw({
+    limit: MAX_AVATAR_BYTES,
+    type: (req) => {
+      const value = req.headers["content-type"]?.split(";")[0]?.trim().toLowerCase();
+      return value === "image/jpeg" || value === "image/jpg" || value === "image/png";
+    },
+  }),
+  async (req: Request, res: Response): Promise<void> => {
+    const contentType = imageContentType(req.headers["content-type"]);
+    if (!contentType || contentType === "image/gif") {
+      res.status(400).json({ error: "Yalnız JPG və ya PNG qəbul olunur." });
+      return;
+    }
+    const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    if (!body.length) {
+      res.status(400).json({ error: "Şəkil faylı boşdur." });
+      return;
+    }
+    if (body.length > MAX_AVATAR_BYTES) {
+      res.status(413).json({ error: "Profil şəkli maksimum 5 MB ola bilər." });
+      return;
+    }
+    if (!matchesImageMagic(contentType, body.subarray(0, 8))) {
+      res.status(400).json({ error: "Fayl JPG və ya PNG deyil." });
+      return;
+    }
+    try {
+      const userId = req.dbUser!.id;
+      const { objectPath } = await storage.putNewUpload(body, contentType);
+      await db.insert(supportImageUploadsTable).values({
+        objectPath,
+        ownerId: userId,
+        contentType,
+        size: body.length,
+        finalizedAt: new Date(),
+      });
+      await db.update(usersTable).set({ image: objectPath }).where(eq(usersTable.id, userId));
+      res.json({ objectPath });
+    } catch (error) {
+      req.log.error({ err: error }, "Buyer avatar upload failed");
+      res.status(500).json({ error: "Profil şəkli yüklənmədi. Yenidən cəhd edin." });
     }
   },
 );

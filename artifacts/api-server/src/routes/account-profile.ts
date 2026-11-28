@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { Router, type IRouter } from "express";
 import { db, usersTable } from "@workspace/db";
+import { imageBelongsToUser, UPLOADED_IMAGE_PATH } from "../lib/productImages";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const areas = ["Bakı", "Abşeron"] as const;
@@ -29,6 +30,7 @@ router.get("/account/profile", requireAuth, async (req, res): Promise<void> => {
       phone: usersTable.phone,
       deliveryArea: usersTable.deliveryArea,
       deliveryAddress: usersTable.deliveryAddress,
+      image: usersTable.image,
     })
     .from(usersTable)
     .where(eq(usersTable.id, req.dbUser!.id))
@@ -45,6 +47,7 @@ router.get("/account/profile", requireAuth, async (req, res): Promise<void> => {
     phone: user.phone ?? "",
     deliveryArea: user.deliveryArea === "Abşeron" ? "Abşeron" : "Bakı",
     deliveryAddress: user.deliveryAddress ?? "",
+    image: user.image ?? "",
     paymentMethod: "pay_on_delivery",
   });
 });
@@ -98,6 +101,24 @@ router.patch("/account/profile", requireAuth, async (req, res): Promise<void> =>
       return;
     }
     next.deliveryAddress = address || null;
+  }
+  if ("image" in input) {
+    if (typeof input.image !== "string") {
+      res.status(400).json({ error: "Profil şəkli düzgün deyil." });
+      return;
+    }
+    const image = input.image.trim();
+    if (!image) {
+      next.image = null;
+    } else if (!UPLOADED_IMAGE_PATH.test(image)) {
+      res.status(400).json({ error: "Profil şəkli düzgün deyil." });
+      return;
+    } else if (!(await imageBelongsToUser(image, req.dbUser!.id))) {
+      res.status(403).json({ error: "Bu şəkil sizə məxsus deyil." });
+      return;
+    } else {
+      next.image = image;
+    }
   }
 
   if (Object.keys(next).length) {

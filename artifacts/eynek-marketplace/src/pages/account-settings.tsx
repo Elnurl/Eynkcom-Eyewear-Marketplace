@@ -9,6 +9,7 @@ export type BuyerProfile = {
   phone: string;
   deliveryArea: 'Bakı' | 'Abşeron';
   deliveryAddress: string;
+  image: string;
 };
 
 const emptyProfile = (email: string): BuyerProfile => ({
@@ -18,6 +19,7 @@ const emptyProfile = (email: string): BuyerProfile => ({
   phone: '',
   deliveryArea: 'Bakı',
   deliveryAddress: '',
+  image: '',
 });
 
 async function readError(response: Response) {
@@ -49,6 +51,7 @@ export function useBuyerProfile(userId: string | null, email: string) {
           phone: loaded.phone ?? '',
           deliveryArea: loaded.deliveryArea === 'Abşeron' ? 'Abşeron' : 'Bakı',
           deliveryAddress: loaded.deliveryAddress ?? '',
+          image: loaded.image ?? '',
         });
         setReady(true);
       })

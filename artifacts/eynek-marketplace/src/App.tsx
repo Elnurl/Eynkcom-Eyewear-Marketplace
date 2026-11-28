@@ -52,7 +52,9 @@ import { az } from '@/i18n/az';
 import CheckoutPage from '@/pages/checkout';
 import { LegalPage } from '@/pages/legal';
 import { HelpPage } from '@/pages/help';
+import { AccountHeroAvatar } from '@/components/account-hero-avatar';
 import { AccountAddressSection, AccountSettingsButton, AccountSettingsPanel, useBuyerProfile } from '@/pages/account-settings';
+import { DevAccountPreviewPage } from '@/pages/dev-account-preview';
 import OrderPage from '@/pages/order';
 import SellerOrdersPage from '@/pages/seller-orders';
 import SellerAdminOrdersPage from '@/pages/seller-admin-orders';
@@ -1255,8 +1257,6 @@ function AccountPage() {
       <main className="account-page">
         <section className="account-hero-section">
           <div className="container account-hero">
-            <img className="account-hero-art account-hero-art--desktop" src={`${import.meta.env.BASE_URL}hero-eyewear.webp`} alt="" aria-hidden="true" />
-            <img className="account-hero-art account-hero-art--mobile" src={`${import.meta.env.BASE_URL}hero-eyewear-mobile.webp`} alt="" aria-hidden="true" />
             <div className="account-hero-content">
               <span className="account-overline">Hesabım</span>
               {!isLoaded ? (
@@ -1281,6 +1281,15 @@ function AccountPage() {
                 </>
               )}
             </div>
+            {isLoaded && (
+              <AccountHeroAvatar
+                imagePath={isSignedIn ? profileState.profile.image : ''}
+                canUpload={Boolean(isSignedIn)}
+                displayName={displayName ?? undefined}
+                onImagePath={(path) => profileState.setProfile({ ...profileState.profile, image: path })}
+                onError={profileState.setError}
+              />
+            )}
           </div>
         </section>
 
@@ -1688,6 +1697,7 @@ function Storefront() {
         <Route path="/wishlist"><WishlistPage {...common} /></Route>
         <Route path="/cart"><CartPage items={cartItems} stores={stores} onRemove={removeFromCart} onCheckout={() => setLocation('/checkout')} /></Route>
         <Route path="/account/orders"><AccountOrdersPage /></Route>
+        {import.meta.env.DEV ? <Route path="/dev/account-preview" component={DevAccountPreviewPage} /> : null}
         <Route path="/account"><AccountPage /></Route>
         <Route path="/destek"><HelpPage /></Route>
         <Route path="/qaydalar"><LegalPage slug="qaydalar" /></Route>
